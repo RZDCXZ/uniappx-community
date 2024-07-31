@@ -1,0 +1,16 @@
+export type TopicNav = {
+	id : number
+	title : string
+}
+
+export type Topic = {
+	id : number
+	title : string
+	cover : string
+	desc : string
+	create_time : string | null
+	update_time : string | null
+	category_id : number
+	article_count : number
+	today_article_count : number
+}

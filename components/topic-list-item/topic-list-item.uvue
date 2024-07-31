@@ -1,0 +1,72 @@
+<template>
+	<list-item class="topic-item">
+		<view class="topic-item-image-box">
+			<image :src="item.cover" mode="aspectFill" :fade-show="true" class="topic-item-image"></image>
+		</view>
+		<view class="info">
+			<text class="nickname">{{item.title}}</text>
+			<text class="time">{{item.desc}}</text>
+			<text class="time">动态：{{item.article_count}}条 * 今日：{{item.today_article_count}}条</text>
+		</view>
+	</list-item>
+</template>
+
+<script>
+	import type { Topic } from "@/common/type"
+
+	export default {
+		name: "topic-list-item",
+		props: {
+			item: {
+				type: Object as PropType<Topic>,
+				required: true
+			}
+		},
+		data() {
+			return {
+
+			};
+		}
+	}
+</script>
+
+<style>
+	.topic-item {
+		height: 170rpx;
+		border-bottom: 1rpx solid #f2f2f2;
+		flex-direction: row;
+		align-items: center;
+		padding-right: 34rpx;
+	}
+
+	.topic-item-image-box {
+		width: 102rpx;
+		height: 102rpx;
+		border-radius: 5px;
+		overflow: hidden;
+		margin-right: 25rpx;
+	}
+
+	.topic-item-image {
+		width: 102rpx;
+		height: 102rpx;
+	}
+
+	.info {
+		width: 390rpx;
+	}
+
+	.nickname {
+		color: #272727;
+		max-width: 390rpx;
+		text-overflow: ellipsis;
+		height: 34rpx;
+		font-size: 15px;
+	}
+
+	.time {
+		font-size: 13px;
+		color: #9a9a9a;
+		margin-top: 10rpx;
+	}
+</style>

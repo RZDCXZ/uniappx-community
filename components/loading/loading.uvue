@@ -1,0 +1,31 @@
+<template>
+	<view class="loading-view">
+		<image v-if="!circle" src="@/static/loading1.gif" style="width: 30px;height: 8px;"></image>
+		<image v-else src="@/static/loading2.gif" style="width: 40px;height: 40px;"></image>
+	</view>
+</template>
+
+<script>
+	export default {
+		name: "loading",
+		props: {
+			circle: {
+				type: Boolean,
+				default: true
+			}
+		},
+		data() {
+			return {
+
+			};
+		}
+	}
+</script>
+
+<style>
+	.loading-view {
+		flex: 1;
+		justify-content: center;
+		align-items: center;
+	}
+</style>
