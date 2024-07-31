@@ -1,0 +1,10 @@
+@font-face {
+  font-family: "iconfont"; /* Project id 1054033 */
+  src: url('/static/iconfont.ttf');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+}

@@ -1,0 +1,30 @@
+<template>
+	<text class="iconfont" :style="{color,fontSize: size}">
+		<slot></slot>
+	</text>
+</template>
+
+<script>
+	export default {
+		name: "u-icon",
+		props: {
+			color: {
+				type: String,
+				default: 'gray'
+			},
+			size: {
+				type: String,
+				default: '16px'
+			}
+		},
+		data() {
+			return {
+
+			};
+		}
+	}
+</script>
+
+<style>
+
+</style>

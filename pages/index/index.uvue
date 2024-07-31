@@ -1,0 +1,25 @@
+<template>
+	<view>
+		<u-icon>{{ '\ue621' }}</u-icon>
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+
+			}
+		},
+		onLoad() {
+
+		},
+		methods: {
+
+		}
+	}
+</script>
+
+<style>
+
+</style>
