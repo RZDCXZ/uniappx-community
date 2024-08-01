@@ -1,0 +1,61 @@
+<template>
+	<view class="avatar-box">
+		<text v-if="tip != ''" class="avatar-tip">{{ tip }}</text>
+		<image :src="url" mode="aspectFill" :fade-show="true" :style="{ width:width,height:height }" @load="load" @error="error"></image>
+	</view>
+</template>
+
+<script>
+	export default {
+		name:"avatar",
+		props: {
+			src: {
+				type: String,
+				default: ""
+			},
+			width: {
+				type: String,
+				default: "75rpx"
+			},
+			height:{
+				type: String,
+				default: "75rpx"
+			}
+		},
+		computed: {
+			url(): string {
+				return this.src == "" ? '/static/default-avatar.png' : this.src
+			}
+		},
+		data() {
+			return {
+				tip:"加载中..."
+			};
+		},
+		methods: {
+			// 加载完成之后
+			load(){
+				this.tip = ""
+			},
+			// 图片加载失败
+			error(e:UniImageErrorEvent) {
+				e.target?.setAttribute("src","/static/default-avatar.png")
+			}
+		},
+	}
+</script>
+
+<style>
+.avatar-box {
+	border-radius: 50px;
+	background-color: #f2f2f2;
+	position: relative;
+	align-items: center;
+	justify-content: center;
+}
+.avatar-tip {
+	font-size: 7px;
+	position: absolute;
+	color: #a6a6a6;
+}
+</style>

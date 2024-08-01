@@ -1,16 +1,67 @@
+// 话题分类
 export type TopicNav = {
-	id : number
-	title : string
+	id: number
+	title: string
 }
 
+// 话题列表
 export type Topic = {
-	id : number
-	title : string
-	cover : string
-	desc : string
-	create_time : string | null
-	update_time : string | null
-	category_id : number
-	article_count : number
-	today_article_count : number
+	id: number
+	title: string
+	cover: string
+	desc: string
+	create_time:string | null
+	update_time: string | null
+	category_id: number
+	article_count: number
+	today_article_count: number
+}
+
+// 请求结果
+export type Result<T> = {
+	msg: string
+	data: T | null
+	code: number
+}
+
+export type TopicResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: Topic[]
+}
+
+// 帖子列表
+export type ListItem = {
+	id: number;
+	user_id: number;
+	title: string;
+	images: string[];
+	url: string;
+	category_id: number;
+	topic_id: number;
+	share_count: number;
+	ding_count: number;
+	cai_count: number;
+	comment_count: number;
+	read_count: number;
+	collect_count: number;
+	create_time: string;
+	update_time: string;
+	name: string;
+	avatar: string | null;
+	user_status: number;
+	topic_name: string | null;
+	user_support_action: string;
+	isfollow: boolean;
+}
+
+// 帖子列表请求结果
+export type ListResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: ListItem[]
 }

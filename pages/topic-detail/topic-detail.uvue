@@ -1,0 +1,386 @@
+<template>
+	<list-view class="flex-1" @scroll="handleScroll" @scrolltolower="loadMore" :scroll-top="scrollTop">
+		<!-- 导航栏 -->
+		<sticky-header>
+			<view ref="navbar" class="navbar">
+				<view :style="'height:' + statusBarHeight + 'px;'"></view>
+				<view class="navbar-box">
+					<view class="navbar-icon" @click="back">
+						<text class="iconfont">{{ '\ue60d' }}</text>
+					</view>
+					<text ref="navbarTitle" class="navbar-title">话题标题</text>
+				</view>
+			</view>
+		</sticky-header>
+		<!-- 封面和介绍 -->
+		<list-item ref="header" :style="'margin-top: -'+marginTop+'px;'" style="height: 590rpx;" :type="1">
+			<image ref="banner" class="banner-img" :src="topic.cover" mode="aspectFill"></image>
+			<view class="topic-title-box">
+				<text class="topic-title">{{ topic.title }}</text>
+				<text class="topic-nav">{{ topic.category_name }}</text>
+			</view>
+			<text class="topic-desc">{{ topic.desc }}</text>
+			<text class="topic-info">动态：{{ topic.article_count }}条 · 今日：{{ topic.today_article_count }}条</text>
+			<view class="divider"></view>
+		</list-item>
+		<!-- tabbar -->
+		<sticky-header>
+			<view class="tab">
+				<text class="tab-item" v-for="(item,index) in tabs" :key="index" :class="tabActiveId == item.id ? 'tab-item-active' : ''" @click="onTabClick(item.id)">{{ item.name }}</text>
+			</view>
+		</sticky-header>
+		<!-- 空数据 -->
+		<list-item style="height: 1200px;" v-if="list.length == 0">
+			<view style="height: 400px;">
+				<loading :circle="true" v-if="loading"></loading>
+				<tip title="暂无数据~" v-else></tip>
+			</view>
+		</list-item>
+		<!-- 列表 -->
+		<list-item v-for="(item,index) in list" :key="index" :type="0">
+			<article-list-item :item="item"></article-list-item>
+		</list-item>
+		<list-item :type="4">
+			<loading-more :loading="loading" :isEnded="isEnded"></loading-more>
+		</list-item>
+	</list-view>
+</template>
+
+<script>
+	import { getURL } from "@/common/request.uts"
+	import type { Result,ListItem,ListResult } from "@/common/type.uts"
+	type tab = {
+		type:string,
+		name:string,
+		id:string
+	}
+	
+	type TopicDetail = {
+		id: number;
+		title: string;
+		cover: string;
+		desc: string;
+		create_time: string | null;
+		update_time: string | null;
+		category_id: number;
+		article_count: number;
+		today_article_count: number;
+		category_name: string | null;
+	}
+	
+	export default {
+		data() {
+			return {
+				// 状态栏高度
+				statusBarHeight:0,
+				marginTop:0,
+				
+				// 封面和介绍高度
+				$headerHeight:0,
+				// 导航栏dom
+				$navbarView: null as UniElement | null,
+				// 导航栏标题dom
+				$navbarTitle: null as UniElement | null,
+				
+				// tabbar选项
+				tabs:[{
+					type:"hot",
+					name:"热门",
+					id:"hot"
+				},{
+					type:"new",
+					name:"最新",
+					id:"new"
+				}] as tab[],
+				tabActiveId:"hot",
+				
+				topic:{
+					"id": 0,
+					"title": "",
+					"cover": "",
+					"desc": "",
+					"create_time": null,
+					"update_time": "",
+					"category_id": 7,
+					"article_count": 0,
+					"today_article_count": 0,
+					"category_name": "分类"
+				} as TopicDetail,
+				
+				// 帖子列表
+				list:[] as ListItem[],
+				
+				page:1,
+				isEnded:false,
+				loading:false,
+				
+				// 当前滚动高度
+				currentScrollTop:0,
+				// 滚动位置
+				scrollTop:0
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			this.statusBarHeight = uni.getSystemInfoSync().statusBarHeight
+			this.marginTop = this.statusBarHeight + 45
+			
+			// 获取当前话题ID
+			if(options.has("id")){
+				this.topic.id = parseInt(options.get("id") as string)
+				this.loadTopicDetail()
+				// 加载列表
+				this.loadList(null)
+			}
+		},
+		onReady() {
+			this.$navbarView = this.$refs["navbar"] as UniElement
+			this.$navbarTitle = this.$refs["navbarTitle"] as UniElement
+			
+			this.$headerHeight = (this.$refs["header"] as UniElement).offsetHeight
+		},
+		// 触发下拉刷新
+		onPullDownRefresh() {
+			this.refreshData(()=>{
+				uni.showToast({
+					title: '刷新成功',
+					icon: 'none'
+				});
+				uni.stopPullDownRefresh()
+			})
+		},
+		methods: {
+			// 刷新数据
+			refreshData(loadComplete: (()=>void) | null ){
+				// 清空数据，返回第一页
+				this.list.length = 0
+				this.page = 1
+				this.isEnded = false
+				this.loadList(loadComplete)
+			},
+			// 上拉加载更多
+			loadMore(){
+				if(this.loading || this.isEnded) return
+				this.loadList(null)
+			},
+			// 加载帖子列表
+			loadList(loadComplete: (()=>void) | null ){
+				// 开启上拉加载状态
+				this.loading = true
+				uni.request<Result<ListResult>>({
+					url: getURL(`/topic/${this.topic.id}/article/${this.page}?order=${this.tabActiveId}`),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as ListResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.page == 1){
+							this.list = resData.data
+						} else {
+							this.list.push(...resData.data)
+						}
+						// console.log(resData.data)
+						
+						// 页码+1
+						this.page = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						// uni.hideLoading()
+						if(loadComplete != null){
+							loadComplete()
+						}
+					}
+				});
+			},
+			// 获取话题详情
+			loadTopicDetail(){
+				uni.showLoading({
+					title: '加载中...',
+					mask: false
+				});
+				uni.request<Result<TopicDetail>>({
+					url: getURL(`/topic/${this.topic.id}`),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						this.topic = r.data as TopicDetail
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						setTimeout(function() {
+							uni.hideLoading()
+						}, 200);
+					}
+				});
+			},
+			// 切换tab选项
+			onTabClick(id:string){
+				if(this.tabActiveId == id){
+					return
+				}
+				this.tabActiveId = id
+				
+				// 重置页码
+				this.page = 1
+				this.isEnded = false
+				this.list.length = 0
+				
+				// 确定滚动的高度
+				let h = this.$headerHeight
+				if(this.currentScrollTop > h){
+					// 拿到dom节点，控制css样式
+					let bannerRef = this.$refs["banner"] as UniElement
+					
+					// 先把图片变透明
+					bannerRef?.style?.setProperty("opacity",0)
+					
+					this.$nextTick(()=>{
+						this.scrollTop = this.scrollTop == h ? h+1 : h
+						
+						// 倒计时200毫秒之后再显示，确保滚动完
+						setTimeout(()=>{
+							bannerRef?.style?.setProperty("opacity",1)
+						},200)
+					})
+				}
+				
+				// 请求列表
+				this.loadList(null)
+			},
+			back(){
+				uni.navigateBack({
+					delta: 1
+				});
+			},
+			handleScroll(e:UniScrollEvent){
+				const scrollTop = e.detail.scrollTop
+				this.currentScrollTop = scrollTop
+				// 渐变导航栏初始透明度
+				const colorStart = 0.8
+				const colorEnd = 0
+				
+				// 第一个渐变色透明度变化
+				let colorStartChange = 1 - (1-colorStart)/this.$headerHeight * (this.$headerHeight - scrollTop)
+				if(colorStartChange > 1){
+					colorStartChange = 1
+				}
+				
+				// 第二个渐变色透明度变化
+				let colorEndChange = 1 - (1-colorEnd)/this.$headerHeight * (this.$headerHeight - scrollTop)
+				if(colorEndChange > 1){
+					colorEndChange = 1
+				}
+				
+				// 控制导航栏渐变色变化
+				this.$navbarView?.style?.setProperty("background-image",`linear-gradient(to bottom,rgba(255,255,255,${colorStartChange}),rgba(255,255,255,${colorEndChange}))`)
+				
+				// 控制标题显示
+				this.$navbarTitle?.style?.setProperty("display",colorEndChange == 1 ? "flex" : "none")
+				
+			}
+		}
+	}
+</script>
+
+<style>
+.navbar {
+	background-image: linear-gradient(to bottom,rgba(255,255,255,0.8),rgba(255,255,255,0));
+}
+.navbar-box {
+	height: 45px;
+	flex-direction: row;
+	align-items: center;
+}
+.navbar-icon {
+	width: 45px;
+	height: 45px;
+	align-items: center;
+	justify-content: center;
+}
+.navbar-title {
+	display: none;
+}
+.banner-img {
+	height: 335rpx;
+	width: 750rpx;
+}
+.topic-title-box {
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	margin-top: 30rpx;
+	padding: 0 35rpx;
+}
+.topic-title {
+	font-size: 19px;
+	font-weight: bold;
+	color: #202020;
+}
+.topic-nav {
+	background-color: #fff1f4;
+	color: #f96a88;
+	font-size: 14px;
+	border-radius: 5px;
+	padding: 10rpx;
+}
+.topic-desc {
+	color: #888888;
+	font-size: 16px;
+	margin-top: 20rpx;
+	padding: 0 35rpx;
+}
+.topic-info {
+	font-size: 13px;
+	color: #000000;
+	margin: 30rpx 0;
+	padding: 0 35rpx;
+}
+.divider {
+	background-color: #f3f3f3;
+	width: 750rpx;
+	height: 17rpx;
+}
+.tab {
+	flex-direction: row;
+	justify-content: center;
+	align-items: stretch;
+	background-color: #ffffff;
+}
+.tab-item {
+	color: #414141;
+	font-size: 17px;
+	padding: 12px 25px;
+}
+.tab-item-active {
+	color: #f96a88;
+}
+</style>

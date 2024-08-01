@@ -1,0 +1,154 @@
+<template>
+	<!-- 头部 -->
+	<view class="list-item-header">
+		<avatar :src="item.avatar" style="margin-right: 27rpx;"></avatar>
+		<view>
+			<text class="nickname">{{ item.name }}</text>
+			<text class="time">{{ item.create_time }} · {{ item.read_count }}次阅读</text>
+		</view>
+		<text class="follow">关注</text>
+	</view>
+	<!-- 文字内容 -->
+	<text class="content">{{ item.title }}</text>
+	
+	<!-- 图片，单图，双图，多图 -->
+	<view class="content-media">
+		<image v-for="(img,imgI) in item.images" :key="imgI" :src="img" :fade-show="true" mode="aspectFill" class="content-image" :class="imageClass"></image>
+	</view>
+	
+	<!-- 所属话题 -->
+	<view class="topic-tag" v-if="item.topic_name != null">
+		<text class="topic-tag-icon">#</text>
+		<text class="topic-tag-title">{{ item.topic_name }}</text>
+		<text class="iconfont topic-tag-more">{{ '\ue60c' }}</text>
+	</view>
+	
+	<!-- 操作按钮 -->
+	<view class="actions">
+		<icon-btn label="赞" :icon="'\ue6eb'" :count="item.ding_count"></icon-btn>
+		<icon-btn label="踩" :icon="'\ue701'" :count="item.cai_count"></icon-btn>
+		<icon-btn label="评论" :icon="'\ue648'" :count="item.comment_count"></icon-btn>
+		<icon-btn label="分享" :icon="'\ue633'" :count="item.share_count"></icon-btn>
+	</view>
+	
+	<view class="divider"></view>
+	
+</template>
+
+<script>
+	import type { PropType } from "vue"
+	import type { ListItem } from "@/common/type.uts"
+	export default {
+		name:"article-list-item",
+		props: {
+			item: {
+				type: Object as PropType<ListItem>,
+				required:true 
+			},
+		},
+		computed: {
+			imageClass(): string {
+				const count = this.item.images.length
+				if(count == 1){
+					return "one-image"
+				} else if(count == 2){
+					return "two-image"
+				} else {
+					return "more-image"
+				}
+			}
+		},
+	}
+</script>
+
+<style>
+/* 头部 */
+.list-item-header {
+	flex-direction: row;
+	align-items: center;
+	padding-top: 26rpx;
+	padding-left: 33rpx;
+	padding-right: 33rpx;
+}
+
+.follow {
+	font-size: 15px;
+	font-weight: bold;
+	color: #de6489;
+	padding: 10rpx;
+	margin-left: auto;
+}
+.time {
+	font-size: 13px;
+	color: #a7a7a7;
+	margin-top: 10rpx;
+}
+.nickname {
+	color: #050505;
+	text-overflow: ellipsis;
+	max-width: 240rpx;
+	height: 34rpx;
+	font-size: 15px;
+	font-weight: bold;
+}
+.content {
+	padding-top: 25rpx;
+	padding-left: 33rpx;
+	padding-right: 33rpx;
+	font-size: 16px;
+	line-height: 1.5;
+}
+.content-media {
+	flex-direction: row;
+	flex-wrap: wrap;
+	/* margin-top: 17rpx; */
+	padding-left: 10rpx;
+}
+.content-image {
+	margin-top: 10rpx;
+	margin-right: 10rpx;
+	background-color: #f0f0f0;
+}
+.one-image {
+	width: 730rpx;
+	height: 730rpx;
+}
+.two-image {
+	width: 360rpx;
+	height: 360rpx;
+}
+.more-image {
+	height: 236rpx;
+	width: 236rpx;
+}
+.topic-tag {
+	flex-direction: row;
+	margin: 0 30rpx;
+	background-color: #fff3f7;
+	border-radius: 50px;
+	padding: 8rpx 20rpx;
+	align-items: center;
+	margin-top: 25rpx;
+	align-self: flex-start;
+}
+.topic-tag-icon {
+	font-weight: bold;
+	margin: 0 10rpx;
+	font-size: 18px;
+	color: #fb5e7d;
+}
+.topic-tag-title {
+	color: #000000;
+	font-size: 14px;
+}
+.actions {
+	flex-direction: row;
+	align-items: center;
+	height: 105rpx;
+}
+.divider {
+	background-color: #f3f3f3;
+	width: 750rpx;
+	height: 17rpx;
+}
+</style>

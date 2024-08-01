@@ -1,0 +1,48 @@
+<template>
+	<view class="action-box" hover-class="action-box-hover">
+		<text class="iconfont action-icon">{{ icon }}</text>
+		<text class="action-data">{{ count > 0 ? count : label }}</text>
+	</view>
+</template>
+
+<script>
+	export default {
+		name:"icon-btn",
+		props: {
+			icon: {
+				type: String,
+				default: ""
+			},
+			count:{
+				type:Number,
+				default:0
+			},
+			label:{
+				type: String,
+				default: ""
+			}
+		},
+		data() {
+			return {
+				
+			};
+		}
+	}
+</script>
+
+<style>
+.action-box {
+	flex: 1;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+}
+.action-icon {
+	font-size: 22px!important;
+	margin-right: 12rpx;
+}
+.action-data {
+	color: #000000;
+	font-size: 15px;
+}
+</style>

@@ -10,7 +10,7 @@
 		props: {
 			color: {
 				type: String,
-				default: 'gray'
+				default: 'black'
 			},
 			size: {
 				type: String,

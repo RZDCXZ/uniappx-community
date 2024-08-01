@@ -1,0 +1,6 @@
+import { baseURL } from "@/common/config.uts"
+
+// 获取完整地址
+export function getURL(url:string) : string {
+	return baseURL + url
+}
