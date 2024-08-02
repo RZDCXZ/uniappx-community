@@ -29,3 +29,42 @@ export const userState = reactive({
 
 // 是否已登录
 export const loginState = ref(false)
+
+// 用户登录
+export function login(data:UserDetail){
+	if(data.token != null){
+		uni.setStorageSync("user_token",data.token as string);
+	}
+	// 更新本地用户状态
+	updateUserState(data)
+	uni.setStorageSync("user_info",data);
+	loginState.value = true
+}
+
+// 更新用户状态
+function updateUserState(data:UserDetail){
+	userState.id = data.id
+	userState.name  = data.name
+	userState.username  = data.username
+	userState.avatar  = data.avatar
+	userState.password  = data.password
+	userState.phone  = data.phone
+	userState.email = data.email
+	userState.status = data.status
+	userState.age = data.age
+	userState.sex = data.sex
+	userState.qg = data.qg
+	userState.job = data.job
+	userState.path = data.path
+	userState.birthday = data.birthday
+	userState.desc = data.desc
+	userState.wx_openid = data.wx_openid
+	userState.wx_unionid = data.wx_unionid
+	userState.create_time = data.create_time
+	userState.update_time = data.update_time
+	userState.fans_count = data.fans_count
+	userState.follows_count = data.follows_count
+	userState.articles_count = data.articles_count
+	userState.comments_count = data.comments_count
+	userState.token = data.token
+}

@@ -1,0 +1,61 @@
+<template>
+	<view class="agreement">
+		<radio :checked="modelValue" @click="handleIsAgree" value="1" color="#fd6373"/>
+		<text class="agreement-text">已阅读并同意</text>
+		<text class="agreement-text link" @click="openWebview(agreementUrl)">用户协议</text>
+		<text class="agreement-text">和</text>
+		<text class="agreement-text link" @click="openWebview(privacyUrl)">隐私政策</text>
+	</view>
+</template>
+
+<script>
+	import { agreementUrl,privacyUrl } from "@/common/config.uts"
+	export default {
+		emits:["update:modelValue"],
+		name:"agreement",
+		props: {
+			modelValue: {
+				type: Boolean,
+				default: false
+			},
+		},
+		data() {
+			return {
+				agreementUrl:"",
+				privacyUrl:""
+			};
+		},
+		created() {
+			this.agreementUrl = agreementUrl
+			this.privacyUrl = privacyUrl
+		},
+		methods: {
+			openWebview(url:string){
+				uni.navigateTo({
+					url: '/pages/webview/webview?url=' + url,
+				});
+			},
+			handleIsAgree() {
+				this.$emit("update:modelValue",!this.modelValue)
+			}
+		},
+	}
+</script>
+
+<style>
+/* 用户协议 */
+.agreement {
+	flex-direction: row;
+	justify-content: center;
+	margin-bottom: 40rpx;
+	align-items: center;
+}
+.agreement-text {
+	font-size: 13px;
+	color: #6e6e6e;
+}
+.link {
+	color: #264060;
+	padding: 0 10rpx;
+}
+</style>

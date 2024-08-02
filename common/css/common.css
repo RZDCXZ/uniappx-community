@@ -16,3 +16,23 @@
 	width: 750rpx;
 	height: 17rpx;
 }
+
+
+/* 登录相关 */
+.login-page {
+	flex: 1;
+	padding: 0 48rpx;
+}
+.login-title {
+	margin-top: 70rpx;
+	font-size: 30px;
+	font-weight: bold;
+}
+
+/* 底部 */
+.login-bottom {
+	position: fixed;
+	left: 0;
+	bottom: 0;
+	right: 0;
+}

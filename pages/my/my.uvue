@@ -9,7 +9,7 @@
 				<view>
 					<text class="nologin-title">欢迎来到帝莎编程社区</text>
 					<text class="nologin-info">马上登录跟大家一起嗨</text>
-					<main-btn>登录/注册</main-btn>
+					<main-btn @click="open('user-login')">登录/注册</main-btn>
 				</view>
 				<image src="@/static/nologin-image.png" mode="aspectFill" :fade-show="true" class="nologin-img"></image>
 			</view>
@@ -87,6 +87,12 @@
 			openWebview(url:string){
 				uni.navigateTo({
 					url: '/pages/webview/webview?url=' + url,
+				});
+			},
+			open(p:string){
+				let url = `/pages/${p}/${p}`
+				uni.navigateTo({
+					url
 				});
 			}
 		}

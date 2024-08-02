@@ -34,10 +34,27 @@
 			}
 		},
 		{
-			"path" : "pages/webview/webview",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/webview/webview",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/user-login/user-login",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/user-login-password/user-login-password",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/user-getcode/user-getcode",
+			"style": {
+				"navigationStyle": "custom"
 			}
 		}
 	],

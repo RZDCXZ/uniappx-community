@@ -1,0 +1,5 @@
+// 是否是合法手机号
+export function isValidPhoneNumber(phone:string) : boolean{
+	const regex = /^1[34578]\d{9}$/;
+	return regex.test(phone)
+}

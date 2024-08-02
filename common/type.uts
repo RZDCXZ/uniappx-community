@@ -92,3 +92,10 @@ export type UserDetail = {
 	comments_count: number;
 	token: string | null;
 }
+
+// 默认返回结果
+export type defaultResult = {
+	code: number;
+	msg: string;
+	data: any | null
+} 
