@@ -9,3 +9,10 @@
 .flex-center {
 	align-items: center;justify-content: center;display: flex;
 }
+
+/* 分割线 */
+.divider {
+	background-color: #f3f3f3;
+	width: 750rpx;
+	height: 17rpx;
+}

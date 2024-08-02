@@ -1,0 +1,57 @@
+<template>
+	<view class="cell" :hover-class="hover ? 'cell-hover' : ''">
+		<text class="cell-title">{{ title }}</text>
+		<view class="cell-right">
+			<text class="iconfont cell-icon" v-if="showArrow">{{ '\ue60c' }}</text>
+		</view>
+	</view>
+</template>
+
+<script>
+	export default {
+		name:"cell",
+		props: {
+			title: {
+				type: String,
+				default: ""
+			},
+			showArrow:{
+				type:Boolean,
+				default:true
+			},
+			hover:{
+				type:Boolean,
+				default:true
+			}
+		},
+		data() {
+			return {
+				
+			};
+		}
+	}
+</script>
+
+<style>
+.cell {
+	flex-direction: row;
+	min-height: 100rpx;
+	align-items: center;
+	padding: 0 30rpx;
+	background-color: #ffffff;
+}
+.cell-hover {
+	background-color: #f4f4f4;
+}
+.cell-title {
+	color: #000000;
+}
+.cell-right {
+	margin-left: auto;
+	flex-direction: row;
+	align-items: center;
+}
+.cell-icon {
+	color: #808080;
+}
+</style>

@@ -1,5 +1,5 @@
 <template>
-	<view class="action-box" hover-class="action-box-hover">
+	<view class="action-box" hover-class="action-box-hover" :class="{ 'action-box-column' : column }" :style="style">
 		<text class="iconfont action-icon">{{ icon }}</text>
 		<text class="action-data">{{ count > 0 ? count : label }}</text>
 	</view>
@@ -20,19 +20,29 @@
 			label:{
 				type: String,
 				default: ""
+			},
+			column:{
+				type:Boolean,
+				default:false
+			},
+			width:{
+				type: String,
+				default: ""
+			},
+		},
+		computed: {
+			style(): string {
+				if(this.width != ''){
+					return `width:${this.width};`
+				} 
+				return 'flex: 1;'
 			}
 		},
-		data() {
-			return {
-				
-			};
-		}
 	}
 </script>
 
 <style>
 .action-box {
-	flex: 1;
 	flex-direction: row;
 	justify-content: center;
 	align-items: center;
@@ -44,5 +54,15 @@
 .action-data {
 	color: #000000;
 	font-size: 15px;
+}
+.action-box-column {
+	flex-direction: column;
+}
+.action-box-column .action-icon {
+	margin-right: 0;
+	margin-bottom: 5rpx;
+}
+.action-box-column .action-data {
+	font-size: 12px;
 }
 </style>

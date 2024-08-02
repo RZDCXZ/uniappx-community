@@ -65,3 +65,30 @@ export type ListResult = {
 	total: number
 	data: ListItem[]
 }
+
+export type UserDetail = {
+	name: string | null;
+	id: number;
+	username: string | null;
+	avatar: string | null;
+	password: boolean;
+	phone: string | null;
+	email: string | null;
+	status: number;
+	age: number;
+	sex: number;
+	qg: number;
+	job: string | null;
+	path: string | null;
+	birthday: string | null;
+	desc: string | null;
+	wx_openid: string | null;
+	wx_unionid: string | null;
+	create_time: string | null;
+	update_time: string | null;
+	fans_count: number;
+	follows_count: number;
+	articles_count: number;
+	comments_count: number;
+	token: string | null;
+}

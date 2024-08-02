@@ -1,0 +1,31 @@
+import type { UserDetail } from "@/common/type.uts"
+// state
+export const userState = reactive({
+	"name": "",
+	"id": 0,
+	"username": null,
+	"avatar": "",
+	"password": false,
+	"phone": "",
+	"email": null,
+	"status": 1,
+	"age": 0,
+	"sex": 0,
+	"qg": 0,
+	"job": null,
+	"path": null,
+	"birthday": null,
+	"desc": null,
+	"wx_openid": null,
+	"wx_unionid": null,
+	"create_time": "",
+	"update_time": "",
+	"fans_count": 0,
+	"follows_count": 0,
+	"articles_count": 0,
+	"comments_count": 0,
+	"token": null
+} as UserDetail)
+
+// 是否已登录
+export const loginState = ref(false)

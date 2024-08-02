@@ -1,0 +1,36 @@
+<template>
+	<view class="main-btn" hover-class="main-btn-hover" @click="handleClick">
+		<text class="main-btn-text"><slot></slot></text>
+	</view>
+</template>
+
+<script>
+	export default {
+		name:"main-btn",
+		emits:["click"],
+		methods: {
+			handleClick() {
+				this.$emit("click")
+			}
+		},
+	}
+</script>
+
+<style>
+.main-btn {
+	border-radius: 5px;
+	align-items: center;
+	justify-content: center;
+	background-image: linear-gradient(to bottom right,#fc6672,#e47989);
+	width: 280rpx;
+	height: 80rpx;
+}
+.main-btn-text {
+	color: #ffffff;
+	font-weight: bold;
+	font-size: 15px;
+}
+.main-btn-hover {
+	background-image: linear-gradient(to bottom right,#fd6373,#fd6373);
+}
+</style>
