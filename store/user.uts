@@ -1,4 +1,5 @@
-import type { UserDetail } from "@/common/type.uts"
+import type { UserDetail,Result } from "@/common/type.uts"
+import { getURL } from "@/common/request.uts"
 // state
 export const userState = reactive({
 	"name": "",
@@ -67,4 +68,91 @@ function updateUserState(data:UserDetail){
 	userState.articles_count = data.articles_count
 	userState.comments_count = data.comments_count
 	userState.token = data.token
+}
+
+// 获取当前用户token
+export function getToken():string | null{
+	return uni.getStorageSync("user_token") as string | null
+}
+
+// 当前用户是否已登录
+export function isLogin():boolean{
+	let token = getToken()
+	return token == '' || token == null ? false : true
+}
+
+// 初始化当前登录用户
+export function initCurrentUser(){
+	// 获取缓存中的用户信息
+	getUserInfo(true)
+}
+
+// 获取用户信息
+export function getUserInfo(cache : boolean = true){
+	// 从本地缓存中获取
+	if(cache){
+		uni.getStorage({
+			key:"user_info",
+			success:(res)=>{
+				if(typeof res.data !== "object") return
+				let d = JSON.parse<UserDetail>(JSON.stringify(res.data))
+				if(d == null) return
+				updateUserState(d)
+				loginState.value = true
+			}
+		})
+		return
+	}
+	
+	// 获取最新用户信息
+	if(isLogin()){
+		let token = getToken()
+		uni.request<Result<UserDetail>>({
+			url:getURL("/user/info"),
+			header:{
+				token
+			},
+			success:(res)=>{
+				let r = res.data
+				if(r == null) return
+				// 请求失败
+				if(res.statusCode != 200){
+					// 登录失效
+					if(r.msg == "登录已失效，请重新登录"){
+						// 清除登录状态
+						logout()
+						// 跳转到登录页
+						setTimeout(function() {
+							uni.navigateTo({
+								url: '/pages/user-login/user-login',
+							});
+						}, 300);
+					} else {
+						uni.showToast({
+							title: r.msg,
+							icon: 'none'
+						});
+					}
+					return
+				}
+				
+				if(r.data == null) return
+				updateUserState(r.data as UserDetail)
+				loginState.value = true
+			},
+			fail:(err)=>{
+				uni.showToast({
+					title: err.errMsg,
+					icon: 'none'
+				});
+			}
+		})
+	}
+}
+
+// 退出登录状态
+export function logout(){
+	uni.removeStorageSync("user_token")
+	uni.removeStorageSync("user_info")
+	loginState.value = false
 }

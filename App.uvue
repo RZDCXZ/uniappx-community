@@ -1,4 +1,5 @@
 <script lang="uts">
+	import { initCurrentUser } from "@/store/user.uts"
 	let firstBackTime = 0
 	export default {
 		onLaunch: function () {
@@ -6,6 +7,8 @@
 		},
 		onShow: function () {
 			console.log('App Show')
+			// 初始化用户信息
+			initCurrentUser()
 		},
 		onHide: function () {
 			console.log('App Hide')
@@ -35,10 +38,6 @@
 </script>
 
 <style>
-
-</style>
-
-<style lang="scss">
-	@import url("@/common/css/common.css");
-	@import url("@/common/css/icon.css");
+	@import "@/common/css/icon.css";
+	@import "@/common/css/common.css";
 </style>

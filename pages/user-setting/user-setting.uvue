@@ -1,0 +1,44 @@
+<template>
+	<!-- #ifdef APP -->
+	<scroll-view style="flex:1">
+	<!-- #endif -->
+		<cell title="账号与安全" @click="open('user-safe')"></cell>
+		<cell title="资料编辑" @click="open('user-editinfo')"></cell>
+		<cell title="清除缓存" right-text="1MB" :show-arrow="false"></cell>
+		<cell title="意见反馈" @click="open('user-feedback')"></cell>
+		<cell title="关于社区" @click="open('about')"></cell>
+		<view class="flex-center" style="padding: 20rpx 0;" v-if="loginState">
+			<main-btn width="600rpx">退出登录</main-btn>
+		</view>
+	<!-- #ifdef APP -->
+	</scroll-view>
+	<!-- #endif -->
+</template>
+
+<script>
+	import { loginState } from "@/store/user.uts"
+	export default {
+		data() {
+			return {
+				
+			}
+		},
+		computed: {
+			loginState(): boolean {
+				return loginState.value
+			}
+		},
+		methods: {
+			open(p:string){
+				let url = `/pages/${p}/${p}`
+				uni.navigateTo({
+					url
+				});
+			}
+		}
+	}
+</script>
+
+<style>
+
+</style>

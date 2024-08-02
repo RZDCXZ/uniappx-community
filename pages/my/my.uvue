@@ -16,7 +16,48 @@
 			<view class="divider"></view>
 		</template>
 		<template v-else>
-			<text>{{ name }}</text>
+			<!-- 已登录 -->
+			<view class="my-panel">
+				<avatar :src="avatar" width="148rpx" height="148rpx" style="margin-right: 25rpx;"></avatar>
+				<view class="my-panel-box">
+					<text class="my-nickname">{{ name }}</text>
+					<view class="my-info">
+						<view class="flex">
+							<text class="my-info-label">关注</text>
+							<text class="my-info-value">{{ follows_count }}</text>
+						</view>
+						<view class="flex">
+							<text class="my-info-label">粉丝</text>
+							<text class="my-info-value">{{ fans_count }}</text>
+						</view>
+						<view class="flex">
+							<text class="my-info-label">帖子</text>
+							<text class="my-info-value">{{ articles_count }}</text>
+						</view>
+					</view>
+				</view>
+				
+				<text class="my-panel-btn">个人主页</text>
+			</view>
+			
+			<view class="my-card-section">
+				<view class="my-card">
+					<text class="my-card-title">帖子</text>
+					<text class="my-card-info">我发布的</text>
+					<image src="@/static/view-list.png" mode="aspectFill" class="my-card-img"></image>
+				</view>
+				<view class="my-card">
+					<text class="my-card-title">评论</text>
+					<text class="my-card-info">我发布的</text>
+					<image src="@/static/message.png" mode="aspectFill" class="my-card-img"></image>
+				</view>
+				<view class="my-card">
+					<text class="my-card-title">收藏</text>
+					<text class="my-card-info">我收藏的</text>
+					<image src="@/static/star.png" mode="aspectFill" class="my-card-img"></image>
+				</view>
+			</view>
+			
 		</template>
 		
 		<!-- 广告轮播图部分 -->
@@ -37,7 +78,7 @@
 		<view class="more">
 			<icon-btn :column="true" :icon="'\ue62e'" label="黑名单" width="187.5rpx" style="margin-bottom:30rpx;"></icon-btn>
 			<icon-btn :column="true"  :icon="'\ue6f8'" label="意见反馈" width="187.5rpx" style="margin-bottom:30rpx;"></icon-btn>
-			<icon-btn :column="true" :icon="'\ue608'" label="设置" width="187.5rpx" style="margin-bottom:30rpx;"></icon-btn>
+			<icon-btn :column="true" :icon="'\ue608'" label="设置" width="187.5rpx" style="margin-bottom:30rpx;" @click="open('user-setting')"></icon-btn>
 			<icon-btn :column="true" :icon="'\ueb97'" label="隐私设置" width="187.5rpx" style="margin-bottom:30rpx;"></icon-btn>
 			<icon-btn :column="true" :icon="'\ue6f9'" label="神评鉴定" width="187.5rpx" style="margin-bottom:30rpx;"></icon-btn>
 		</view>
@@ -81,7 +122,19 @@
 			},
 			name():string | null{
 				return userState.name
-			}
+			},
+			avatar():string | null{
+				return userState.avatar
+			},
+			fans_count():number{
+				return userState.fans_count
+			},
+			follows_count():number{
+				return userState.follows_count
+			},
+			articles_count():number{
+				return userState.articles_count
+			},
 		},
 		methods: {
 			openWebview(url:string){
@@ -131,5 +184,70 @@
 	flex-direction: row;
 	flex-wrap: wrap;
 	padding-bottom: 50rpx;
+}
+.my-panel-btn {
+	background-color: #f7f6fb;
+	color: #333237;
+	font-size: 13px;
+	border-top-left-radius: 20px;
+	border-bottom-left-radius: 20px;
+	padding: 15rpx 20rpx;
+	margin-right: -30rpx;
+}
+.my-panel-box {
+	flex: 1;
+}
+.my-nickname {
+	font-size: 18px;
+	font-weight: bold;
+	margin-bottom: 20rpx;
+	color: #333333;
+}
+.my-info {
+	flex-direction: row;
+	align-items: center;
+}
+.my-info-label {
+	font-size: 14px;
+}
+.my-info-value {
+	font-size: 14px;
+	font-weight: bold;
+	margin-left: 12rpx;
+	margin-right: 20rpx;
+}
+.my-card-section {
+	flex-direction: row;
+	padding: 38rpx 30rpx;
+}
+.my-card{
+	height: 115rpx;
+	flex: 1;
+	border-radius: 5rpx;
+	padding: 0 20rpx;
+	margin-left: 10rpx;
+	margin-right: 10rpx;
+	box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.1);
+	background-color: #ffffff;
+	position: relative;
+	justify-content: center;
+}
+.my-card-title {
+	font-size: 18px;
+	font-weight: bold;
+	color: #333333;
+	margin-bottom: 10rpx;
+}
+.my-card-info {
+	font-size: 13px;
+	color: #686868;
+}
+.my-card-img {
+	position: absolute;
+	width: 70rpx;
+	height: 70rpx;
+	bottom: -15rpx;
+	right: -15rpx;
+	opacity: 0.2;
 }
 </style>
