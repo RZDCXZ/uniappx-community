@@ -62,6 +62,71 @@
 			"style": {
 				"navigationBarTitleText": "设置"
 			}
+		},
+		{
+			"path": "pages/user-space/user-space",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/user-follow-list/user-follow-list",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/user-fans-list/user-fans-list",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/my-collection/my-collection",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/user-history/user-history",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path" : "pages/user-blacklist/user-blacklist",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/user-feedback/user-feedback",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/user-safe/user-safe",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/user-editinfo/user-editinfo",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/about/about",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
 		}
 	],
 	"globalStyle": {

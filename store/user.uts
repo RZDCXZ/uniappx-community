@@ -156,3 +156,11 @@ export function logout(){
 	uni.removeStorageSync("user_info")
 	loginState.value = false
 }
+
+// 需要登录才能跳转
+export function AuthNavigateTo(u:string){
+	const url = loginState.value ? u : '/pages/user-login/user-login'
+	uni.navigateTo({
+		url
+	});
+}

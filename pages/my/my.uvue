@@ -18,40 +18,40 @@
 		<template v-else>
 			<!-- 已登录 -->
 			<view class="my-panel">
-				<avatar :src="avatar" width="148rpx" height="148rpx" style="margin-right: 25rpx;"></avatar>
+				<avatar :src="avatar" width="148rpx" height="148rpx" style="margin-right: 25rpx;" @click="openMySpace()"></avatar>
 				<view class="my-panel-box">
-					<text class="my-nickname">{{ name }}</text>
+					<text class="my-nickname" @click="openMySpace()">{{ name }}</text>
 					<view class="my-info">
-						<view class="flex">
+						<navigator class="flex" :url="`/pages/user-follow-list/user-follow-list?user_id=${id}`">
 							<text class="my-info-label">关注</text>
 							<text class="my-info-value">{{ follows_count }}</text>
-						</view>
-						<view class="flex">
+						</navigator>
+						<navigator class="flex" :url="`/pages/user-fans-list/user-fans-list?user_id=${id}`">
 							<text class="my-info-label">粉丝</text>
 							<text class="my-info-value">{{ fans_count }}</text>
-						</view>
-						<view class="flex">
+						</navigator>
+						<view class="flex" @click="openMySpace()">
 							<text class="my-info-label">帖子</text>
 							<text class="my-info-value">{{ articles_count }}</text>
 						</view>
 					</view>
 				</view>
 				
-				<text class="my-panel-btn">个人主页</text>
+				<text class="my-panel-btn" @click="openMySpace()">个人主页</text>
 			</view>
 			
 			<view class="my-card-section">
-				<view class="my-card">
+				<view class="my-card" @click="openMySpace">
 					<text class="my-card-title">帖子</text>
 					<text class="my-card-info">我发布的</text>
 					<image src="@/static/view-list.png" mode="aspectFill" class="my-card-img"></image>
 				</view>
-				<view class="my-card">
+				<view class="my-card" @click="openMySpace">
 					<text class="my-card-title">评论</text>
 					<text class="my-card-info">我发布的</text>
 					<image src="@/static/message.png" mode="aspectFill" class="my-card-img"></image>
 				</view>
-				<view class="my-card">
+				<view class="my-card" @click="open('my-collection')">
 					<text class="my-card-title">收藏</text>
 					<text class="my-card-info">我收藏的</text>
 					<image src="@/static/star.png" mode="aspectFill" class="my-card-img"></image>
@@ -67,20 +67,20 @@
 			</swiper-item>
 		</swiper>
 		
-		<cell title="历史记录"></cell>
+		<cell title="历史记录" @click="open('user-history')"></cell>
 		<view class="divider"></view>
-		<cell title="福利中心"></cell>
+		<cell title="福利中心" @click="test"></cell>
 		<view class="divider"></view>
-		<cell title="创作中心"></cell>
-		<cell title="原创特权"></cell>
+		<cell title="创作中心" @click="test"></cell>
+		<cell title="原创特权" @click="test"></cell>
 		<view class="divider"></view>
 		<cell title="更多功能" :hover="false" :show-arrow="false"></cell>
 		<view class="more">
-			<icon-btn :column="true" :icon="'\ue62e'" label="黑名单" width="187.5rpx" style="margin-bottom:30rpx;"></icon-btn>
-			<icon-btn :column="true"  :icon="'\ue6f8'" label="意见反馈" width="187.5rpx" style="margin-bottom:30rpx;"></icon-btn>
+			<icon-btn :column="true" :icon="'\ue62e'" label="黑名单" width="187.5rpx" style="margin-bottom:30rpx;" @click="open('user-blacklist')"></icon-btn>
+			<icon-btn :column="true"  :icon="'\ue6f8'" label="意见反馈" width="187.5rpx" style="margin-bottom:30rpx;" @click="open('user-feedback')"></icon-btn>
 			<icon-btn :column="true" :icon="'\ue608'" label="设置" width="187.5rpx" style="margin-bottom:30rpx;" @click="open('user-setting')"></icon-btn>
-			<icon-btn :column="true" :icon="'\ueb97'" label="隐私设置" width="187.5rpx" style="margin-bottom:30rpx;"></icon-btn>
-			<icon-btn :column="true" :icon="'\ue6f9'" label="神评鉴定" width="187.5rpx" style="margin-bottom:30rpx;"></icon-btn>
+			<icon-btn :column="true" :icon="'\ueb97'" label="隐私设置" width="187.5rpx" style="margin-bottom:30rpx;" @click="open('user-safe')"></icon-btn>
+			<icon-btn :column="true" :icon="'\ue6f9'" label="神评鉴定" width="187.5rpx" style="margin-bottom:30rpx;" @click="test"></icon-btn>
 		</view>
 		
 	<!-- #ifdef APP -->
@@ -89,7 +89,9 @@
 </template>
 
 <script>
-	import { loginState,userState } from "@/store/user.uts"
+	import type { Result } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts";
+	import { loginState,userState,getUserInfo,AuthNavigateTo } from "@/store/user.uts"
 	type AdsenseItem = {
 		src: string;
 		url: string;
@@ -97,20 +99,7 @@
 	export default {
 		data() {
 			return {
-				adsenses:[
-					{
-						"src": "https://tangzhe123-com.oss-cn-shenzhen.aliyuncs.com/Appstatic/qsbk/demo/banner1.jpg",
-						"url": "https://pc.dishait.cn/"
-					},
-					{
-						"src": "https://tangzhe123-com.oss-cn-shenzhen.aliyuncs.com/Appstatic/qsbk/demo/banner2.jpg",
-						"url": "https://pc.dishait.cn/"
-					},
-					{
-						"src": "https://tangzhe123-com.oss-cn-shenzhen.aliyuncs.com/Appstatic/qsbk/demo/banner3.jpg",
-						"url": "https://pc.dishait.cn/"
-					}
-				] as AdsenseItem[]
+				adsenses:[] as AdsenseItem[]
 			}
 		},
 		computed: {
@@ -136,7 +125,50 @@
 				return userState.articles_count
 			},
 		},
+		onLoad() {
+			this.loadAdsenses()
+		},
+		onShow() {
+			// 获取最新的用户信息
+			getUserInfo(false)
+		},
 		methods: {
+			test(){
+				uni.showToast({
+					title: '学完之后自己扩展',
+					icon: 'none'
+				});
+			},
+			openMySpace(){
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id=' + this.id,
+				});
+			},
+			// 获取广告列表
+			loadAdsenses(){
+				uni.request<Result<AdsenseItem[]>>({
+					url: getURL(`/adsense/my`),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						// 请求失败
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						this.adsenses = r.data as AdsenseItem[]
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+				});
+			},
 			openWebview(url:string){
 				uni.navigateTo({
 					url: '/pages/webview/webview?url=' + url,
@@ -144,6 +176,13 @@
 			},
 			open(p:string){
 				let url = `/pages/${p}/${p}`
+				
+				// 需要登录后才能打开的页面
+				if(p == "my-collection" || p == "user-history" || p == "user-feedback" || p == "user-blacklist" || p == "user-safe"){
+					AuthNavigateTo(`${url}?user_id=${this.id}`)
+					return
+				}
+				
 				uni.navigateTo({
 					url
 				});
