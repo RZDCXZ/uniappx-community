@@ -137,10 +137,9 @@
 			}
 		},
 		{
-			"path" : "pages/user-forget-password/user-forget-password",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/user-forget-password/user-forget-password",
+			"style": {
+				"navigationStyle": "custom"
 			}
 		}
 	],
