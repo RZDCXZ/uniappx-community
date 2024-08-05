@@ -1,0 +1,292 @@
+<template>
+	<status-bar></status-bar>
+	<!-- #ifdef APP -->
+	<scroll-view style="flex:1">
+	<!-- #endif -->
+		<!-- 头部布局 -->
+		<template v-if="!loginState">
+			<view class="my-panel">
+				<view>
+					<text class="nologin-title">欢迎来到帝莎编程社区</text>
+					<text class="nologin-info">马上登录跟大家一起嗨</text>
+					<main-btn @click="open('user-login')">登录/注册</main-btn>
+				</view>
+				<image src="@/static/nologin-image.png" mode="aspectFill" :fade-show="true" class="nologin-img"></image>
+			</view>
+			<view class="divider"></view>
+		</template>
+		<template v-else>
+			<!-- 已登录 -->
+			<view class="my-panel">
+				<avatar :src="avatar" width="148rpx" height="148rpx" style="margin-right: 25rpx;" @click="openMySpace()"></avatar>
+				<view class="my-panel-box">
+					<text class="my-nickname" @click="openMySpace()">{{ name }}</text>
+					<view class="my-info">
+						<navigator class="flex" :url="`/pages/user-follow-list/user-follow-list?user_id=${id}`">
+							<text class="my-info-label">关注</text>
+							<text class="my-info-value">{{ follows_count }}</text>
+						</navigator>
+						<navigator class="flex" :url="`/pages/user-fans-list/user-fans-list?user_id=${id}`">
+							<text class="my-info-label">粉丝</text>
+							<text class="my-info-value">{{ fans_count }}</text>
+						</navigator>
+						<view class="flex" @click="openMySpace()">
+							<text class="my-info-label">帖子</text>
+							<text class="my-info-value">{{ articles_count }}</text>
+						</view>
+					</view>
+				</view>
+				
+				<text class="my-panel-btn" @click="openMySpace()">个人主页</text>
+			</view>
+			
+			<view class="my-card-section">
+				<view class="my-card" @click="openMySpace">
+					<text class="my-card-title">帖子</text>
+					<text class="my-card-info">我发布的</text>
+					<image src="@/static/view-list.png" mode="aspectFill" class="my-card-img"></image>
+				</view>
+				<view class="my-card" @click="openMySpace">
+					<text class="my-card-title">评论</text>
+					<text class="my-card-info">我发布的</text>
+					<image src="@/static/message.png" mode="aspectFill" class="my-card-img"></image>
+				</view>
+				<view class="my-card" @click="open('my-collection')">
+					<text class="my-card-title">收藏</text>
+					<text class="my-card-info">我收藏的</text>
+					<image src="@/static/star.png" mode="aspectFill" class="my-card-img"></image>
+				</view>
+			</view>
+			
+		</template>
+		
+		<!-- 广告轮播图部分 -->
+		<swiper :indicator-dots="true" :autoplay="true" :interval="3000" :duration="1000" :circular="true">
+			<swiper-item style="padding: 15rpx 30rpx;" v-for="(item,index) in adsenses" :key="index" @click="openWebview(item.url)">
+				<image :src="item.src" mode="aspectFill" :fade-show="true" class="my-swiper-img"></image>
+			</swiper-item>
+		</swiper>
+		
+		<cell title="历史记录" @click="open('user-history')"></cell>
+		<view class="divider"></view>
+		<cell title="福利中心" @click="test"></cell>
+		<view class="divider"></view>
+		<cell title="创作中心" @click="test"></cell>
+		<cell title="原创特权" @click="test"></cell>
+		<view class="divider"></view>
+		<cell title="更多功能" :hover="false" :show-arrow="false"></cell>
+		<view class="more">
+			<icon-btn :column="true" :icon="'\ue62e'" label="黑名单" width="187.5rpx" style="margin-bottom:30rpx;" @click="open('user-blacklist')"></icon-btn>
+			<icon-btn :column="true"  :icon="'\ue6f8'" label="意见反馈" width="187.5rpx" style="margin-bottom:30rpx;" @click="open('user-feedback')"></icon-btn>
+			<icon-btn :column="true" :icon="'\ue608'" label="设置" width="187.5rpx" style="margin-bottom:30rpx;" @click="open('user-setting')"></icon-btn>
+			<icon-btn :column="true" :icon="'\ueb97'" label="隐私设置" width="187.5rpx" style="margin-bottom:30rpx;" @click="open('user-safe')"></icon-btn>
+			<icon-btn :column="true" :icon="'\ue6f9'" label="神评鉴定" width="187.5rpx" style="margin-bottom:30rpx;" @click="test"></icon-btn>
+		</view>
+		
+	<!-- #ifdef APP -->
+	</scroll-view>
+	<!-- #endif -->
+</template>
+
+<script>
+	import type { Result } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts";
+	import { loginState,userState,getUserInfo,AuthNavigateTo } from "@/store/user.uts"
+	type AdsenseItem = {
+		src: string;
+		url: string;
+	}
+	export default {
+		data() {
+			return {
+				adsenses:[] as AdsenseItem[]
+			}
+		},
+		computed: {
+			loginState(): boolean {
+				return loginState.value
+			},
+			id():number{
+				return userState.id
+			},
+			name():string | null{
+				return userState.name
+			},
+			avatar():string | null{
+				return userState.avatar
+			},
+			fans_count():number{
+				return userState.fans_count
+			},
+			follows_count():number{
+				return userState.follows_count
+			},
+			articles_count():number{
+				return userState.articles_count
+			},
+		},
+		onLoad() {
+			this.loadAdsenses()
+		},
+		onShow() {
+			// 获取最新的用户信息
+			getUserInfo(false)
+		},
+		methods: {
+			test(){
+				uni.showToast({
+					title: '学完之后自己扩展',
+					icon: 'none'
+				});
+			},
+			openMySpace(){
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id=' + this.id,
+				});
+			},
+			// 获取广告列表
+			loadAdsenses(){
+				uni.request<Result<AdsenseItem[]>>({
+					url: getURL(`/adsense/my`),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						// 请求失败
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						this.adsenses = r.data as AdsenseItem[]
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+				});
+			},
+			openWebview(url:string){
+				uni.navigateTo({
+					url: '/pages/webview/webview?url=' + url,
+				});
+			},
+			open(p:string){
+				let url = `/pages/${p}/${p}`
+				
+				// 需要登录后才能打开的页面
+				if(p == "my-collection" || p == "user-history" || p == "user-feedback" || p == "user-blacklist" || p == "user-safe"){
+					AuthNavigateTo(`${url}?user_id=${this.id}`)
+					return
+				}
+				
+				uni.navigateTo({
+					url
+				});
+			}
+		}
+	}
+</script>
+
+<style>
+.my-panel {
+	flex-direction: row;
+	margin-top: 65rpx;
+	padding: 0 30rpx;
+	align-items: center;
+}
+.nologin-title {
+	font-weight: bold;
+	font-size: 20px;
+	color: #171717;
+	margin-bottom: 20rpx;
+}
+.nologin-info {
+	color: #818181;
+	font-size: 13px;
+	margin-bottom: 35rpx;
+}
+.nologin-img {
+	width: 290rpx;
+	height: 240rpx;
+	margin-left: auto;
+}
+.my-swiper-img {
+	width: 690rpx;
+	height: 135rpx;
+	border-radius: 5px;
+}
+.more {
+	flex-direction: row;
+	flex-wrap: wrap;
+	padding-bottom: 50rpx;
+}
+.my-panel-btn {
+	background-color: #f7f6fb;
+	color: #333237;
+	font-size: 13px;
+	border-top-left-radius: 20px;
+	border-bottom-left-radius: 20px;
+	padding: 15rpx 20rpx;
+	margin-right: -30rpx;
+}
+.my-panel-box {
+	flex: 1;
+}
+.my-nickname {
+	font-size: 18px;
+	font-weight: bold;
+	margin-bottom: 20rpx;
+	color: #333333;
+}
+.my-info {
+	flex-direction: row;
+	align-items: center;
+}
+.my-info-label {
+	font-size: 14px;
+}
+.my-info-value {
+	font-size: 14px;
+	font-weight: bold;
+	margin-left: 12rpx;
+	margin-right: 20rpx;
+}
+.my-card-section {
+	flex-direction: row;
+	padding: 38rpx 30rpx;
+}
+.my-card{
+	height: 115rpx;
+	flex: 1;
+	border-radius: 5rpx;
+	padding: 0 20rpx;
+	margin-left: 10rpx;
+	margin-right: 10rpx;
+	box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.1);
+	background-color: #ffffff;
+	position: relative;
+	justify-content: center;
+}
+.my-card-title {
+	font-size: 18px;
+	font-weight: bold;
+	color: #333333;
+	margin-bottom: 10rpx;
+}
+.my-card-info {
+	font-size: 13px;
+	color: #686868;
+}
+.my-card-img {
+	position: absolute;
+	width: 70rpx;
+	height: 70rpx;
+	bottom: -15rpx;
+	right: -15rpx;
+	opacity: 0.2;
+}
+</style>

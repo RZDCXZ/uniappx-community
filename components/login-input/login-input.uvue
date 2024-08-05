@@ -1,6 +1,6 @@
 <template>
 	<view class="login-box">
-		<input :auto-focus="autoFocus" :style="{ 'font-size':fontSize }" :value="modelValue" :type="type" :placeholder="placeholder" placeholder-style="font-weight:bold;color:#cbcbcb;" class="login-input" :maxlength="maxlength" :confirm-type="confirmType" @input="handleInput" @confirm="handleConfirm"/>
+		<input :password="password" :auto-focus="autoFocus" :style="{ 'font-size':fontSize }" :value="modelValue" :type="type" :placeholder="placeholder" placeholder-style="font-weight:bold;color:#cbcbcb;" class="login-input" :class="{ 'login-input-full': (btn == '') }" :maxlength="maxlength" :confirm-type="confirmType" @input="handleInput" @confirm="handleConfirm"/>
 		<view v-if="btn != ''" class="login-box-btn" @click="$emit('click')">
 			<text class="login-box-btn-text">{{ btn }}</text>
 		</view>
@@ -44,6 +44,10 @@
 				type:String,
 				default:""
 			},
+			password:{
+				type:Boolean,
+				default:false
+			}
 		},
 		data() {
 			return {
@@ -84,5 +88,9 @@
 .login-box-btn-text {
 	font-size: 14px;
 	color: #262626;
+}
+.login-input-full {
+	width: 655rpx;
+	border-right: 0;
 }
 </style>

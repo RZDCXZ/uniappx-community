@@ -94,38 +94,46 @@
 			}
 		},
 		{
-			"path" : "pages/user-blacklist/user-blacklist",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/user-blacklist/user-blacklist",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/user-feedback/user-feedback",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/user-feedback/user-feedback",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/user-safe/user-safe",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/user-safe/user-safe",
+			"style": {
+				"navigationBarTitleText": "账号与安全"
 			}
 		},
 		{
-			"path" : "pages/user-editinfo/user-editinfo",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/user-editinfo/user-editinfo",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/about/about",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/about/about",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/user-reset-password/user-reset-password",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/user-bindphone/user-bindphone",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom"
 			}
 		}
 	],

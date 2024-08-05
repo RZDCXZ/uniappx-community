@@ -1,0 +1,25 @@
+<template>
+	<web-view class="flex-1" :src="url"></web-view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				url:""
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			if(options.has("url")){
+				this.url = options.get("url") as string
+			}
+		},
+		methods: {
+			
+		}
+	}
+</script>
+
+<style>
+
+</style>

@@ -1,0 +1,49 @@
+<template>
+	<navbar></navbar>
+	<view class="login-page">
+		<text class="login-title">绑定</text>
+		<!-- 输入框 -->
+		<login-input :auto-focus="true" fontSize="24px" v-model="phone" type="tel" placeholder="输入手机号" :maxlength="11" confirm-type="send" @confirm="openGetCode"></login-input>
+		
+		<!-- 底部 -->
+		<view class="login-bottom">
+			<main-btn :disabled="disabled" borderRadius="0" width="750rpx" height="98rpx" fontSize="18px" @click="openGetCode">获取验证码</main-btn>
+		</view>
+		
+	</view>
+</template>
+
+<script>
+	import { isValidPhoneNumber } from "@/common/utils.uts"
+	export default {
+		data() {
+			return {
+				phone:"",
+			}
+		},
+		computed: {
+			disabled(): boolean {
+				return this.phone.trim().length != 11
+			}
+		},
+		methods: {
+			openGetCode(){
+				if(!isValidPhoneNumber(this.phone)){
+					uni.showToast({
+						title: '请输入合法手机号',
+						icon: 'none'
+					});
+					return
+				}
+				
+				uni.navigateTo({
+					url: `/pages/user-getcode/user-getcode?phone=${this.phone}&type=bindphone`
+				});
+			}
+		}
+	}
+</script>
+
+<style>
+
+</style>
