@@ -10,9 +10,23 @@
 		</list-item>
 		
 		<!-- 帖子列表 -->
-		<list-item v-for="(item,index) in dataList" :key="index" :type="0">
-			<article-list-item ref="articleListItem" :item="item"></article-list-item>
-		</list-item>
+		<template v-if="type == 'article' || page == 'index'">
+			<list-item v-for="(item,index) in dataList" :key="index" :type="0">
+				<article-list-item ref="articleListItem" :item="item"></article-list-item>
+			</list-item>
+		</template>
+		<!-- 用户列表 -->
+		<template v-else-if="type == 'user'">
+			<list-item v-for="(item,index) in userList" :key="index" :type="5">
+				<user-list-item :item="item"></user-list-item>
+			</list-item>
+		</template>
+		<!-- 话题列表 -->
+		<template v-else-if="type == 'topic'">
+			<list-item style="padding-left: 34rpx;" v-for="(item,index) in topicList" :key="index" :type="6">
+				<topic-list-item :item="item"></topic-list-item>
+			</list-item>
+		</template>
 		<list-item :type="4" v-if="!isFirstLoad">
 			<loading-more :loading="loading" :isEnded="isEnded"></loading-more>
 		</list-item>
@@ -21,7 +35,7 @@
 </template>
 
 <script>
-	import type { Result,ListItem,ListResult,updateArticleChangeEvent,updateSupportEvent } from "@/common/type.uts"
+	import type { Result,ListItem,ListResult,updateArticleChangeEvent,updateSupportEvent,Topic,TopicResult,UserItem,UserItemResult } from "@/common/type.uts"
 	import { getURL } from "@/common/request.uts"
 	import { getToken } from "@/store/user.uts"
 
@@ -42,12 +56,22 @@
 			category_id:{
 				type:Number,
 				default:0
+			},
+			page:{
+				type: String,
+				default: 'index'
+			},
+			keyword:{
+				type: String,
+				default: ''
 			}
 		},
 		data() {
 			return {
 				loading: false,
 				dataList: [] as ListItem[],
+				topicList: [] as Topic[],
+				userList: [] as UserItem[],
 				isEnded: false,
 				loadingError: '',
 				currentPage: 1,
@@ -57,6 +81,14 @@
 		computed: {
 			// 列表长度
 			count():number{
+				if(this.page == "search"){
+					if(this.type == "topic"){
+						return this.topicList.length
+					}
+					if(this.type == 'user'){
+						return  this.userList.length
+					}
+				}
 				return this.dataList.length
 			},
 		},
@@ -107,9 +139,125 @@
 					return
 				}
 				this.loading = true
-
+				
+				switch (this.page){
+					case "index":
+					this.loadArticleList(loadComplete)
+						break;
+					case "search":
+					if(this.type == "article"){
+						this.loadArticleList(loadComplete)
+					} else if(this.type == "topic"){
+						this.loadSearchTopicList(loadComplete)
+					} else if(this.type == "user"){
+						this.loadSearchUserList(loadComplete)
+					}
+						break;
+				}
+				
+			},
+			// 搜索话题列表
+			loadSearchTopicList(loadComplete : (() => void) | null){
+				uni.request<Result<TopicResult>>({
+					url: getURL(`/search/topic/${Math.floor(this.currentPage)}?keyword=${this.keyword}`),
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as TopicResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.topicList = resData.data
+						} else {
+							this.topicList.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
+			// 搜索用户列表
+			loadSearchUserList(loadComplete : (() => void) | null){
+				uni.request<Result<UserItemResult>>({
+					url: getURL(`/search/user/${Math.floor(this.currentPage)}?keyword=${this.keyword}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as UserItemResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.userList = resData.data
+						} else {
+							this.userList.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
+			// 获取帖子列表
+			loadArticleList(loadComplete : (() => void) | null){
+				// 首页
+				let url =  `/category/${this.category_id}/article/${Math.floor(this.currentPage)}`
+				// 搜索页
+				if(this.page == "search"){
+					url = `/search/article/${Math.floor(this.currentPage)}?keyword=${this.keyword}`
+				}
+				
 				uni.request<Result<ListResult>>({
-					url: getURL(`/category/${this.category_id}/article/${Math.floor(this.currentPage)}`),
+					url: getURL(url),
 					header:{
 						token:getToken()
 					},
@@ -152,8 +300,7 @@
 						}
 					}
 				})
-			},
-			
+			}
 		}
 	}
 </script>

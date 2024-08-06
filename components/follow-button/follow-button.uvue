@@ -1,5 +1,5 @@
 <template>
-	<text v-show="!loading" class="follow" :class="{ 'follow-active':modelValue }" @click.stop="handleFollow">{{ modelValue ? '已关注' : '关注' }}</text>
+	<text v-show="!loading" class="follow" :class="{  ['follow-' + type] : true,'follow-active':modelValue }" @click.stop="handleFollow">{{ modelValue ? '已关注' : '关注' }}</text>
 	<image v-show="loading" src="@/static/loading1.gif" mode="widthFix" style="width: 30px;margin-left: auto;"></image>
 </template>
 
@@ -19,6 +19,10 @@
 			user_id:{
 				type:Number,
 				default:0
+			},
+			type:{
+				type:String,
+				default:"text"
 			}
 		},
 		data() {
@@ -91,9 +95,18 @@
 .follow {
 	font-size: 15px;
 	font-weight: bold;
+	margin-left: auto;
+}
+.follow-text {
 	color: #de6489;
 	padding: 10rpx;
-	margin-left: auto;
+}
+.follow-plain {
+	color: #de6489;
+	border: 1rpx solid #de6489;
+	border-radius: 6px;
+	padding: 10rpx 25rpx;
+	font-size: 14px;
 }
 .follow-active {
 	color: #9a9a9a;

@@ -1,0 +1,67 @@
+<template>
+	<tabs-swiper :default-tab-index="tabIndex" :show-search-icon="true" :tabs="tabs" @loadData="loadData" @change="onSwiperChange">
+		<template v-slot:navbar>
+			<navbar ref="navbar" type="search" :disabled="true"></navbar>
+		</template>
+		<swiper-item class="flex-1" v-for="(item,index) in tabs" :key="index">
+			<long-page ref="longPage" page="search" :keyword="keyword" :type="item.type" :preload="item.preload"></long-page>
+		</swiper-item>
+	</tabs-swiper>
+</template>
+
+<script>
+	import type { TabsSwiperItem } from '@/components/tabs-swiper/type.uts'
+	import longPage from '@/pages/long-list/long-list-page.uvue';
+	export default {
+		components: {
+			longPage
+		},
+		data() {
+			return {
+				keyword:"",
+				tabIndex:0,
+				tabs:[{
+					"id": 0,
+					"name": "帖子",
+					"type":"article",
+					"preload":true
+				},{
+					"id": 2,
+					"name": "用户",
+					"type":"user",
+					"preload":false
+				},
+				{
+					"id": 3,
+					"name": "话题",
+					"type":"topic",
+					"preload":false
+				}] as TabsSwiperItem[],
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			if(options.has("keyword")){
+				this.keyword = options.get("keyword") as string
+			}
+		},
+		onReady() {
+			if(this.keyword != ""){
+				(this.$refs["navbar"] as ComponentPublicInstance).$callMethod("setKeyword",this.keyword)
+			}
+		},
+		methods: {
+			// 当滑动时候，用来加载列表数据
+			loadData(index:number){
+				(this.$refs["longPage"] as ComponentPublicInstance[])[index].$callMethod("loadData",null)
+			},
+			// 当滑动时候，触发索引变化
+			onSwiperChange(index:number){
+				this.tabIndex = index
+			}
+		}
+	}
+</script>
+
+<style>
+
+</style>

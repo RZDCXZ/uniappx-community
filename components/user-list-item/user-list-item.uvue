@@ -1,0 +1,71 @@
+<template>
+	<view class="list-item-header">
+		<avatar :src="item.avatar" width="120rpx" height="120rpx" style="margin-right: 27rpx;" @click="openUserSpace"></avatar>
+		<view @click="openUserSpace">
+			<text class="nickname">{{ item.name }}</text>
+			<text class="desc">{{ item.desc }}</text>
+			<text class="time">{{ item.create_time }}</text>
+		</view>
+		<follow-button type="plain" v-model="isfollow" :user_id="item.id"></follow-button>
+	</view>
+</template>
+
+<script>
+	import type { PropType } from "vue"
+	import type { UserItem } from "@/common/type.uts"
+	export default {
+		name:"user-list-item",
+		props: {
+			item: {
+				type: Object as PropType<UserItem>,
+				required:true
+			},
+		},
+		data() {
+			return {
+				isfollow:false
+			};
+		},
+		created() {
+			this.isfollow = this.item.isfollow
+		},
+		methods: {
+			openUserSpace() {
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id='+this.item.id
+				});
+			}
+		},
+	}
+</script>
+
+<style>
+.list-item-header {
+	flex-direction: row;
+	align-items: center;
+	padding-top: 26rpx;
+	padding-left: 33rpx;
+	padding-right: 33rpx;
+}
+
+.time {
+	font-size: 13px;
+	color: #a7a7a7;
+	margin-top: 10rpx;
+}
+.nickname {
+	color: #050505;
+	text-overflow: ellipsis;
+	max-width: 240rpx;
+	height: 34rpx;
+	font-size: 15px;
+	font-weight: bold;
+}
+.desc {
+	font-size: 14px;
+	color: #202020;
+	margin-top: 10rpx;
+	lines: 1;
+	max-width: 410rpx;
+}
+</style>

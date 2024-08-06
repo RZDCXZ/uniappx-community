@@ -2,7 +2,14 @@
 	<!-- #ifdef APP -->
 	<scroll-view style="flex:1">
 	<!-- #endif -->
-		
+		<navbar type="search" @search="handleSearch"></navbar>
+		<view class="cell" v-if="searchList.length > 0">
+			<text class="cell-title">历史记录</text>
+			<text class="cell-tip" @click="clearSearchList">清除记录</text>
+		</view>
+		<view class="keyword-list">
+			<text class="keyword" v-for="(item,index) in searchList" :key="index" @click="handleSearch(item)">{{ item }}</text>
+		</view>
 	<!-- #ifdef APP -->
 	</scroll-view>
 	<!-- #endif -->
@@ -12,15 +19,92 @@
 	export default {
 		data() {
 			return {
-				
+				searchList:[] as string[]
 			}
 		},
+		onLoad() {
+			this.getSearchList()
+		},
 		methods: {
-			
+			// 跳转到搜索结果页
+			handleSearch(keyword:string){
+				uni.navigateTo({
+					url: '/pages/search-result/search-result?keyword='+keyword,
+					success:()=>{
+						this.addSearchList(keyword)
+					}
+				});
+			},
+			// 加载搜索记录
+			getSearchList(){
+				// 取出搜索历史
+				let list = (uni.getStorageSync("historySearchList"))!
+				if(Array.isArray(list)){
+					this.searchList = list as string[]
+				}
+			},
+			// 添加搜索记录
+			addSearchList(keyword:string){
+				// 查询之前是否已加入
+				let index = (this.searchList.findIndex((v:string):boolean => v == keyword) as number)
+				if(index != -1){
+					// 如果之前加入，则直接置顶到第一位
+					this.toFirst(this.searchList,index)
+				} else {
+					// 否则追加到第一位
+					this.searchList = [ keyword, ...this.searchList ]
+				}
+				// 存储到本地缓存中
+				uni.setStorageSync("historySearchList",this.searchList)
+			},
+			// 数组置顶
+			toFirst(arr:string[],index:number):string[]{
+				if(index != 0){
+					arr.unshift(arr.splice(index,1)[0])
+				}
+				return arr
+			},
+			clearSearchList(){
+				uni.showModal({
+					title: '提示',
+					content: '是否要清除搜索记录？',
+					confirmText: '清除',
+					success: res => {
+						if(res.confirm){
+							uni.removeStorageSync("historySearchList")
+							this.searchList.length = 0
+						}
+					},
+				});
+			}
 		}
 	}
 </script>
 
 <style>
-
+.cell {
+	height: 100rpx;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 30rpx;
+	background-color: #ffffff;
+}
+.cell-title {
+	color: #090909;
+}
+.cell-tip {
+	color: #858585;
+}
+.keyword-list {
+	flex-direction: row;
+	padding: 0 20rpx;
+	flex-wrap: wrap;
+}
+.keyword {
+	border: 1rpx solid #dddddd;
+	border-radius: 4px;
+	padding: 8rpx 15rpx;
+	margin: 10rpx;
+}
 </style>

@@ -119,3 +119,26 @@ export type updateSupportEvent = {
 	ding_count:number
 	cai_count:number
 }
+
+
+// 用户列表
+export type UserItem = {
+	id: number;
+	username: string | null;
+	phone: string | null;
+	email: string | null;
+	avatar: string | null;
+	desc: string | null;
+	create_time: string | null;
+	fans_count: number;
+	isfollow: boolean;
+	name: string | null;
+}
+// 搜索用户列表分页结果
+export type UserItemResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: UserItem[]
+}

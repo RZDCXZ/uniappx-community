@@ -2,20 +2,74 @@
 	<status-bar/>
 	<view class="navbar">
 		<view class="navbar-icon" @click="back">
-			<text class="iconfont">{{ '\ue6aa' }}</text>
+			<text class="iconfont">{{ leftIcon }}</text>
+		</view>
+		<view v-if="type == 'search'" class="flex-1">
+			<input v-if="!disabled" class="search-input" type="text" placeholder="请输入搜索词" v-model="keyword" confirm-type="search" @confirm="handleSearch"/>
+			<input v-else :disabled="true" class="search-input" type="text" placeholder="请输入搜索词" v-model="keyword" @click="back"/>
+		</view>
+		<view v-if="type == 'search'" class="navbar-icon" @click="handleSearch">
+			<text class="search-btn">搜索</text>
 		</view>
 	</view>
 </template>
 
 <script>
+	type LeftIcons = {
+		more:string
+		back:string
+		close:string
+	}
 	export default {
+		emits:["search"],
 		name:"navbar",
+		props: {
+			type: {
+				type: String,
+				default: ""
+			},
+			disabled:{
+				type:Boolean,
+				default:false
+			}
+		},
+		data() {
+			return {
+				keyword:"",
+				icons: {
+					more:"\ue6fd",
+					back:"\ue60d",
+					close:"\ue6aa",
+				} as LeftIcons
+			}
+		},
+		computed: {
+			leftIcon(): string {
+				if(this.type == "search"){
+					return this.icons.back
+				}
+				return this.icons.close
+			}
+		},
 		methods: {
+			setKeyword(keyword:string){
+				this.keyword = keyword
+			},
 			back(){
 				uni.navigateBack({
 					delta: 1
 				});
 			},
+			handleSearch(){
+				if(this.disabled){
+					this.back()
+					return
+				}
+				if(this.keyword.trim() == ""){
+					return
+				}
+				this.$emit("search",this.keyword)
+			}
 		},
 	}
 </script>
@@ -23,11 +77,21 @@
 <style>
 .navbar {
 	height: 45px;
+	flex-direction: row;
 }
 .navbar-icon {
 	width: 45px;
 	height: 45px;
 	justify-content: center;
 	align-items: center;
+}
+.search-input {
+	height: 80rpx;
+	background-color: #f4f4f4;
+	border-radius: 6rpx;
+	padding: 0 30rpx;
+}
+.search-btn {
+	font-size: 14px;
 }
 </style>
