@@ -177,3 +177,15 @@ export function updatePassword(){
 	userState.password = true
 	uni.setStorageSync("user_info",userState)
 }
+
+// 需要登录之后才能操作
+export function AuthAction(callback:()=>void){
+	if(loginState.value){
+		callback()
+		return
+	}
+	// 未登录
+	uni.navigateTo({
+		url: '/pages/user-login/user-login',
+	});
+}

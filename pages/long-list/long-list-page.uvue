@@ -1,0 +1,166 @@
+<template>
+	<list-view ref="listView" :id="id" class="list" :rebound="false" :scroll-y="true" :custom-nested-scroll="true" @scrolltolower="loadData(null)">
+		<!-- 骨架屏 -->
+		<list-item v-if="isFirstLoad" :type="1">
+			<skeleton></skeleton>
+		</list-item>
+		<!-- 空数据显示 -->
+		<list-item v-if="!isFirstLoad && count == 0" :type="2" class="flex-1">
+			<tip/>
+		</list-item>
+		
+		<!-- 帖子列表 -->
+		<list-item v-for="(item,index) in dataList" :key="index" :type="0">
+			<article-list-item ref="articleListItem" :item="item"></article-list-item>
+		</list-item>
+		<list-item :type="4" v-if="!isFirstLoad">
+			<loading-more :loading="loading" :isEnded="isEnded"></loading-more>
+		</list-item>
+		
+	</list-view>
+</template>
+
+<script>
+	import type { Result,ListItem,ListResult,updateArticleChangeEvent,updateSupportEvent } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+
+	export default {
+		props: {
+			type: {
+				type: String,
+				default: ''
+			},
+			preload: {
+				type: Boolean,
+				default: false
+			},
+			id: {
+				type: String,
+				default: ''
+			},
+			category_id:{
+				type:Number,
+				default:0
+			}
+		},
+		data() {
+			return {
+				loading: false,
+				dataList: [] as ListItem[],
+				isEnded: false,
+				loadingError: '',
+				currentPage: 1,
+				isFirstLoad:true
+			}
+		},
+		computed: {
+			// 列表长度
+			count():number{
+				return this.dataList.length
+			},
+		},
+		created() {
+			if (this.preload) {
+				this.loadData(null)
+			}
+			// 监听帖子变化
+			uni.$on("onUpdateArticleChange",this.onUpdateArticleChange)
+		},
+		// 组件销毁
+		destroyed() {
+			uni.$off("onUpdateArticleChange",this.onUpdateArticleChange)
+		},
+		methods: {
+			// 监听帖子变化
+			onUpdateArticleChange(e:updateArticleChangeEvent){
+				const aRefs = this.$refs["articleListItem"] as ComponentPublicInstance[]
+				if(e.key == "updateFollow"){
+					this.dataList.forEach((o:ListItem,i:number)=>{
+						if(o.user_id == e.id){
+							aRefs[i].$callMethod("updateFollow",e.value == "true" ? true : false)
+						}
+					})
+					return;
+				} 
+				
+				
+				let index = this.dataList.findIndex((o:ListItem,_:number):boolean => o.id == e.id)
+				if(index == -1){
+					return
+				}
+				let ItemRef = aRefs[index]
+				switch (e.key){
+					case "updateSupport":
+					ItemRef.$callMethod("updateSupport",JSON.parse<updateSupportEvent>(e.value))
+						break;
+				}
+			},
+			refreshData(loadComplete : (() => void) | null) {
+				this.dataList.length = 0
+				this.currentPage = 1
+				this.isFirstLoad = true
+				this.loadData(loadComplete)
+			},
+			loadData(loadComplete : (() => void) | null) {
+				if (this.loading || this.isEnded) {
+					return
+				}
+				this.loading = true
+
+				uni.request<Result<ListResult>>({
+					url: getURL(`/category/${this.category_id}/article/${Math.floor(this.currentPage)}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as ListResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.dataList = resData.data
+						} else {
+							this.dataList.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
+			
+		}
+	}
+</script>
+
+<style>
+	.list {
+		flex: 1;
+		background-color: #ffffff;
+	}
+</style>

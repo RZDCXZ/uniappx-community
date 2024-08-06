@@ -3,3 +3,17 @@ export function isValidPhoneNumber(phone:string) : boolean{
 	const regex = /^1[34578]\d{9}$/;
 	return regex.test(phone)
 }
+
+// 整数+-1
+export function stepInt(value:number, action:string = "+",step:number = 1):number {
+	let v:number = 0
+	if(action == "+"){
+		v = Math.floor(value + step)
+	} else if(action == "-"){
+		v = Math.floor(value - step)
+		if(v < 0){
+			v = 0
+		}
+	}
+	return v
+}

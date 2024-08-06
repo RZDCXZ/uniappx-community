@@ -47,8 +47,8 @@ export type ListItem = {
 	comment_count: number;
 	read_count: number;
 	collect_count: number;
-	create_time: string;
-	update_time: string;
+	create_time: string | null;
+	update_time: string | null;
 	name: string;
 	avatar: string | null;
 	user_status: number;
@@ -99,3 +99,23 @@ export type defaultResult = {
 	msg: string;
 	data: any | null
 } 
+
+// 帖子分类
+export type articleNav = {
+	id:number
+	title:string
+}
+
+// 监听帖子变化事件参数
+export type updateArticleChangeEvent = {
+	id:number
+	key:string
+	value:string
+}
+
+// 顶踩操作参数
+export type updateSupportEvent = {
+	action:string
+	ding_count:number
+	cai_count:number
+}

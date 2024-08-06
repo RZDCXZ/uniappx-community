@@ -1,0 +1,103 @@
+<template>
+	<text v-show="!loading" class="follow" :class="{ 'follow-active':modelValue }" @click.stop="handleFollow">{{ modelValue ? '已关注' : '关注' }}</text>
+	<image v-show="loading" src="@/static/loading1.gif" mode="widthFix" style="width: 30px;margin-left: auto;"></image>
+</template>
+
+<script>
+	import type { defaultResult,updateArticleChangeEvent } from '@/common/type.uts'
+	import { getURL } from "@/common/request.uts"
+	import { AuthAction,getToken } from '@/store/user.uts'
+	export default {
+		emits:["update:modelValue"],
+		name:"follow-button",
+		props: {
+			modelValue: {
+				type: Boolean,
+				default: false
+			},
+			// 被关注人ID
+			user_id:{
+				type:Number,
+				default:0
+			}
+		},
+		data() {
+			return {
+				loading:false
+			};
+		},
+		methods: {
+			// 关注/取消关注
+			handleFollow() {
+				AuthAction(()=>{
+					if(this.loading) return
+					
+					this.loading = true
+					// 判断是关注还是取消关注
+					let action = this.modelValue ? 'remove_follow' : 'add_follow'
+					uni.request<defaultResult>({
+						url: getURL(`/${action}/${this.user_id}`),
+						method:"POST",
+						header:{
+							token:getToken()
+						},
+						success: (res) => {
+							let r = res.data
+							if(r == null) return
+							if(res.statusCode !=200){
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								return
+							}
+							
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							
+							// 全局通知
+							uni.$emit("onUpdateArticleChange",{
+								// 被关注用户ID
+								id:this.user_id,
+								// 事件标识
+								key:"updateFollow",
+								// 转成string，方便后期其他事件传递其他参数
+								value: this.modelValue ? "false" : "true"
+							} as updateArticleChangeEvent)
+							
+							this.$emit("update:modelValue",!this.modelValue)
+						},
+						fail: (err) => {
+							uni.showToast({
+								title: err.errMsg,
+								icon: 'none'
+							});
+						},
+						complete: () => {
+							setTimeout(()=>{
+								this.loading = false
+							}, 300);
+						}
+					})
+				})
+			}
+		},
+	}
+</script>
+
+<style>
+.follow {
+	font-size: 15px;
+	font-weight: bold;
+	color: #de6489;
+	padding: 10rpx;
+	margin-left: auto;
+}
+.follow-active {
+	color: #9a9a9a;
+	background-color: #ffffff;
+	border-color: #ffffff;
+}
+</style>

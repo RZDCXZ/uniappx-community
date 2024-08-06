@@ -1,0 +1,6 @@
+export type TabsSwiperItem = {
+	id:number
+	type : string,
+	name : string,
+	preload : boolean,
+}

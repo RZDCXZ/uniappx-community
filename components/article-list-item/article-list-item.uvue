@@ -6,7 +6,7 @@
 			<text class="nickname">{{ item.name }}</text>
 			<text class="time">{{ item.create_time }} · {{ item.read_count }}次阅读</text>
 		</view>
-		<text class="follow">关注</text>
+		<follow-button v-model="isfollow" :user_id="item.user_id"></follow-button>
 	</view>
 	<!-- 文字内容 -->
 	<text class="content">{{ item.title }}</text>
@@ -25,8 +25,8 @@
 	
 	<!-- 操作按钮 -->
 	<view class="actions">
-		<icon-btn label="赞" :icon="'\ue6eb'" :count="item.ding_count"></icon-btn>
-		<icon-btn label="踩" :icon="'\ue701'" :count="item.cai_count"></icon-btn>
+		<icon-btn label="赞" :icon="'\ue6eb'" :count="ding_count" :active="action == 'ding'" @click="handleSupport('ding')"></icon-btn>
+		<icon-btn label="踩" :icon="'\ue701'" :count="cai_count" :active="action == 'cai'" @click="handleSupport('cai')"></icon-btn>
 		<icon-btn label="评论" :icon="'\ue648'" :count="item.comment_count"></icon-btn>
 		<icon-btn label="分享" :icon="'\ue633'" :count="item.share_count"></icon-btn>
 	</view>
@@ -37,7 +37,10 @@
 
 <script>
 	import type { PropType } from "vue"
-	import type { ListItem } from "@/common/type.uts"
+	import type { ListItem,defaultResult,updateSupportEvent,updateArticleChangeEvent } from "@/common/type.uts"
+	import { stepInt } from "@/common/utils.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken,AuthAction } from "@/store/user.uts"
 	export default {
 		name:"article-list-item",
 		props: {
@@ -45,6 +48,22 @@
 				type: Object as PropType<ListItem>,
 				required:true 
 			},
+		},
+		data() {
+			return {
+				isfollow: false,
+				action:"",
+				ding_count:0,
+				ding_loading:false,
+				cai_count:0,
+				cai_loading:false,
+			}
+		},
+		created(){
+			this.isfollow = this.item.isfollow
+			this.action = this.item.user_support_action
+			this.ding_count = this.item.ding_count
+			this.cai_count = this.item.cai_count
 		},
 		computed: {
 			imageClass(): string {
@@ -56,6 +75,101 @@
 				} else {
 					return "more-image"
 				}
+			}
+		},
+		created() {
+			this.isfollow = this.item.isfollow
+		},
+		methods: {
+			// 更新isfollow
+			updateFollow(value:boolean) {
+				this.isfollow = value
+			},
+			// 更新顶踩情况
+			updateSupport(e:updateSupportEvent){
+				this.action = e.action
+				this.ding_count = e.ding_count
+				this.cai_count = e.cai_count 
+			},
+			// 顶踩
+			handleSupport(type : 'ding' | 'cai'){
+				AuthAction(()=>{
+					if(this.ding_loading || this.cai_loading){
+						return
+					}
+					uni.request<defaultResult>({
+						url: getURL(`/support/${type}/${this.item.id}`),
+						method:"POST",
+						header:{
+							token:getToken()
+						},
+						success: (res) => {
+							let r = res.data
+							if(r == null) return
+							if(res.statusCode !=200){
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								return
+							}
+							
+							// 之前没有操作过
+							if(this.action == ""){
+								if(type == "ding"){
+									this.ding_count = stepInt(this.ding_count)
+								} else {
+									this.cai_count = stepInt(this.cai_count)
+								}
+								this.action = type
+							}
+							// 之前操作过，操作一致，取消之前操作
+							else if(this.action == type){
+								if(type == "ding"){
+									this.ding_count = stepInt(this.ding_count,"-")
+								} else {
+									this.cai_count = stepInt(this.cai_count,"-")
+								}
+								this.action = ""
+							}
+							// 之前操作，操作不一致
+							else {
+								if(type == "ding"){
+									this.ding_count = stepInt(this.ding_count)
+									this.cai_count = stepInt(this.cai_count,"-")
+								} else {
+									this.cai_count = stepInt(this.cai_count)
+									this.ding_count = stepInt(this.ding_count,"-")
+								}
+								this.action = type
+							}
+							
+							// 全局通知
+							uni.$emit("onUpdateArticleChange",{
+								// 帖子ID
+								id:this.item.id,
+								// 事件标识
+								key:"updateSupport",
+								// 转成string，方便后期其他事件传递其他参数
+								value: JSON.stringify({
+									ding_count:this.ding_count,
+									cai_count:this.cai_count,
+									action:this.action
+								} as updateSupportEvent)
+							} as updateArticleChangeEvent)
+						},
+						fail: (err) => {
+							uni.showToast({
+								title: err.errMsg,
+								icon: 'none'
+							});
+						},
+						complete: () => {
+							this.ding_loading = false
+							this.cai_loading = false
+						}
+					})
+				})
 			}
 		},
 	}
@@ -71,13 +185,6 @@
 	padding-right: 33rpx;
 }
 
-.follow {
-	font-size: 15px;
-	font-weight: bold;
-	color: #de6489;
-	padding: 10rpx;
-	margin-left: auto;
-}
 .time {
 	font-size: 13px;
 	color: #a7a7a7;
@@ -146,9 +253,5 @@
 	align-items: center;
 	height: 105rpx;
 }
-.divider {
-	background-color: #f3f3f3;
-	width: 750rpx;
-	height: 17rpx;
-}
+
 </style>

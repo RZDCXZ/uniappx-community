@@ -47,6 +47,7 @@
 </template>
 
 <script>
+	import { getToken } from "@/store/user"
 	import { getURL } from "@/common/request.uts"
 	import type { Result,ListItem,ListResult } from "@/common/type.uts"
 	type tab = {
@@ -168,6 +169,9 @@
 				this.loading = true
 				uni.request<Result<ListResult>>({
 					url: getURL(`/topic/${this.topic.id}/article/${this.page}?order=${this.tabActiveId}`),
+					header:{
+						token:getToken()
+					},
 					success: res => {
 						let r = res.data
 						if(r == null) return
@@ -364,11 +368,7 @@
 	margin: 30rpx 0;
 	padding: 0 35rpx;
 }
-.divider {
-	background-color: #f3f3f3;
-	width: 750rpx;
-	height: 17rpx;
-}
+
 .tab {
 	flex-direction: row;
 	justify-content: center;
