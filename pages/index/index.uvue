@@ -1,6 +1,5 @@
 <template>
-	<tabs-swiper :default-tab-index="tabIndex" :show-search-icon="true" :tabs="tabs" @loadData="loadData"
-		@change="onSwiperChange">
+	<tabs-swiper :default-tab-index="tabIndex" :show-search-icon="true" :tabs="tabs" @loadData="loadData" @change="onSwiperChange">
 		<swiper-item class="flex-1" v-for="(item,index) in tabs" :key="index">
 			<long-page ref="longPage" :category_id="item.id" :type="item.type" :preload="item.preload"></long-page>
 		</swiper-item>
@@ -8,7 +7,7 @@
 </template>
 
 <script>
-	import type { articleNav, Result } from "@/common/type.uts"
+	import type { articleNav,Result } from "@/common/type.uts"
 	import { getURL } from "@/common/request.uts"
 	import type { TabsSwiperItem } from '@/components/tabs-swiper/type.uts'
 	import longPage from '@/pages/long-list/long-list-page.uvue';
@@ -18,84 +17,83 @@
 		},
 		data() {
 			return {
-				tabIndex: 1,
-				tabs: [{
+				tabIndex:1,
+				tabs:[{
 					"id": 0,
 					"name": "关注",
-					"type": "follow",
-					"preload": false
-				}, {
+					"type":"follow",
+					"preload":false
+				},{
 					"id": 2,
 					"name": "图文",
-					"type": "default",
-					"preload": false
+					"type":"default",
+					"preload":false
 				},
 				{
 					"id": 3,
 					"name": "体育",
-					"type": "default",
-					"preload": false
+					"type":"default",
+					"preload":false
 				},
 				{
 					"id": 4,
 					"name": "热点",
-					"type": "default",
-					"preload": false
+					"type":"default",
+					"preload":false
 				}] as TabsSwiperItem[],
 				// 是否已经加载了分类
-				isTabsLoaded: false,
+				isTabsLoaded:false
 			}
 		},
 		onLoad() {
 			this.loadTabs(null)
 		},
 		onPullDownRefresh() {
-			if (!this.isTabsLoaded) {
-				this.loadTabs(() => {
+			if(!this.isTabsLoaded){
+				this.loadTabs(()=>{
 					uni.stopPullDownRefresh()
 				})
 				return
 			}
-
-			(this.$refs["longPage"] as ComponentPublicInstance[])[this.tabIndex].$callMethod("refreshData", () => {
+			(this.$refs["longPage"] as ComponentPublicInstance[])[this.tabIndex].$callMethod("refreshData",()=>{
 				uni.stopPullDownRefresh()
 			})
 		},
 		methods: {
 			// 加载分类
-			loadTabs(loadComplete : (() => void) | null) {
+			loadTabs(loadComplete:(()=>void) | null){
 				uni.request<Result<articleNav[]>>({
 					url: getURL('/category/article'),
 					success: res => {
 						let r = res.data
-						if (r == null) return
-						if (res.statusCode != 200) {
+						if(r == null) return
+						if(res.statusCode !=200){
 							uni.showToast({
 								title: r.msg,
 								icon: 'none'
 							});
 							return
 						}
-
+						
 						let tabs = [{
 							"id": 0,
 							"name": "关注",
-							"type": "follow",
-							"preload": false
+							"type":"follow",
+							"preload":false
 						}] as TabsSwiperItem[]
 						let d = r.data as articleNav[]
-						d.forEach((o : articleNav, _ : number) => {
+						d.forEach((o:articleNav,_:number)=>{
 							tabs.push({
-								id: o.id,
-								name: o.title,
-								type: "default",
-								preload: false
+								id:o.id,
+								name:o.title,
+								type:"default",
+								preload:false
 							} as TabsSwiperItem)
 						})
-
+						
 						this.tabs = tabs
 						this.isTabsLoaded = true
-
+						
 						this.loadData(this.tabIndex)
 					},
 					fail: (err) => {
@@ -105,16 +103,16 @@
 						});
 					},
 					complete: () => {
-						if (loadComplete != null) loadComplete()
+						if(loadComplete != null) loadComplete()
 					}
 				});
 			},
 			// 当滑动时候，用来加载列表数据
-			loadData(index : number) {
-				(this.$refs["longPage"] as ComponentPublicInstance[])[index].$callMethod("loadData", null)
+			loadData(index:number){
+				(this.$refs["longPage"] as ComponentPublicInstance[])[index].$callMethod("loadData",null)
 			},
 			// 当滑动时候，触发索引变化
-			onSwiperChange(index : number) {
+			onSwiperChange(index:number){
 				this.tabIndex = index
 			}
 		}
@@ -122,5 +120,5 @@
 </script>
 
 <style>
-
+	
 </style>

@@ -1,6 +1,6 @@
 <template>
 	<view class="action-box" hover-class="action-box-hover" :class="{ 'action-box-column' : column }" :style="style" @click.stop="handleClick">
-		<text class="iconfont action-icon" :class=" active ?  'action-active' : ''">{{ icon }}</text>
+		<text class="iconfont action-icon" :style="`font-size:${iconSize}`" :class=" active ?  'action-active' : ''">{{ icon }}</text>
 		<text class="action-data" :class=" active ?  'action-active' : ''">{{ count > 0 ? count : label }}</text>
 	</view>
 </template>
@@ -13,6 +13,10 @@
 			icon: {
 				type: String,
 				default: ""
+			},
+			iconSize:{
+				type: String,
+				default: "22px"
 			},
 			count:{
 				type:Number,
@@ -58,8 +62,9 @@
 	align-items: center;
 }
 .action-icon {
-	font-size: 22px!important;
+	/* font-size: 22px!important; */
 	margin-right: 12rpx;
+	margin-bottom: 0;
 }
 .action-data {
 	color: #000000;

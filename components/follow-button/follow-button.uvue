@@ -108,6 +108,12 @@
 	padding: 10rpx 25rpx;
 	font-size: 14px;
 }
+.follow-button {
+	border-radius: 6px;
+	background-color:#de6489;
+	color: #ffffff;
+	padding: 10rpx 25rpx;
+}
 .follow-active {
 	color: #9a9a9a;
 	background-color: #ffffff;

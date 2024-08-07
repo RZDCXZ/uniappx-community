@@ -1,0 +1,383 @@
+<template>
+	<navbar type="text" title="社区交友" right-icon="more" @clickRight="handleShare"></navbar>
+	<!-- #ifdef APP -->
+	<scroll-view style="flex:1" @scrolltolower="onScrollBottom">
+	<!-- #endif -->
+		<!-- 头部 -->
+		<view class="list-item-header">
+			<avatar :src="item.avatar" style="margin-right: 27rpx;" @click="openUserSpace(item.user_id)"></avatar>
+			<view @click="openUserSpace(item.user_id)">
+				<text class="nickname">{{ item.name }}</text>
+				<text class="time">{{ item.create_time }} · {{ item.read_count }}次阅读</text>
+			</view>
+			<follow-button type="button" v-model="isfollow" :user_id="item.user_id"></follow-button>
+		</view>
+		<!-- 文字内容 -->
+		<text class="content">{{ item.title }}</text>
+		
+		<!-- 图片，单图，双图，多图 -->
+		<image v-for="(img,imgI) in item.images" :key="imgI" :src="img" :fade-show="true" mode="widthFix" class="content-image" @error="imageErrorEvent" @click.stop="previewImage(img)"></image>
+		
+		<view class="divider"></view>
+		
+		<comment ref="comment" :article_id="item.id" :support_count="support_count"></comment>
+		
+		<view class="action-bar">
+			<view class="action-input">
+				<text class="placeholder">说点什么...</text>
+				<text class="iconfont emotion">{{ '\ue64e' }}</text>
+			</view>
+			<icon-btn :column="true" iconSize="18px" label="赞" :icon="'\ue6eb'" :count="ding_count" :active="action == 'ding'" @click="handleSupport('ding')"></icon-btn>
+			<icon-btn :column="true" iconSize="16px" label="踩" :icon="'\ue701'" :count="cai_count" :active="action == 'cai'" @click="handleSupport('cai')"></icon-btn>
+			<icon-btn :column="true" iconSize="18px" label="收藏" :icon="'\ue629'" :count="collect_count" :active="isCollect" @click="handleCollect"></icon-btn>
+			<icon-btn :column="true" iconSize="18px" label="评论" :icon="'\ue648'" :count="comment_count"></icon-btn>
+			<icon-btn :column="true" iconSize="18px" label="分享" :icon="'\ue633'" :count="share_count" @click="handleShare()"></icon-btn>
+		</view>
+		
+	<!-- #ifdef APP -->
+	</scroll-view>
+	<!-- #endif -->
+</template>
+
+<script>
+	import { getToken,AuthAction } from "@/store/user"
+	import { getURL } from "@/common/request.uts"
+	import { Result,ArticleDetail,updateArticleChangeEvent,defaultResult,updateSupportEvent } from "@/common/type.uts"
+	import { stepInt } from "@/common/utils.uts"
+	import share from "@/components/share/share.uts"
+	export default {
+		data() {
+			return {
+				isfollow:false,
+				read_count:0,
+				ding_count:0,
+				cai_count:0,
+				action:"",
+				collect_count:0,
+				isCollect:false,
+				comment_count:0,
+				share_count:0,
+				ding_loading:false,
+				cai_loading:false,
+				collectLoading:false,
+				
+				item:{
+					"id": 0,
+					"user_id": 0,
+					"title": "",
+					"content": "",
+					"images": [],
+					"url": "",
+					"category_id": 0,
+					"topic_id": 0,
+					"share_count": 0,
+					"ding_count": 0,
+					"cai_count": 0,
+					"comment_count": 0,
+					"read_count": 0,
+					"collect_count": 0,
+					"create_time": "",
+					"update_time": "",
+					"name": "",
+					"avatar": null,
+					"user_status": 1,
+					"topic_name": "",
+					"user_support_action": "",
+					"isfollow": false,
+					"isCollect": false
+				} as ArticleDetail
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			if(options.has("id")){
+				this.item.id = parseInt(options.get("id") as string)
+				// 加载帖子详情
+				this.loadArticleDetail()
+			}
+		},
+		computed: {
+			support_count(): number {
+				return Math.floor(this.ding_count + this.cai_count)
+			}
+		},
+		methods: {
+			// 收藏/取消收藏
+			handleCollect(){
+				AuthAction(()=>{
+					if(this.collectLoading){
+						return
+					}
+					this.collectLoading = true
+					let action = this.isCollect ? "remove_collection" : "add_collection"
+					uni.request<defaultResult>({
+						url: getURL(`/${action}/${this.item.id}`),
+						method:"POST",
+						header:{
+							token:getToken()
+						},
+						success: (res) => {
+							let r = res.data
+							if(r == null) return
+							if(res.statusCode !=200){
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								return
+							}
+							
+							this.isCollect = !this.isCollect
+							// 修改收藏数
+							this.collect_count = r.data as number
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+						},
+						fail: (err) => {
+							uni.showToast({
+								title: err.errMsg,
+								icon: 'none'
+							});
+						},
+						complete: () => {
+							this.collectLoading = false
+						}
+					})
+				})
+			},
+			// 顶踩
+			handleSupport(type : 'ding' | 'cai'){
+				AuthAction(()=>{
+					if(this.ding_loading || this.cai_loading){
+						return
+					}
+					if(type == "ding"){
+						this.ding_loading = true
+					} else {
+						this.cai_loading = true
+					}
+					uni.request<defaultResult>({
+						url: getURL(`/support/${type}/${this.item.id}`),
+						method:"POST",
+						header:{
+							token:getToken()
+						},
+						success: (res) => {
+							let r = res.data
+							if(r == null) return
+							if(res.statusCode !=200){
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								return
+							}
+							
+							// 之前没有操作过
+							if(this.action == ""){
+								if(type == "ding"){
+									this.ding_count = stepInt(this.ding_count)
+								} else {
+									this.cai_count = stepInt(this.cai_count)
+								}
+								this.action = type
+							}
+							// 之前操作过，操作一致，取消之前操作
+							else if(this.action == type){
+								if(type == "ding"){
+									this.ding_count = stepInt(this.ding_count,"-")
+								} else {
+									this.cai_count = stepInt(this.cai_count,"-")
+								}
+								this.action = ""
+							}
+							// 之前操作，操作不一致
+							else {
+								if(type == "ding"){
+									this.ding_count = stepInt(this.ding_count)
+									this.cai_count = stepInt(this.cai_count,"-")
+								} else {
+									this.cai_count = stepInt(this.cai_count)
+									this.ding_count = stepInt(this.ding_count,"-")
+								}
+								this.action = type
+							}
+							
+							// 全局通知
+							uni.$emit("onUpdateArticleChange",{
+								// 帖子ID
+								id:this.item.id,
+								// 事件标识
+								key:"updateSupport",
+								// 转成string，方便后期其他事件传递其他参数
+								value: JSON.stringify({
+									ding_count:this.ding_count,
+									cai_count:this.cai_count,
+									action:this.action
+								} as updateSupportEvent)
+							} as updateArticleChangeEvent)
+						},
+						fail: (err) => {
+							uni.showToast({
+								title: err.errMsg,
+								icon: 'none'
+							});
+						},
+						complete: () => {
+							this.ding_loading = false
+							this.cai_loading = false
+						}
+					})
+				})
+			},
+			// 触底事件
+			onScrollBottom(){
+				// 加载更多评论
+				(this.$refs["comment"] as ComponentPublicInstance).$callMethod("loadCommentList")
+			},
+			loadArticleDetail(){
+				uni.showLoading({
+					title: '加载中...',
+					mask: false
+				});
+				uni.request<Result<ArticleDetail>>({
+					url: getURL(`/article/${this.item.id}`),
+					header:{
+						token:getToken()
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+
+						this.item = r.data as ArticleDetail
+						this.isfollow = this.item.isfollow
+						this.read_count = this.item.read_count
+						this.action = this.item.user_support_action
+						this.ding_count = this.item.ding_count
+						this.cai_count = this.item.cai_count
+						this.collect_count = this.item.collect_count
+						this.isCollect = this.item.isCollect
+						this.comment_count = this.item.comment_count
+						this.share_count = this.item.share_count
+						
+						// 更新首页阅读数
+						uni.$emit("onUpdateArticleChange",{
+							id:this.item.id,
+							key:"updateReadCount",
+							value:this.item.read_count.toString()
+						} as updateArticleChangeEvent)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						setTimeout(function() {
+							uni.hideLoading()
+						}, 200);
+					}
+				});
+			},
+			// 分享
+			handleShare(){
+				share("https://www.dishaxy.com")
+			},
+			// 打开个人空间页
+			openUserSpace(user_id:number){
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id='+user_id,
+				});
+			},
+			// 预览图片
+			previewImage(img:string){
+				uni.previewImage({
+					current:img,
+					urls:this.item.images
+				})
+			},
+			// 图片加载失败
+			imageErrorEvent(e:UniImageErrorEvent){
+				e.target?.setAttribute("src","/static/error-picture.png")
+			}
+		}
+	}
+</script>
+
+<style>
+/* 头部 */
+.list-item-header {
+	flex-direction: row;
+	align-items: center;
+	padding-top: 26rpx;
+	padding-left: 33rpx;
+	padding-right: 33rpx;
+}
+
+.time {
+	font-size: 13px;
+	color: #a7a7a7;
+	margin-top: 10rpx;
+}
+.nickname {
+	color: #050505;
+	text-overflow: ellipsis;
+	max-width: 240rpx;
+	height: 34rpx;
+	font-size: 15px;
+	font-weight: bold;
+}
+.content {
+	padding-top: 25rpx;
+	padding-left: 33rpx;
+	padding-right: 33rpx;
+	font-size: 16px;
+	line-height: 1.5;
+	margin-bottom: 15rpx;
+}
+.content-image {
+	width: 750rpx;
+	background-color: #f0f0f0;
+}
+.action-bar {
+	background-color: #ffffff;
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	border-top: 1rpx solid #f2f2f2;
+	z-index: 100;
+	height: 103rpx;
+	padding-left: 28rpx;
+	padding-right: 28rpx;
+	flex-direction: row;
+	align-items: center;
+}
+.action-input {
+	flex-direction: row;
+	background-color: #f4f4f4;
+	height: 73rpx;
+	width: 250rpx;
+	border-radius: 5px;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 20rpx;
+}
+.placeholder {
+	font-size: 14px;
+	color: #949494;
+}
+.emotion {
+	font-size: 20px;
+	color: #191919;
+}
+</style>

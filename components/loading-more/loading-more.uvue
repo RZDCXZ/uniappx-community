@@ -1,46 +1,45 @@
 <template>
-	<view class="loading" v-if="loadingText !== ''">
-		<text class="loading-text">{{loadingText}}</text>
+	<view class="loading" v-if="loadingText != ''">
+		<text class="loading-text">{{ loadingText }}</text>
 	</view>
 </template>
 
 <script>
 	export default {
-		name: "loading-more",
+		name:"loading-more",
 		props: {
-			isLoading: {
+			loading: {
 				type: Boolean,
 				default: false
 			},
-			isEnded: {
+			isEnded:{
 				type: Boolean,
 				default: false
 			}
 		},
 		computed: {
-			loadingText() : string {
-				if (this.isLoading) {
-					return '加载中...'
-				} else if (this.isEnded) {
-					return '已经到底了~'
+			loadingText(): string {
+				if(this.loading){
+					return "加载中..."
+				} else if(this.isEnded){
+					return "已经到底了"
 				} else {
-					return ''
+					return "上拉加载更多"
 				}
 			}
-		}
+		},
 	}
 </script>
 
 <style>
-	.loading {
-		padding: 20px;
-		justify-content: center;
-		align-items: center;
-		flex-direction: row;
-	}
-
-	.loading-text {
-		text-align: center;
-		color: #333333;
-	}
+.loading {
+	padding: 20px;
+	justify-content: center;
+	align-items: center;
+	flex-direction: row;
+}
+.loading-text {
+	text-align: center;
+	color: #333333;
+}
 </style>

@@ -1,42 +1,40 @@
 <template>
 	<view class="tip">
 		<image src="@/static/empty.png" mode="widthFix" :fade-show="true" class="tip-img"></image>
-		<text class="tip-title">{{title}}</text>
+		<text class="tip-title">{{ title }}</text>
 	</view>
 </template>
 
 <script>
 	export default {
-		name: "tip",
+		name:"tip",
 		props: {
 			title: {
 				type: String,
-				default: '暂无数据'
-			}
+				default: "暂无数据"
+			},
 		},
 		data() {
 			return {
-
+				
 			};
 		}
 	}
 </script>
 
 <style>
-	.tip {
-		flex: 1;
-		align-items: center;
-		justify-content: center;
-		min-height: 600rpx;
-	}
-
-	.tip-img {
-		width: 350rpx;
-		height: 350rpx;
-	}
-
-	.tip-title {
-		color: #5d5d5d;
-		margin-top: 45rpx;
-	}
+.tip {
+	flex: 1;
+	align-items: center;
+	justify-content: center;
+	min-height: 600rpx;
+}
+.tip-img{
+	width: 350rpx;
+	height: 350rpx;
+}
+.tip-title {
+	color: #5d5d5d;
+	margin-top: 45rpx;
+}
 </style>

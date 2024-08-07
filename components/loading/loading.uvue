@@ -7,25 +7,26 @@
 
 <script>
 	export default {
-		name: "loading",
+		name:"loading",
 		props: {
+			// 是否是圆形
 			circle: {
 				type: Boolean,
-				default: true
-			}
+				default: false 
+			},
 		},
 		data() {
 			return {
-
+				
 			};
 		}
 	}
 </script>
 
 <style>
-	.loading-view {
-		flex: 1;
-		justify-content: center;
-		align-items: center;
-	}
+.loading-view {
+	flex: 1;
+	align-items: center;
+	justify-content: center;
+}
 </style>

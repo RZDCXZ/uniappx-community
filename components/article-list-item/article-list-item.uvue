@@ -1,23 +1,23 @@
 <template>
 	<!-- 头部 -->
-	<view class="list-item-header">
+	<view class="list-item-header" @click.stop="openDetail">
 		<avatar :src="item.avatar" style="margin-right: 27rpx;"></avatar>
 		<view>
 			<text class="nickname">{{ item.name }}</text>
-			<text class="time">{{ item.create_time }} · {{ item.read_count }}次阅读</text>
+			<text class="time">{{ item.create_time }} · {{ read_count }}次阅读</text>
 		</view>
 		<follow-button v-model="isfollow" :user_id="item.user_id"></follow-button>
 	</view>
 	<!-- 文字内容 -->
-	<text class="content">{{ item.title }}</text>
+	<text class="content" @click.stop="openDetail">{{ item.title }}</text>
 	
 	<!-- 图片，单图，双图，多图 -->
-	<view class="content-media">
+	<view class="content-media" @click.stop="openDetail">
 		<image v-for="(img,imgI) in item.images" :key="imgI" :src="img" :fade-show="true" mode="aspectFill" class="content-image" :class="imageClass"></image>
 	</view>
 	
 	<!-- 所属话题 -->
-	<view class="topic-tag" v-if="item.topic_name != null">
+	<view class="topic-tag" v-if="item.topic_name != null" @click.stop="openTopicDetail">
 		<text class="topic-tag-icon">#</text>
 		<text class="topic-tag-title">{{ item.topic_name }}</text>
 		<text class="iconfont topic-tag-more">{{ '\ue60c' }}</text>
@@ -27,8 +27,8 @@
 	<view class="actions">
 		<icon-btn label="赞" :icon="'\ue6eb'" :count="ding_count" :active="action == 'ding'" @click="handleSupport('ding')"></icon-btn>
 		<icon-btn label="踩" :icon="'\ue701'" :count="cai_count" :active="action == 'cai'" @click="handleSupport('cai')"></icon-btn>
-		<icon-btn label="评论" :icon="'\ue648'" :count="item.comment_count"></icon-btn>
-		<icon-btn label="分享" :icon="'\ue633'" :count="item.share_count"></icon-btn>
+		<icon-btn label="评论" :icon="'\ue648'" :count="item.comment_count" @click="openDetail"></icon-btn>
+		<icon-btn label="分享" :icon="'\ue633'" :count="item.share_count" @click="openDetail"></icon-btn>
 	</view>
 	
 	<view class="divider"></view>
@@ -36,8 +36,8 @@
 </template>
 
 <script>
-	import type { PropType } from "vue"
-	import type { ListItem,defaultResult,updateSupportEvent,updateArticleChangeEvent } from "@/common/type.uts"
+	import { PropType } from "vue"
+	import { ListItem,defaultResult,updateSupportEvent,updateArticleChangeEvent } from "@/common/type.uts"
 	import { stepInt } from "@/common/utils.uts"
 	import { getURL } from "@/common/request.uts"
 	import { getToken,AuthAction } from "@/store/user.uts"
@@ -48,6 +48,10 @@
 				type: Object as PropType<ListItem>,
 				required:true 
 			},
+			inTopicDetail:{
+				type:Boolean,
+				default:false
+			}
 		},
 		data() {
 			return {
@@ -57,6 +61,7 @@
 				ding_loading:false,
 				cai_count:0,
 				cai_loading:false,
+				read_count:0
 			}
 		},
 		created(){
@@ -64,6 +69,7 @@
 			this.action = this.item.user_support_action
 			this.ding_count = this.item.ding_count
 			this.cai_count = this.item.cai_count
+			this.read_count = this.item.read_count
 		},
 		computed: {
 			imageClass(): string {
@@ -81,6 +87,23 @@
 			this.isfollow = this.item.isfollow
 		},
 		methods: {
+			// 更新阅读数
+			updateReadCount(count:number){
+				this.read_count = count
+			},
+			openTopicDetail(){
+				if(this.inTopicDetail){
+					return
+				}
+				uni.navigateTo({
+					url: '/pages/topic-detail/topic-detail?id='+this.item.topic_id
+				});
+			},
+			openDetail(){
+				uni.navigateTo({
+					url: '/pages/detail/detail?id='+this.item.id
+				});
+			},
 			// 更新isfollow
 			updateFollow(value:boolean) {
 				this.isfollow = value
@@ -96,6 +119,11 @@
 				AuthAction(()=>{
 					if(this.ding_loading || this.cai_loading){
 						return
+					}
+					if(type == "ding"){
+						this.ding_loading = true
+					} else {
+						this.cai_loading = true
 					}
 					uni.request<defaultResult>({
 						url: getURL(`/support/${type}/${this.item.id}`),

@@ -126,6 +126,9 @@
 					case "updateSupport":
 					ItemRef.$callMethod("updateSupport",JSON.parse<updateSupportEvent>(e.value))
 						break;
+					case "updateReadCount":
+					ItemRef.$callMethod("updateReadCount",parseInt(e.value))
+						break;
 				}
 			},
 			refreshData(loadComplete : (() => void) | null) {

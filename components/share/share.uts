@@ -1,0 +1,25 @@
+// #ifdef APP-ANDROID
+import Intent from 'android.content.Intent';
+// #endif
+export default function share(text:string,title:string = "分享到"){
+	// #ifdef APP-ANDROID
+	const context = UTSAndroid.getUniActivity()!;
+	const intent = new Intent(Intent.ACTION_SEND)
+	intent.setType("text/plain");
+	intent.putExtra(Intent.EXTRA_TEXT, text);
+	context.startActivity(Intent.createChooser(intent, title));
+	// #endif
+	// #ifdef WEB
+	if (navigator.share) {  
+		return navigator.share({  
+			title: title,  
+			text: text,  
+			url: text  
+		})  
+		.then(() => console.log('分享成功'))  
+		.catch((error) => console.log('分享失败', error));  
+	} else {  
+		console.log('浏览器不支持Web Share API');  
+	}  
+	// #endif
+}

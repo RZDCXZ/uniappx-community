@@ -142,3 +142,52 @@ export type UserItemResult = {
 	total: number
 	data: UserItem[]
 }
+
+// 帖子详情
+export type ArticleDetail = {
+	id: number;
+	user_id: number;
+	title: string | null;
+	content: string | null;
+	images: string[];
+	url: string | null;
+	category_id: number;
+	topic_id: number;
+	share_count: number;
+	ding_count: number;
+	cai_count: number;
+	comment_count: number;
+	read_count: number;
+	collect_count: number;
+	create_time: string | null;
+	update_time: string | null;
+	name: string | null;
+	avatar: string | null;
+	user_status: number;
+	topic_name: string | null;
+	user_support_action: string;
+	isfollow: boolean;
+	isCollect: boolean;
+}
+
+// 评论列表
+export type CommentItem = {
+	id: number;
+	article_id: number;
+	user_id: number;
+	reply_count: number;
+	content: string | null;
+	comment_id: number | null;
+	create_time: string | null;
+	avatar: string | null;
+	name: string | null;
+}
+
+// 评论列表分页结果
+export type CommentItemResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: CommentItem[]
+}

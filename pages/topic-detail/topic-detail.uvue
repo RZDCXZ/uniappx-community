@@ -38,7 +38,7 @@
 		</list-item>
 		<!-- 列表 -->
 		<list-item v-for="(item,index) in list" :key="index" :type="0">
-			<article-list-item :item="item"></article-list-item>
+			<article-list-item :inTopicDetail="true" :item="item"></article-list-item>
 		</list-item>
 		<list-item :type="4">
 			<loading-more :loading="loading" :isEnded="isEnded"></loading-more>

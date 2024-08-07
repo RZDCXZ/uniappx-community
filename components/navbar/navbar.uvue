@@ -4,13 +4,23 @@
 		<view class="navbar-icon" @click="back">
 			<text class="iconfont">{{ leftIcon }}</text>
 		</view>
-		<view v-if="type == 'search'" class="flex-1">
-			<input v-if="!disabled" class="search-input" type="text" placeholder="请输入搜索词" v-model="keyword" confirm-type="search" @confirm="handleSearch"/>
-			<input v-else :disabled="true" class="search-input" type="text" placeholder="请输入搜索词" v-model="keyword" @click="back"/>
-		</view>
-		<view v-if="type == 'search'" class="navbar-icon" @click="handleSearch">
-			<text class="search-btn">搜索</text>
-		</view>
+		<template v-if="type == 'search'">
+			<view class="flex-1">
+				<input v-if="!disabled" class="search-input" type="text" placeholder="请输入搜索词" v-model="keyword" confirm-type="search" @confirm="handleSearch"/>
+				<input v-else :disabled="true" class="search-input" type="text" placeholder="请输入搜索词" v-model="keyword" @click="back"/>
+			</view>
+			<view class="navbar-icon" @click="handleSearch">
+				<text class="search-btn">搜索</text>
+			</view>
+		</template>
+		<template v-else-if="type == 'text'">
+			<view class="flex-1 flex-center">
+				<text>{{ title }}</text>
+			</view>
+			<view class="navbar-icon" @click="$emit('clickRight')">
+				<text class="iconfont" v-if="rightIcon != ''">{{ icons[rightIcon] }}</text>
+			</view>
+		</template>
 	</view>
 </template>
 
@@ -21,7 +31,7 @@
 		close:string
 	}
 	export default {
-		emits:["search"],
+		emits:["search","clickRight"],
 		name:"navbar",
 		props: {
 			type: {
@@ -31,6 +41,14 @@
 			disabled:{
 				type:Boolean,
 				default:false
+			},
+			title:{
+				type: String,
+				default: ""
+			},
+			rightIcon:{
+				type: String,
+				default: ""
 			}
 		},
 		data() {
@@ -45,7 +63,7 @@
 		},
 		computed: {
 			leftIcon(): string {
-				if(this.type == "search"){
+				if(this.type == "search" || this.type == 'text'){
 					return this.icons.back
 				}
 				return this.icons.close

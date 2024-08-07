@@ -1,0 +1,178 @@
+<template>
+	<view class="comment-section">
+		<text class="comment-title">评论</text>
+		<text class="comment-count">{{ support_count }}人表态</text>
+	</view>
+	<tip v-if="commentList.length == 0 && !isFirstLoad" title="暂无评论~"></tip>
+	<view class="comment" v-for="(ct,ctI) in commentList" :key="ctI">
+		<view class="flex">
+			<avatar :src="ct.avatar" style="margin-right: 27rpx;" @click="openUserSpace(ct.user_id)"></avatar>
+			<text class="comment-nickname" @click="openUserSpace(ct.user_id)">{{ ct.name }}</text>
+			<text class="comment-time">{{ ct.create_time }}</text>
+		</view>
+		<text class="comment-content">{{ ct.content }}</text>
+		<!-- 回复数>0 -->
+		<view class="reply" hover-class="reply-hover" v-if="ct.reply_count > 0" @click="openCommentDetail(ct.id)">
+			<text class="reply-text">{{ ct.reply_count }}条回复</text>
+			<text class="iconfont reply-icon">{{ '\ue60c' }}</text>
+		</view>
+		<!-- 回复数=0 -->
+		<view class="reply" hover-class="reply-hover" v-else>
+			<text class="reply-text">回复</text>
+		</view>
+	</view>
+	
+	<loading-more v-if="isFirstLoad || commentList.length > 0" :loading="loading" :isEnded="isEnded"></loading-more>
+</template>
+
+<script>
+	import { CommentItem,CommentItemResult,Result } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	export default {
+		name: "comment",
+		props: {
+			support_count: {
+				type: Number,
+				default: 0
+			},
+			article_id:{
+				type: Number,
+				default: 0
+			}
+		},
+		created() {
+			this.loadCommentList()
+		},
+		data() {
+			return {
+				commentList: [] as CommentItem[],
+				isEnded:false,
+				currentPage:1,
+				loading:false,
+				isFirstLoad:true
+			};
+		},
+		methods:{
+			openUserSpace(user_id:number){
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id='+user_id,
+				});
+			},
+			openCommentDetail(id:number){
+				uni.navigateTo({
+					url: '/pages/comment-detail/comment-detail?id='+id,
+				});
+			},
+			loadCommentList(){
+				if(this.loading || this.isEnded){
+					return
+				}
+				this.loading = true
+				uni.request<Result<CommentItemResult>>({
+					url:getURL(`/article/${this.article_id}/comment/${Math.floor(this.currentPage)}`),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as CommentItemResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.commentList = resData.data
+						} else {
+							this.commentList.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+					}
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+.comment-section {
+	flex-direction: row;
+	height: 80rpx;
+	width: 750rpx;
+	align-items: center;
+	padding: 0 32rpx;
+	justify-content: space-between;
+}
+.comment-title {
+	font-size: 16px;
+	font-weight: bold;
+}
+.comment-count {
+	font-size: 13px;
+	color: #8b8b8b;
+}
+.comment {
+	padding: 20rpx 30rpx;
+}
+.comment-nickname {
+	max-width: 224rpx;
+	text-overflow: ellipsis;
+	height: 30rpx;
+	font-size: 14px;
+	margin-top: 15rpx;
+	line-height: 1.2;
+	margin-right: 10rpx;
+}
+.comment-time {
+	font-size: 13px;
+	color: #a7a7a7;
+	margin-top: 15rpx;
+	margin-left: auto;
+	line-height: 1.2;
+}
+.comment-content {
+	font-size: 16px;
+	width: 590rpx;
+	margin-left: 98rpx;
+	line-height: 1.5;
+	margin-top: 10rpx;
+}
+.reply {
+	background-color: #f8f8f8;
+	border-radius: 50px;
+	padding: 10rpx 18rpx;
+	align-self: flex-start;
+	margin-left: 98rpx;
+	margin-top: 20rpx;
+	flex-direction: row;
+}
+.reply-hover {
+	background-color: #f2f2f2;
+}
+.reply-text {
+	color: #0a0a0a;
+	font-size: 12px;
+}
+.reply-icon {
+	color: #0a0a0a;
+	font-size: 12px;
+	margin-left: 5rpx;
+}
+</style>
