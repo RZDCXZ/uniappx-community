@@ -265,7 +265,7 @@
 					let bannerRef = this.$refs["banner"] as UniElement
 					
 					// 先把图片变透明
-					bannerRef?.style?.setProperty("opacity",0)
+					bannerRef.style.setProperty("opacity",0)
 					
 					this.$nextTick(()=>{
 						this.scrollTop = this.scrollTop == h ? h+1 : h

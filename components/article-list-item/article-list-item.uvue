@@ -27,7 +27,7 @@
 	<view class="actions">
 		<icon-btn label="赞" :icon="'\ue6eb'" :count="ding_count" :active="action == 'ding'" @click="handleSupport('ding')"></icon-btn>
 		<icon-btn label="踩" :icon="'\ue701'" :count="cai_count" :active="action == 'cai'" @click="handleSupport('cai')"></icon-btn>
-		<icon-btn label="评论" :icon="'\ue648'" :count="item.comment_count" @click="openDetail"></icon-btn>
+		<icon-btn label="评论" :icon="'\ue648'" :count="comment_count" @click="openDetail"></icon-btn>
 		<icon-btn label="分享" :icon="'\ue633'" :count="item.share_count" @click="openDetail"></icon-btn>
 	</view>
 	
@@ -61,7 +61,8 @@
 				ding_loading:false,
 				cai_count:0,
 				cai_loading:false,
-				read_count:0
+				read_count:0,
+				comment_count:0
 			}
 		},
 		created(){
@@ -70,6 +71,7 @@
 			this.ding_count = this.item.ding_count
 			this.cai_count = this.item.cai_count
 			this.read_count = this.item.read_count
+			this.comment_count = this.item.comment_count
 		},
 		computed: {
 			imageClass(): string {
@@ -87,6 +89,10 @@
 			this.isfollow = this.item.isfollow
 		},
 		methods: {
+			// 更新评论数
+			updateCommentCount(count:number){
+				this.comment_count = count
+			},
 			// 更新阅读数
 			updateReadCount(count:number){
 				this.read_count = count

@@ -1,26 +1,234 @@
 <template>
 	<!-- #ifdef APP -->
-	<scroll-view style="flex:1">
+	<scroll-view :scroll-into-view="scrollIntoView" :scroll-with-animation="true" style="flex:1;background-color: #f9f9f9;" @scrolltolower="onScrollBottom">
 	<!-- #endif -->
+		<!-- 头部 -->
+		<view class="list-item-header">
+			<avatar :src="item.avatar" style="margin-right: 27rpx;" @click="openUserSpace(item.user_id)"></avatar>
+			<view @click="openUserSpace(item.user_id)">
+				<text class="nickname">{{ item.name }}</text>
+				<text class="time">{{ item.create_time }}</text>
+			</view>
+			<follow-button type="button" v-model="isfollow" :user_id="item.user_id"></follow-button>
+		</view>
+		<!-- 文字内容 -->
+		<text class="content">{{ item.content }}</text>
 		
+		<view class="divider" id="divider"></view>
+
+		<comment ref="comment" :isreply="true" :comment_id="item.id" :support_count="reply_count" @reply="handleReply"></comment>
+
+
+		<view class="action-bar">
+			<view class="action-input" @click="toggleCommentPopup(true)">
+				<text class="placeholder">说点什么...</text>
+				<text class="iconfont emotion">{{ '\ue64e' }}</text>
+			</view>
+		</view>
+		
+		<!-- 弹出评论框 -->
+		<comment-popup ref="popup"></comment-popup>
+
 	<!-- #ifdef APP -->
 	</scroll-view>
 	<!-- #endif -->
 </template>
 
 <script>
+	import { Result,CommentDetail,ReplyEmit,CommentItem,updateArticleChangeEvent } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken,AuthAction } from "@/store/user"
 	export default {
 		data() {
 			return {
+				isfollow:false,
+				reply_count:0,
+				scrollIntoView:"",
 				
+				item:{
+					"id": 1766,
+					"article_id": 1034,
+					"user_id": 1108,
+					"reply_count": 0,
+					"content": "阿里健康",
+					"comment_id": null,
+					"create_time": "2021-04-15 17:40:53",
+					"avatar": null,
+					"name": "13163224966",
+					"isfollow": false
+				} as CommentDetail
 			}
 		},
+		onLoad(options:OnLoadOptions) {
+			if(options.has("id")){
+				this.item.id = parseInt(options.get("id") as string)
+				// 加载评论详情
+				this.loadCommentDetail()
+			}
+			uni.$on("onSendCommentSuccess",this.onSendCommentSuccess)
+			// 监听帖子变化
+			uni.$on("onUpdateArticleChange",this.onUpdateArticleChange)
+		},
+		onUnload() {
+			uni.$off("onSendCommentSuccess",this.onSendCommentSuccess)
+			uni.$off("onUpdateArticleChange",this.onUpdateArticleChange)
+		},
 		methods: {
+			// 监听帖子变化
+			onUpdateArticleChange(e:updateArticleChangeEvent){
+				if(e.key == "updateFollow" && this.item.user_id == e.id){
+					this.isfollow = e.value == "true" ? true : false 
+				}
+			},
+			// 评论/回复成功回调
+			onSendCommentSuccess(e:CommentItem){
+				// 如果是评论，直接终止
+				if(e.comment_id == null) return
+				// 回复数+1
+				this.reply_count = Math.floor(this.reply_count + 1)
+				// 滚动到评论位置
+				this.scrollIntoView = ""
+				this.$nextTick(()=>{
+					this.scrollIntoView = "divider"
+				})
+			},
+			// 显示隐藏评论框
+			toggleCommentPopup(show:boolean){
+				AuthAction(()=>{
+					let popup = this.$refs["popup"] as ComponentPublicInstance
+					popup.$callMethod("toggleCommentPopup",show,null,this.item.id)
+				})
+			},
+			// 打开回复框
+			handleReply(e:ReplyEmit){
+				AuthAction(()=>{
+					let popup = this.$refs["popup"] as ComponentPublicInstance
+					popup.$callMethod("toggleCommentPopup",true,e.placeholder,e.reply_id)
+				})
+			},
+			// 触底事件
+			onScrollBottom(){
+				// 加载更多评论
+				(this.$refs["comment"] as ComponentPublicInstance).$callMethod("loadCommentList")
+			},
+			// 打开个人空间页
+			openUserSpace(user_id:number){
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id='+user_id,
+				});
+			},
+			// 加载评论详情
+			loadCommentDetail(){
+				uni.showLoading({
+					title: '加载中...',
+					mask: false
+				});
+				uni.request<Result<CommentDetail>>({
+					url: getURL(`/comment/${this.item.id}`),
+					header:{
+						token:getToken()
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
 			
+						this.item = r.data as CommentDetail
+						this.isfollow = this.item.isfollow
+						this.reply_count = this.item.reply_count
+						
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						setTimeout(function() {
+							uni.hideLoading()
+						}, 200);
+					}
+				});
+			},
 		}
 	}
 </script>
 
 <style>
+/* 头部 */
+.list-item-header {
+	flex-direction: row;
+	align-items: center;
+	padding-top: 26rpx;
+	padding-left: 33rpx;
+	padding-right: 33rpx;
+	background-color: #ffffff;
+}
 
+.time {
+	font-size: 13px;
+	color: #a7a7a7;
+	margin-top: 10rpx;
+}
+.nickname {
+	color: #050505;
+	text-overflow: ellipsis;
+	max-width: 240rpx;
+	height: 34rpx;
+	font-size: 15px;
+	font-weight: bold;
+}
+.content {
+	padding-top: 25rpx;
+	padding-left: 33rpx;
+	padding-right: 33rpx;
+	font-size: 16px;
+	line-height: 1.5;
+	padding-bottom: 20rpx;
+	background-color: #ffffff;
+}
+.content-image {
+	width: 750rpx;
+	background-color: #f0f0f0;
+}
+.action-bar {
+	background-color: #ffffff;
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	border-top: 1rpx solid #f2f2f2;
+	z-index: 100;
+	height: 103rpx;
+	padding-left: 28rpx;
+	padding-right: 28rpx;
+	flex-direction: row;
+	align-items: center;
+}
+.action-input {
+	flex-direction: row;
+	background-color: #f4f4f4;
+	height: 73rpx;
+	/* width: 250rpx; */
+	flex: 1;
+	border-radius: 5px;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 20rpx;
+}
+.placeholder {
+	font-size: 14px;
+	color: #949494;
+}
+.emotion {
+	font-size: 20px;
+	color: #191919;
+}
 </style>

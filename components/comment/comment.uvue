@@ -1,7 +1,7 @@
 <template>
 	<view class="comment-section">
-		<text class="comment-title">评论</text>
-		<text class="comment-count">{{ support_count }}人表态</text>
+		<text class="comment-title">{{ isreply ? `${support_count} 条回复` : '评论' }}</text>
+		<text class="comment-count" v-if="!isreply">{{ support_count }}人表态</text>
 	</view>
 	<tip v-if="commentList.length == 0 && !isFirstLoad" title="暂无评论~"></tip>
 	<view class="comment" v-for="(ct,ctI) in commentList" :key="ctI">
@@ -11,13 +11,17 @@
 			<text class="comment-time">{{ ct.create_time }}</text>
 		</view>
 		<text class="comment-content">{{ ct.content }}</text>
+		
+		<!-- 渲染@用户引用评论 -->
+		<rich-text class="comment-quote" v-if="ct.quote != null" :nodes="`<a href='/pages/user-space/user-space?user_id=${ct.quote?.user_id}'>${ct.quote?.name}</a>：<span>${ct.quote?.content}</span>`" @itemclick="handleRichItemClick"></rich-text>
+		
 		<!-- 回复数>0 -->
 		<view class="reply" hover-class="reply-hover" v-if="ct.reply_count > 0" @click="openCommentDetail(ct.id)">
 			<text class="reply-text">{{ ct.reply_count }}条回复</text>
 			<text class="iconfont reply-icon">{{ '\ue60c' }}</text>
 		</view>
 		<!-- 回复数=0 -->
-		<view class="reply" hover-class="reply-hover" v-else>
+		<view class="reply" :style="isreply ? 'background:#ffffff;' : ''" hover-class="reply-hover" v-else @click="handleReply(ct.name,ct.id)">
 			<text class="reply-text">回复</text>
 		</view>
 	</view>
@@ -26,9 +30,10 @@
 </template>
 
 <script>
-	import { CommentItem,CommentItemResult,Result } from "@/common/type.uts"
+	import { CommentItem,CommentItemResult,Result,ReplyEmit } from "@/common/type.uts"
 	import { getURL } from "@/common/request.uts"
 	export default {
+		emits:["reply"],
 		name: "comment",
 		props: {
 			support_count: {
@@ -38,10 +43,24 @@
 			article_id:{
 				type: Number,
 				default: 0
+			},
+			// 是否在回复页
+			isreply:{
+				type:Boolean,
+				default:false
+			},
+			// 父级评论ID
+			comment_id:{
+				type:Number,
+				default:0
 			}
 		},
 		created() {
 			this.loadCommentList()
+			uni.$on("onSendCommentSuccess",this.onSendCommentSuccess)
+		},
+		unmounted() {
+			uni.$off("onSendCommentSuccess",this.onSendCommentSuccess)
 		},
 		data() {
 			return {
@@ -53,6 +72,33 @@
 			};
 		},
 		methods:{
+			handleRichItemClick(e:UniRichTextItemClickEvent){
+				uni.navigateTo({
+					url: e.detail.href as string
+				});
+			},
+			// 回复
+			handleReply(name:string | null,reply_id:number){
+				const placeholder = "回复@"+name
+				this.$emit("reply",{
+					placeholder,
+					reply_id
+				} as ReplyEmit)
+			},
+			// 回复/评论成功回调
+			onSendCommentSuccess(e:CommentItem){
+				// 回复
+				if(!this.isreply && e.comment_id != null){
+					let i = this.commentList.findIndex((o:CommentItem):boolean => o.id == e.comment_id)
+					if(i == -1) return
+					// 回复数+1
+					this.commentList[i].reply_count = Math.floor(this.commentList[i].reply_count + 1)
+				} 
+				// 评论
+				else {
+					this.commentList = [ e,...this.commentList ]
+				}	
+			},
 			openUserSpace(user_id:number){
 				uni.navigateTo({
 					url: '/pages/user-space/user-space?user_id='+user_id,
@@ -68,8 +114,16 @@
 					return
 				}
 				this.loading = true
+				const page = Math.floor(this.currentPage)
+				let url = `/article/${this.article_id}/comment/${page}`
+				
+				// 回复列表
+				if(this.isreply){
+					url = `/comment/${this.comment_id}/replies/${page}`
+				}
+				
 				uni.request<Result<CommentItemResult>>({
-					url:getURL(`/article/${this.article_id}/comment/${Math.floor(this.currentPage)}`),
+					url:getURL(url),
 					success: res => {
 						let r = res.data
 						if(r == null) return
@@ -80,7 +134,6 @@
 							});
 							return
 						}
-						
 						const resData = r.data as CommentItemResult | null
 						if(resData == null) return
 						
@@ -174,5 +227,12 @@
 	color: #0a0a0a;
 	font-size: 12px;
 	margin-left: 5rpx;
+}
+.comment-quote {
+	width: 590rpx;
+	margin-left: 98rpx;
+	margin-top: 10rpx;
+	border-left: 2rpx solid #bbbbbb;
+	padding-left: 20rpx;
 }
 </style>

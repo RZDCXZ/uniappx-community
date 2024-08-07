@@ -1,7 +1,7 @@
 <template>
 	<navbar type="text" title="社区交友" right-icon="more" @clickRight="handleShare"></navbar>
 	<!-- #ifdef APP -->
-	<scroll-view style="flex:1" @scrolltolower="onScrollBottom">
+	<scroll-view :scroll-into-view="scrollIntoView" :scroll-with-animation="true" style="flex:1" @scrolltolower="onScrollBottom">
 	<!-- #endif -->
 		<!-- 头部 -->
 		<view class="list-item-header">
@@ -13,26 +13,29 @@
 			<follow-button type="button" v-model="isfollow" :user_id="item.user_id"></follow-button>
 		</view>
 		<!-- 文字内容 -->
-		<text class="content">{{ item.title }}</text>
+		<text class="content">{{ item.content }}</text>
 		
 		<!-- 图片，单图，双图，多图 -->
 		<image v-for="(img,imgI) in item.images" :key="imgI" :src="img" :fade-show="true" mode="widthFix" class="content-image" @error="imageErrorEvent" @click.stop="previewImage(img)"></image>
 		
-		<view class="divider"></view>
+		<view class="divider" id="divider"></view>
 		
-		<comment ref="comment" :article_id="item.id" :support_count="support_count"></comment>
+		<comment ref="comment" :article_id="item.id" :support_count="support_count" @reply="handleReply"></comment>
 		
 		<view class="action-bar">
-			<view class="action-input">
+			<view class="action-input" @click="toggleCommentPopup(true)">
 				<text class="placeholder">说点什么...</text>
 				<text class="iconfont emotion">{{ '\ue64e' }}</text>
 			</view>
 			<icon-btn :column="true" iconSize="18px" label="赞" :icon="'\ue6eb'" :count="ding_count" :active="action == 'ding'" @click="handleSupport('ding')"></icon-btn>
 			<icon-btn :column="true" iconSize="16px" label="踩" :icon="'\ue701'" :count="cai_count" :active="action == 'cai'" @click="handleSupport('cai')"></icon-btn>
 			<icon-btn :column="true" iconSize="18px" label="收藏" :icon="'\ue629'" :count="collect_count" :active="isCollect" @click="handleCollect"></icon-btn>
-			<icon-btn :column="true" iconSize="18px" label="评论" :icon="'\ue648'" :count="comment_count"></icon-btn>
+			<icon-btn :column="true" iconSize="18px" label="评论" :icon="'\ue648'" :count="comment_count" @click="toggleCommentPopup(true)"></icon-btn>
 			<icon-btn :column="true" iconSize="18px" label="分享" :icon="'\ue633'" :count="share_count" @click="handleShare()"></icon-btn>
 		</view>
+		
+		<!-- 弹出评论框 -->
+		<comment-popup ref="popup" :article_id="item.id"></comment-popup>
 		
 	<!-- #ifdef APP -->
 	</scroll-view>
@@ -42,7 +45,7 @@
 <script>
 	import { getToken,AuthAction } from "@/store/user"
 	import { getURL } from "@/common/request.uts"
-	import { Result,ArticleDetail,updateArticleChangeEvent,defaultResult,updateSupportEvent } from "@/common/type.uts"
+	import { Result,ArticleDetail,updateArticleChangeEvent,defaultResult,updateSupportEvent,CommentItem,ReplyEmit } from "@/common/type.uts"
 	import { stepInt } from "@/common/utils.uts"
 	import share from "@/components/share/share.uts"
 	export default {
@@ -60,6 +63,8 @@
 				ding_loading:false,
 				cai_loading:false,
 				collectLoading:false,
+				
+				scrollIntoView:"",
 				
 				item:{
 					"id": 0,
@@ -94,6 +99,13 @@
 				// 加载帖子详情
 				this.loadArticleDetail()
 			}
+			uni.$on("onSendCommentSuccess",this.onSendCommentSuccess)
+			// 监听帖子变化
+			uni.$on("onUpdateArticleChange",this.onUpdateArticleChange)
+		},
+		onUnload() {
+			uni.$off("onSendCommentSuccess",this.onSendCommentSuccess)
+			uni.$off("onUpdateArticleChange",this.onUpdateArticleChange)
 		},
 		computed: {
 			support_count(): number {
@@ -101,6 +113,48 @@
 			}
 		},
 		methods: {
+			// 监听帖子变化 
+			onUpdateArticleChange(e:updateArticleChangeEvent){
+				if(e.key == "updateFollow" && this.item.user_id == e.id){
+					this.isfollow = e.value == "true" ? true : false 
+				}
+			},
+			// 打开回复框
+			handleReply(e:ReplyEmit){
+				AuthAction(()=>{
+					let popup = this.$refs["popup"] as ComponentPublicInstance
+					popup.$callMethod("toggleCommentPopup",true,e.placeholder,e.reply_id)
+				})
+			},
+			// 评论/回复成功回调
+			onSendCommentSuccess(e:CommentItem){
+				// 如果是回复，直接终止
+				if(e.comment_id != null){
+					return
+				}
+				// 评论数+1
+				this.comment_count = Math.floor(this.comment_count + 1)
+				
+				// 通知首页更新评论数
+				uni.$emit("onUpdateArticleChange",{
+					id:this.item.id,
+					key:"updateCommentCount",
+					value: this.comment_count.toString()
+				} as updateArticleChangeEvent)
+				
+				// 滚动到评论位置
+				this.scrollIntoView = ""
+				this.$nextTick(()=>{
+					this.scrollIntoView = "divider"
+				})
+			},
+			// 显示隐藏评论框
+			toggleCommentPopup(show:boolean){
+				AuthAction(()=>{
+					let popup = this.$refs["popup"] as ComponentPublicInstance
+					popup.$callMethod("toggleCommentPopup",show,null,null)
+				})
+			},
 			// 收藏/取消收藏
 			handleCollect(){
 				AuthAction(()=>{

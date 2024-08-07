@@ -170,6 +170,14 @@ export type ArticleDetail = {
 	isCollect: boolean;
 }
 
+// 评论引用
+export type Quote = {
+	content: string
+	user_id: number
+	name: string | null
+	avatar: string | null
+}
+
 // 评论列表
 export type CommentItem = {
 	id: number;
@@ -181,6 +189,7 @@ export type CommentItem = {
 	create_time: string | null;
 	avatar: string | null;
 	name: string | null;
+	quote?:Quote | null
 }
 
 // 评论列表分页结果
@@ -190,4 +199,24 @@ export type CommentItemResult = {
 	last_page: number
 	total: number
 	data: CommentItem[]
+}
+
+// 点击回复
+export type ReplyEmit = {
+	placeholder:string | null
+	reply_id:number
+}
+
+// 评论详情
+export type CommentDetail = {
+	id: number;
+	article_id: number;
+	user_id: number;
+	reply_count: number;
+	content: string;
+	comment_id: number | null;
+	create_time: string | null;
+	avatar: string | null;
+	name: string | null;
+	isfollow: boolean;
 }
