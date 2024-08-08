@@ -1,6 +1,7 @@
 <template>
 	<view class="cell" :hover-class="hover ? 'cell-hover' : ''">
 		<text class="cell-title">{{ title }}</text>
+		<slot/>
 		<view class="cell-right">
 			<text class="cell-right-text" v-if="rightText != ''">{{ rightText }}</text>
 			<text class="iconfont cell-icon" v-if="showArrow">{{ '\ue60c' }}</text>

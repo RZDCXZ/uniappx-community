@@ -1,0 +1,217 @@
+<template>
+	<navbar type="text">
+		<template #right>
+			<view class="navbar-right">
+				<main-btn :disabled="disabled" width="118rpx" height="60rpx" font-size="14px" @click="submit">发送</main-btn>
+			</view>
+		</template>
+	</navbar>
+	<!-- #ifdef APP -->
+	<scroll-view style="flex:1;background-color: #f4f4f4;">
+	<!-- #endif -->
+		<view style="background-color: #ffffff;">
+			<textarea :auto-focus="true" :auto-height="true" v-model="content" placeholder="有标题和画面清晰无水印的作品曝光更多哦~" class="add-textarea"></textarea>	
+			<upload-images ref="upload" style="margin-bottom: 60rpx;"></upload-images>
+			
+		</view>
+		
+		<f-picker :range="range" @confirm="handleChooseCategory">
+			<cell :title="'# ' + chooseCategoryTitle" :rightText="chooseCategoryId == 0 ? '点击选择' : ''">
+				<text class="cell-tip" v-if="chooseCategoryId == 0">必填</text>
+			</cell>
+		</f-picker>
+		
+		<cell :title="'# '+ chooseTopicTitle" :rightText="chooseTopicId == 0 ? '点击选择' : ''" @click="openTopicPicker">
+			<text class="cell-tip" v-if="chooseTopicId == 0">让更多人看见</text>
+		</cell>
+		
+	<!-- #ifdef APP -->
+	</scroll-view>
+	<!-- #endif -->
+</template>
+
+<script>
+	import { articleNav,Result,TopicNav,defaultResult,onAddArticleSuccessEvent } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+	export default {
+		data() {
+			return {
+				content:"",
+				
+				chooseCategoryTitle:"选择分类",
+				chooseCategoryId:0,
+				// 分类
+				categoryList:[{
+					id:0,
+					title:"请选择"
+				}] as articleNav[],
+				// 分类选项
+				range:[] as string[],
+				
+				chooseTopicTitle:"选择话题",
+				chooseTopicId:0
+			}
+		},
+		computed: {
+			disabled(): boolean {
+				return this.content.length == 0 || this.chooseCategoryId == 0
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			if(options.has("topic_id")){
+				this.chooseTopicId = parseInt(options.get("topic_id") as string)
+			}
+			if(options.has("topic_title")){
+				this.chooseTopicTitle = options.get("topic_title") as string
+			}
+			this.loadCategories()
+			uni.$on("onTopicPickerSuccess",this.onTopicPickerSuccess)
+		},
+		onUnload() {
+			uni.$off("onTopicPickerSuccess",this.onTopicPickerSuccess)
+		},
+		methods: {
+			// 选择话题结果
+			onTopicPickerSuccess(e: TopicNav){
+				this.chooseTopicId = e.id
+				this.chooseTopicTitle = e.title
+			},
+			// 打开话题选择器
+			openTopicPicker(){
+				uni.navigateTo({
+					url: '/pages/choose-topic/choose-topic',
+				});
+			},
+			// 获取分类
+			loadCategories(){
+				uni.request<Result<articleNav[]>>({
+					url: getURL('/category/article'),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						let d = r.data as articleNav[]
+						this.categoryList.push(...d)
+						this.range = this.categoryList.map((o:articleNav) : string => o.title)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					}
+				});
+			},
+			// 发布帖子
+			submit(){
+				// 拿到上传组件节点
+				const uploadRef = this.$refs["upload"] as ComponentPublicInstance
+				// 判断是否还有图片正在上传
+				if(uploadRef.$callMethod("isUploading") as boolean){
+					uni.showToast({
+						title: '还有图片正在上传中...',
+						icon: 'none'
+					});
+					return
+				}
+				// 获取图片数组
+				let images = uploadRef.$callMethod("getValue") as string[]
+				// 请求参数
+				let data = {
+				  images,
+				  content:this.content,
+				  category_id: this.chooseCategoryId,
+				  topic_id:this.chooseTopicId
+				} as  UTSJSONObject
+				
+				uni.showLoading({
+					title: '发布中...',
+					mask: false
+				});
+				
+				uni.request<defaultResult>({
+					url: getURL("/article/save"),
+					method: 'POST',
+					data,
+					header:{
+						token:getToken()
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						
+						// 请求失败
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						// 刷新首页/话题详情页
+						uni.$emit("onAddArticleSuccess",{
+							category_id:this.chooseCategoryId,
+							topic_id:this.chooseTopicId
+						} as onAddArticleSuccessEvent)
+						
+						uni.showToast({
+							title: r.msg,
+							icon: 'none'
+						});
+						
+						setTimeout(function() {
+							uni.navigateBack({
+								delta: 1
+							});
+						}, 300);
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						uni.hideLoading()
+					}
+				});
+			},
+			handleChooseCategory(i:number){
+				let item = this.categoryList[i] as articleNav
+				this.chooseCategoryId = item.id
+				this.chooseCategoryTitle = item.title
+			}
+		}
+	}
+</script>
+
+<style>
+.navbar-right {
+	height: 45px;
+	align-items: center;
+	justify-content: center;
+	margin-right: 34rpx;
+}
+.cell-tip {
+	color: #f0748a;
+	background-color: #fff1f6;
+	border-radius: 4px;
+	margin-left: 18rpx;
+	font-size: 13px;
+	padding: 5rpx 10rpx;
+}
+.add-textarea {
+	width: 750rpx;
+	max-height: 500rpx;
+	padding: 60rpx 30rpx;
+}
+</style>

@@ -30,7 +30,7 @@
 			</view>
 		</sticky-header>
 		<!-- 空数据 -->
-		<list-item style="height: 1200px;" v-if="list.length == 0">
+		<list-item style="height: 1200px;" v-if="list.length == 0" :type="2">
 			<view style="height: 400px;">
 				<loading :circle="true" v-if="loading"></loading>
 				<tip title="暂无数据~" v-else></tip>
@@ -44,12 +44,13 @@
 			<loading-more :loading="loading" :isEnded="isEnded"></loading-more>
 		</list-item>
 	</list-view>
+	<add-post-btn :topic_id="topic.id" :topic_title="topic.title" />
 </template>
 
 <script>
 	import { getToken } from "@/store/user"
 	import { getURL } from "@/common/request.uts"
-	import type { Result,ListItem,ListResult } from "@/common/type.uts"
+	import type { Result,ListItem,ListResult,onAddArticleSuccessEvent } from "@/common/type.uts"
 	type tab = {
 		type:string,
 		name:string,
@@ -132,6 +133,10 @@
 				// 加载列表
 				this.loadList(null)
 			}
+			uni.$on("onAddArticleSuccess",this.onAddArticleSuccess)
+		},
+		onUnload() {
+			uni.$off("onAddArticleSuccess",this.onAddArticleSuccess)
 		},
 		onReady() {
 			this.$navbarView = this.$refs["navbar"] as UniElement
@@ -150,6 +155,12 @@
 			})
 		},
 		methods: {
+			// 监听发帖成功事件，刷新对应的页面
+			onAddArticleSuccess(_:onAddArticleSuccessEvent){
+				this.loadTopicDetail()
+				// 加载列表
+				this.loadList(null)
+			},
 			// 刷新数据
 			refreshData(loadComplete: (()=>void) | null ){
 				// 清空数据，返回第一页
@@ -272,7 +283,7 @@
 						
 						// 倒计时200毫秒之后再显示，确保滚动完
 						setTimeout(()=>{
-							bannerRef?.style?.setProperty("opacity",1)
+							bannerRef.style.setProperty("opacity",1)
 						},200)
 					})
 				}

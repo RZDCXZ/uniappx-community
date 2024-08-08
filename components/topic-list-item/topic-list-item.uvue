@@ -8,12 +8,15 @@
 			<text class="time">{{ item.desc }}</text>
 			<text class="time">动态：{{ item.article_count }}条 · 今日{{ item.today_article_count }}条</text>
 		</view>
+		
+		<!-- 选择话题 -->
+		<main-btn width="100rpx" height="55rpx" fontSize="14px" style="margin-left: auto;" v-if="ischoose" @click.stop="open">选择</main-btn>
 	</list-item>
 </template>
 
 <script>
-	import type { PropType } from "vue"
-	import type { Topic } from "@/common/type.uts"
+	import { PropType } from "vue"
+	import { Topic, TopicNav } from "@/common/type.uts"
 	export default {
 		name:"topic-list-item",
 		props: {
@@ -21,6 +24,10 @@
 				type: Object as PropType<Topic>,
 				required:true
 			},
+			ischoose: {
+				type:Boolean,
+				default:false
+			}
 		},
 		data() {
 			return {
@@ -29,6 +36,19 @@
 		},
 		methods: {
 			open() {
+				// 选择话题功能实现
+				if(this.ischoose){
+					const d = {
+						id:this.item.id,
+						title:this.item.title
+					} as TopicNav
+					uni.$emit("onTopicPickerSuccess",d)
+					uni.navigateBack({
+						delta: 1
+					});
+					return
+				}
+				
 				uni.navigateTo({
 					url: '/pages/topic-detail/topic-detail?id=' + this.item.id
 				});
@@ -57,7 +77,7 @@
 	height: 102rpx;
 }
 .info {
-	width: 390rpx;
+	flex: 1;
 }
 .nickname {
 	color: #272727;

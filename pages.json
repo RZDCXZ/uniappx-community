@@ -224,6 +224,21 @@
 			{
 				"navigationBarTitleText" : "评论详情页"
 			}
+		},
+		{
+			"path" : "pages/add-post/add-post",
+			"style" : 
+			{
+				"navigationBarTitleText" : "",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path" : "pages/choose-topic/choose-topic",
+			"style" : 
+			{
+				"navigationBarTitleText" : "选择话题"
+			}
 		}
 	],
 	"globalStyle": {

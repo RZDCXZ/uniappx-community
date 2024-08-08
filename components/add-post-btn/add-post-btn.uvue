@@ -1,0 +1,58 @@
+<template>
+	<view class="add-btn" hover-class="add-btn-hover" @click="openAddPost">
+		<text class="iconfont add-btn-text">{{ '\ue684' }}</text>
+	</view>
+</template>
+
+<script>
+	import { AuthNavigateTo } from "@/store/user.uts"
+	export default {
+		name:"add-post-btn",
+		props: {
+			topic_id: {
+				type: Number,
+				default: 0
+			},
+			topic_title:{
+				type:String,
+				default:""
+			}
+		},
+		data() {
+			return {
+				
+			};
+		},
+		methods: {
+			openAddPost() {
+				let url = '/pages/add-post/add-post'
+				if(this.topic_id != 0 && this.topic_title != ""){
+					url += `?topic_id=${this.topic_id}&topic_title=${this.topic_title}`
+				}
+				AuthNavigateTo(url);
+			}
+		},
+	}
+</script>
+
+<style>
+.add-btn {
+	width: 100rpx;
+	height: 100rpx;
+	align-items: center;
+	justify-content: center;
+	position: fixed;
+	bottom: 34rpx;
+	right: 34rpx;
+	z-index: 1000;
+	border-radius: 50px;
+	background-image: linear-gradient(to bottom right,#fc6672,#e47989);
+}
+.add-btn-hover {
+	background-image: linear-gradient(to bottom right,#fd6373,#fd6373);
+}
+.add-btn-text {
+	color: #ffffff;
+	font-size: 25px;
+}
+</style>

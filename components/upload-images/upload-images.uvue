@@ -1,0 +1,209 @@
+<template>
+	<view class="upload-images">
+		<view class="upload-item" v-for="(img,index) in imageList" :key="img.id">
+			<image :src="img.src" mode="aspectFill" class="upload-img" @click="previewImage(img.src)"></image>
+			<!-- 取消按钮 -->
+			<text class="iconfont upload-close" @click="remove(index)">x</text>
+			<!-- 上传进度 -->
+			<view class="upload-progress" v-if="img.err != '' || img.progress < 100">
+				<text class="upload-progress-data">{{ img.err != '' ? img.err : (img.progress + '%') }}</text>
+			</view>
+		</view>
+		<view class="upload-btn upload-item" @click="chooseImageUpload" v-if="count > 0">
+			<text class="iconfont upload-btn-icon">+</text>
+		</view>
+	</view>
+</template>
+
+<script>
+	import { defaultResult } from "@/common/type.uts"
+	import { getURL } from '@/common/request.uts'
+	import { getToken } from '@/store/user.uts'
+	import { generateUniqueId } from '@/common/utils.uts'
+	type ImageItem = {
+		id: string
+		src: string
+		progress: number
+		err: string
+		task: UploadTask | null
+	}
+	export default {
+		name:"upload-images",
+		data() {
+			return {
+				imageList: [] as ImageItem[]
+			};
+		},
+		computed: {
+			// 剩余可选上传图片数
+			count(): number {
+				return 9 - this.imageList.length 
+			}
+		},
+		methods: {
+			// 判断是否还有没上传的图片
+			isUploading():boolean {
+				let result = false
+				this.imageList.forEach((o:ImageItem)=>{
+					if(o.progress < 100 && o.err == ""){
+						result = true
+					}
+				})
+				return result
+			},
+			// 获取已上传图片地址
+			getValue(): string[] {
+				let arr = [] as string[]
+				this.imageList.forEach((o:ImageItem)=>{
+					if(o.progress == 100){
+						arr.push(o.src)
+					}
+				})
+				return arr
+			},
+			// 删除图片
+			remove(index: number){
+				uni.showModal({
+					title: '提示',
+					content: '是否要删除该图片？',
+					confirmText: '删除',
+					success: res => {
+						if(!res.confirm){
+							return
+						}
+						let item = this.imageList[index]
+						// 如果还在上传中，先中端
+						if(item.progress < 100 && item.task != null && item.err == ""){
+							// 取消上传
+							item.task?.abort()
+						}
+						// 移除
+						this.imageList.splice(index,1)
+					},
+				});
+			},
+			previewImage(current : string) {
+				uni.previewImage({
+					current,
+					urls: this.imageList.map((o:ImageItem):string => o.src)
+				})
+			},
+			chooseImageUpload(){
+				uni.chooseImage({
+					count: this.count,
+					sizeType: ["compressed"],
+					sourceType: ["album"],
+					success:(res: ChooseImageSuccess)=>{
+						let length = res.tempFilePaths.length
+						for (let i = 0; i < length; i++) {
+							let src = res.tempFilePaths[i]
+							this.upload(src)
+						}
+					}
+				})
+			},
+			// 上传
+			upload(src:string){
+				let item = {
+					id:generateUniqueId(),
+					src,
+					progress: 0, 
+					err: "",
+					task: null
+				} as ImageItem
+				
+				let i = this.imageList.length
+				this.imageList.push(item)
+				item.task = uni.uploadFile({
+					url:getURL("/upload"),
+					filePath: src,
+					name:"image",
+					header: {
+						token:getToken()
+					},
+					success:(res)=>{
+						let d = JSON.parse<defaultResult>(res.data)
+						if(d == null) return
+						if(d.code == 0){
+							this.imageList[i].err = "上传失败"
+							uni.showToast({
+								title: d.msg,
+								icon: 'none'
+							});
+							return
+						}
+						this.imageList[i].src = d.data as string
+					},
+					fail:(_)=>{
+						this.imageList[i].err = "上传失败"
+					}
+				})
+				
+				// 上传进度
+				item.task?.onProgressUpdate((res:OnProgressUpdateResult)=>{
+					this.imageList[i].progress = res.progress
+				})
+			}
+		},
+	}
+</script>
+
+<style>
+.upload-images {
+	flex-direction: row;
+	flex-wrap: wrap;
+	padding: 0 14rpx;
+}
+.upload-item {
+	width: 220rpx;
+	height: 220rpx;
+	border-radius: 5px;
+	margin: 10rpx;
+	overflow: hidden;
+	position: relative;
+}
+.upload-img {
+	width: 220rpx;
+	height: 220rpx;
+}
+
+.upload-close {
+	position: absolute;
+	right: 0;
+	top: 0;
+	z-index: 100;
+	width: 50rpx;
+	height: 50rpx;
+	text-align: center;
+	line-height: 50rpx;
+	color: #ffffff;
+	background-color: rgba(0, 0, 0, 0.1);
+	border-radius: 5px;
+}
+
+.upload-btn {
+	border: 1px solid #e2e2e2;
+	align-items: center;
+	justify-content: center;
+}
+.upload-btn-icon {
+	font-size: 60px;
+	color: #e2e2e2;
+}
+.upload-progress {
+	width: 220rpx;
+	height: 220rpx;
+	position: absolute;
+	top: 0;
+	right: 0;
+	background-color: rgba(0, 0, 0, 0.3);
+	z-index: 99;
+	align-items: center;
+	justify-content: center;
+	flex-direction: row;
+}
+.upload-progress-data {
+	font-size: 14px;
+	color: #ffffff;
+}
+</style>

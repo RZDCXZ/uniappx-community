@@ -220,3 +220,8 @@ export type CommentDetail = {
 	name: string | null;
 	isfollow: boolean;
 }
+
+export type onAddArticleSuccessEvent = {
+	category_id:number
+	topic_id:number
+}

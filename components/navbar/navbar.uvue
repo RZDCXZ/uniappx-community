@@ -17,9 +17,11 @@
 			<view class="flex-1 flex-center">
 				<text>{{ title }}</text>
 			</view>
-			<view class="navbar-icon" @click="$emit('clickRight')">
-				<text class="iconfont" v-if="rightIcon != ''">{{ icons[rightIcon] }}</text>
-			</view>
+			<slot name="right">
+				<view class="navbar-icon" @click="$emit('clickRight')">
+					<text class="iconfont" v-if="rightIcon != ''">{{ icons[rightIcon] }}</text>
+				</view>
+			</slot>
 		</template>
 	</view>
 </template>

@@ -4,10 +4,11 @@
 			<long-page ref="longPage" :category_id="item.id" :type="item.type" :preload="item.preload"></long-page>
 		</swiper-item>
 	</tabs-swiper>
+	<add-post-btn/>
 </template>
 
 <script>
-	import type { articleNav,Result } from "@/common/type.uts"
+	import type { articleNav,Result,onAddArticleSuccessEvent } from "@/common/type.uts"
 	import { getURL } from "@/common/request.uts"
 	import type { TabsSwiperItem } from '@/components/tabs-swiper/type.uts'
 	import longPage from '@/pages/long-list/long-list-page.uvue';
@@ -47,6 +48,10 @@
 		},
 		onLoad() {
 			this.loadTabs(null)
+			uni.$on("onAddArticleSuccess",this.onAddArticleSuccess)
+		},
+		onUnload() {
+			uni.$off("onAddArticleSuccess",this.onAddArticleSuccess)
 		},
 		onPullDownRefresh() {
 			if(!this.isTabsLoaded){
@@ -60,6 +65,14 @@
 			})
 		},
 		methods: {
+			// 监听发帖成功事件，刷新对应的页面
+			onAddArticleSuccess(e:onAddArticleSuccessEvent){
+				// 找到对应分类
+				let i = this.tabs.findIndex((o:TabsSwiperItem) : boolean => o.id == e.category_id)
+				if(i == -1) return
+				// 刷新对应页面
+				(this.$refs["longPage"] as ComponentPublicInstance[])[i].$callMethod("refreshData",null)
+			},
 			// 加载分类
 			loadTabs(loadComplete:(()=>void) | null){
 				uni.request<Result<articleNav[]>>({

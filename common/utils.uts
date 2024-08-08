@@ -17,3 +17,13 @@ export function stepInt(value:number, action:string = "+",step:number = 1):numbe
 	}
 	return v
 }
+
+// 生成随机唯一ID
+export function generateUniqueId():string {
+	// 获取当前时间戳
+	let timestamp = Date.now().toString()
+	// 生成唯一随机数
+	let randomNum = Math.floor(Math.random() * 1000000)
+	// 将时间戳和随机数拼接起来
+	return timestamp + randomNum.toString()
+}
