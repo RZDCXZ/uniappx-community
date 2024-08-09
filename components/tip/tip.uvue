@@ -2,17 +2,23 @@
 	<view class="tip">
 		<image src="@/static/empty.png" mode="widthFix" :fade-show="true" class="tip-img"></image>
 		<text class="tip-title">{{ title }}</text>
+		<main-btn v-if="button != ''" style="margin-top: 20rpx;" @click="$emit('click-button')">{{ button }}</main-btn>
 	</view>
 </template>
 
 <script>
 	export default {
+		emits:["click-button"],
 		name:"tip",
 		props: {
 			title: {
 				type: String,
 				default: "暂无数据"
 			},
+			button: {
+				type: String,
+				default: ""
+			}
 		},
 		data() {
 			return {

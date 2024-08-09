@@ -1,6 +1,7 @@
 <template>
-	<text v-show="!loading" class="follow" :class="{  ['follow-' + type] : true,'follow-active':modelValue }" @click.stop="handleFollow">{{ modelValue ? '已关注' : '关注' }}</text>
-	<image v-show="loading" src="@/static/loading1.gif" mode="widthFix" style="width: 30px;margin-left: auto;"></image>
+	<main-btn v-if="type == 'main-btn'" @click.stop="handleFollow" width="330rpx" height="65rpx">{{ modelValue ? '已关注' : '关注' }}</main-btn>
+	<text v-else class="follow" :class="{  ['follow-' + type] : true,'follow-active':modelValue }" @click.stop="handleFollow">{{ modelValue ? '已关注' : '关注' }}</text>
+	<!-- <image v-show="loading" src="@/static/loading1.gif" mode="widthFix" style="width: 30px;margin-left: auto;"></image> -->
 </template>
 
 <script>

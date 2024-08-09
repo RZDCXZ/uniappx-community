@@ -1,0 +1,98 @@
+<template>
+	<view v-if="show" class="popup-mask" @click="close"></view>
+	<view class="popup" :class="show ? 'popup-show' : ''">
+		<view class="popup-header" v-if="title != ''">
+			<text class="iconfont popup-action" style="font-size: 22px;" @click="close">×</text>
+			<text class="popup-title">{{ title }}</text>
+			<text class="popup-action" style="color: #949494;" @click="$emit('confirm')">完成</text>
+		</view>
+		<slot></slot>
+		<view v-if="showCancel" class="popup-cancel" @click="close">
+			<text>取消</text>
+		</view>
+	</view>
+</template>
+
+<script>
+	export default {
+		name:"popup",
+		emits:["confirm"],
+		props: {
+			title:{
+				type:String,
+				default:""
+			},
+			showCancel: {
+				type: Boolean,
+				default: true
+			}
+		},
+		data() {
+			return {
+				show:false
+			};
+		},
+		methods: {
+			open(){
+				this.show = true
+			},
+			close() {
+				this.show = false
+			}
+		},
+	}
+</script>
+
+<style>
+.popup-mask {
+	position: fixed;
+	left: 0;
+	top: 0;
+	right:0;
+	bottom: 0;
+	background-color: rgba(0, 0, 0, 0.3);
+	z-index: 99;
+}
+.popup {
+	position: fixed;
+	bottom: 0;
+	right: 0;
+	left: 0;
+	background-color: #ffffff;
+	z-index: 100;
+	border-top-left-radius: 15px;
+	border-top-right-radius: 15px;
+	transform: translateY(1000px);
+	opacity: 0;
+	transition-property: transform,opacity;
+	transition-duration: 400ms;
+}
+.popup-show {
+	opacity: 1;
+	transform: translateY(0);
+}
+.popup-header {
+	
+	height: 112rpx;
+	flex-direction: row;
+	align-items: center;
+	border-bottom: 1px solid #ececec;
+}
+.popup-action {
+	font-size: 16px;
+	width: 100rpx;
+	height: 112rpx;
+	text-align: center;
+	line-height: 112rpx;
+}
+.popup-title {
+	flex: 1;text-align: center;font-weight: bold;font-size: 16px;
+}
+.popup-cancel {
+	height: 100rpx;
+	width: 750rpx;
+	
+	align-items: center;
+	justify-content: center;
+}
+</style>

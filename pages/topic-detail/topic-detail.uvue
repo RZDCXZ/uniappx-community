@@ -319,7 +319,8 @@
 				this.$navbarView?.style?.setProperty("background-image",`linear-gradient(to bottom,rgba(255,255,255,${colorStartChange}),rgba(255,255,255,${colorEndChange}))`)
 				
 				// 控制标题显示
-				this.$navbarTitle?.style?.setProperty("display",colorEndChange == 1 ? "flex" : "none")
+				// this.$navbarTitle?.style?.setProperty("display",colorEndChange == 1 ? "flex" : "none")
+				this.$navbarTitle?.style?.setProperty("opacity",colorEndChange == 1 ? 1 : 0)
 				
 			}
 		}
@@ -342,7 +343,8 @@
 	justify-content: center;
 }
 .navbar-title {
-	display: none;
+	/* display: none; */
+	opacity: 0;
 }
 .banner-img {
 	height: 335rpx;

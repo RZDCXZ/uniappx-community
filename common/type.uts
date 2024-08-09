@@ -90,7 +90,29 @@ export type UserDetail = {
 	follows_count: number;
 	articles_count: number;
 	comments_count: number;
-	token: string | null;
+	token?: string | null;
+	isfollow?: boolean
+	isblacked?: boolean
+}
+
+export type UserDetail2 = {
+	name: string | null;
+	id: number;
+	avatar: string | null;
+	status: number;
+	age: number;
+	sex: number;
+	qg: number;
+	job: string | null;
+	path: string | null;
+	birthday: string | null;
+	desc: string | null;
+	fans_count: number;
+	follows_count: number;
+	articles_count: number;
+	comments_count: number;
+	isfollow: boolean;
+	isblacked: boolean;
 }
 
 // 默认返回结果
@@ -189,7 +211,9 @@ export type CommentItem = {
 	create_time: string | null;
 	avatar: string | null;
 	name: string | null;
-	quote?:Quote | null
+	quote?:Quote | null;
+	article_cover?: string | null;
+	article_title?: string | null;
 }
 
 // 评论列表分页结果

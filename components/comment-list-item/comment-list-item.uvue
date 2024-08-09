@@ -1,0 +1,162 @@
+<template>
+	<!-- 头部 -->
+	<view class="list-item-header">
+		<avatar :src="item.avatar" style="margin-right: 27rpx;"></avatar>
+		<view>
+			<text class="nickname">{{ item.name }}</text>
+			<text class="time">{{ item.create_time }}</text>
+		</view>
+		
+		<text class="iconfont delete-icon" v-if="isAdmin" @click.stop="deleteItem">{{ '\ue605' }}</text>
+	</view>
+	<!-- 文字内容 -->
+	<text class="content">{{ item.content }}</text>
+	
+	<!-- 引用 -->
+	<view class="quote" @click.stop="openDetail">
+		<text class="quote-text">{{ item.article_title }}</text>
+		<image v-if="item.article_cover != null" :src="item.article_cover" mode="aspectFill" class="quote-img"></image>
+	</view>
+	
+	<view class="divider"></view>
+</template>
+
+<script>
+	import { CommentItem,defaultResult } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+	import { PropType } from "vue"
+	export default {
+		emits:["onDeleteSuccess"],
+		name:"comment-list-item",
+		props: {
+			item: {
+				type: Object as PropType<CommentItem>,
+				required:true 
+			},
+			isAdmin: {
+				type:Boolean,
+				default:false
+			},
+		},
+		methods: {
+			openDetail() {
+				uni.navigateTo({
+					url: '/pages/detail/detail?id='+this.item.article_id,
+				});
+			},
+			deleteItem(){
+				uni.showModal({
+					title: '',
+					content: '是否要删除该评论？',
+					confirmText: '删除',
+					success: res => {
+						if(!res.confirm){
+							return
+						}
+						uni.showLoading({
+							title: '删除中...',
+							mask: true
+						});
+						uni.request<defaultResult>({
+							url: getURL(`/comment/delete/${this.item.id}`),
+							method: 'POST',
+							header: {
+								token:getToken()
+							},
+							success: res => {
+								let r = res.data
+								if(r == null) return
+								if(res.statusCode !=200){
+									uni.showToast({
+										title: r.msg,
+										icon: 'none'
+									});
+									return
+								}
+								
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								
+								this.$emit("onDeleteSuccess")
+							},
+							fail: (err) => {
+								uni.showToast({
+									title: err.errMsg,
+									icon: 'none'
+								});
+							},
+							complete: () => {
+								uni.hideLoading()
+							}
+						});
+					},
+				});
+			},
+		},
+	}
+</script>
+
+<style>
+/* 头部 */
+.list-item-header {
+	flex-direction: row;
+	align-items: center;
+	padding-top: 26rpx;
+	padding-left: 33rpx;
+	padding-right: 33rpx;
+}
+
+.time {
+	font-size: 13px;
+	color: #a7a7a7;
+	margin-top: 10rpx;
+}
+.nickname {
+	color: #050505;
+	text-overflow: ellipsis;
+	max-width: 240rpx;
+	height: 34rpx;
+	font-size: 15px;
+	font-weight: bold;
+}
+.content {
+	padding-top: 25rpx;
+	padding-left: 33rpx;
+	padding-right: 33rpx;
+	font-size: 16px;
+	line-height: 1.5;
+}
+.quote {
+	width: 690rpx;
+	margin-left: 30rpx;
+	margin-right: 30rpx;
+	height: 96rpx;
+	flex-direction: row;
+	align-items: center;
+	background-color: #f9f9f9;
+	border-radius: 5px;
+	margin-top: 30rpx;
+	margin-bottom: 30rpx;
+}
+.quote-text {
+	width: 530rpx;
+	text-overflow: ellipsis;
+	height: 35rpx;
+	margin-right: 30rpx;
+	margin-left: 30rpx;
+	font-size: 15px;
+}
+.quote-img {
+	width: 96rpx;
+	height: 96rpx;
+	margin-left: auto;
+}
+.delete-icon {
+	margin-left: auto;
+	padding: 10rpx;
+	color: #999999;
+}
+</style>

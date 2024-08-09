@@ -1,12 +1,13 @@
 <template>
 	<!-- 头部 -->
 	<view class="list-item-header" @click.stop="openDetail">
-		<avatar :src="item.avatar" style="margin-right: 27rpx;"></avatar>
+		<avatar :src="item.avatar" style="margin-right: 27rpx;" @click.stop="openUserSpace"></avatar>
 		<view>
-			<text class="nickname">{{ item.name }}</text>
+			<text class="nickname" @click.stop="openUserSpace">{{ item.name }}</text>
 			<text class="time">{{ item.create_time }} · {{ read_count }}次阅读</text>
 		</view>
-		<follow-button v-model="isfollow" :user_id="item.user_id"></follow-button>
+		<text class="iconfont delete-icon" v-if="isAdmin" @click.stop="deleteItem">{{ '\ue605' }}</text>
+		<follow-button v-else v-model="isfollow" :user_id="item.user_id"></follow-button>
 	</view>
 	<!-- 文字内容 -->
 	<text class="content" @click.stop="openDetail">{{ item.title }}</text>
@@ -42,6 +43,7 @@
 	import { getURL } from "@/common/request.uts"
 	import { getToken,AuthAction } from "@/store/user.uts"
 	export default {
+		emits:["onDeleteSuccess"],
 		name:"article-list-item",
 		props: {
 			item: {
@@ -51,7 +53,15 @@
 			inTopicDetail:{
 				type:Boolean,
 				default:false
-			}
+			},
+			inUserSpace: {
+				type:Boolean,
+				default:false
+			},
+			isAdmin: {
+				type:Boolean,
+				default:false
+			},
 		},
 		data() {
 			return {
@@ -89,6 +99,64 @@
 			this.isfollow = this.item.isfollow
 		},
 		methods: {
+			deleteItem(){
+				uni.showModal({
+					title: '',
+					content: '是否要删除该帖子？',
+					confirmText: '删除',
+					success: res => {
+						if(!res.confirm){
+							return
+						}
+						uni.showLoading({
+							title: '删除中...',
+							mask: true
+						});
+						uni.request<defaultResult>({
+							url: getURL(`/article/delete/${this.item.id}`),
+							method: 'POST',
+							header: {
+								token:getToken()
+							},
+							success: res => {
+								let r = res.data
+								if(r == null) return
+								if(res.statusCode !=200){
+									uni.showToast({
+										title: r.msg,
+										icon: 'none'
+									});
+									return
+								}
+								
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								
+								this.$emit("onDeleteSuccess")
+							},
+							fail: (err) => {
+								uni.showToast({
+									title: err.errMsg,
+									icon: 'none'
+								});
+							},
+							complete: () => {
+								uni.hideLoading()
+							}
+						});
+					},
+				});
+			},
+			openUserSpace(){
+				if(this.inUserSpace){
+					return
+				}
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id=' + this.item.user_id
+				});
+			},
 			// 更新评论数
 			updateCommentCount(count:number){
 				this.comment_count = count
@@ -287,5 +355,9 @@
 	align-items: center;
 	height: 105rpx;
 }
-
+.delete-icon {
+	margin-left: auto;
+	padding: 10rpx;
+	color: #999999;
+}
 </style>

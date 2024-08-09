@@ -6,13 +6,14 @@
 		</list-item>
 		<!-- 空数据显示 -->
 		<list-item v-if="!isFirstLoad && count == 0" :type="2" class="flex-1">
-			<tip/>
+			<tip v-if="page == 'user-space' && isAdmin && type == 'article'" title="现在不发帖,光看别人火" button="去发帖" @click-button="openAddPost"/>
+			<tip v-else/>
 		</list-item>
 		
 		<!-- 帖子列表 -->
 		<template v-if="type == 'article' || page == 'index'">
 			<list-item v-for="(item,index) in dataList" :key="index" :type="0">
-				<article-list-item ref="articleListItem" :item="item"></article-list-item>
+				<article-list-item :isAdmin="isAdmin" :inUserSpace="page == 'user-space'" ref="articleListItem" :item="item" @onDeleteSuccess="onDeleteSuccess"></article-list-item>
 			</list-item>
 		</template>
 		<!-- 用户列表 -->
@@ -27,7 +28,13 @@
 				<topic-list-item :item="item"></topic-list-item>
 			</list-item>
 		</template>
-		<list-item :type="4" v-if="!isFirstLoad">
+		<!-- 评论列表 -->
+		<template v-else-if="type == 'comment'">
+			<list-item v-for="(item,index) in commentList" :key="index" :type="7">
+				<comment-list-item :isAdmin="isAdmin" :item="item" @onDeleteSuccess="refreshData(null)"></comment-list-item>
+			</list-item>
+		</template>
+		<list-item :type="4" v-if="!isFirstLoad && count > 0">
 			<loading-more :loading="loading" :isEnded="isEnded"></loading-more>
 		</list-item>
 		
@@ -35,11 +42,12 @@
 </template>
 
 <script>
-	import type { Result,ListItem,ListResult,updateArticleChangeEvent,updateSupportEvent,Topic,TopicResult,UserItem,UserItemResult } from "@/common/type.uts"
+	import type { Result,ListItem,ListResult,updateArticleChangeEvent,updateSupportEvent,Topic,TopicResult,UserItem,UserItemResult,CommentItem,CommentItemResult } from "@/common/type.uts"
 	import { getURL } from "@/common/request.uts"
 	import { getToken } from "@/store/user.uts"
 
 	export default {
+		emits:["onDeleteSuccess"],
 		props: {
 			type: {
 				type: String,
@@ -64,6 +72,14 @@
 			keyword:{
 				type: String,
 				default: ''
+			},
+			user_id:{
+				type:Number,
+				default:0
+			},
+			isAdmin:{
+				type:Boolean,
+				default:false
 			}
 		},
 		data() {
@@ -72,6 +88,7 @@
 				dataList: [] as ListItem[],
 				topicList: [] as Topic[],
 				userList: [] as UserItem[],
+				commentList: [] as CommentItem[],
 				isEnded: false,
 				loadingError: '',
 				currentPage: 1,
@@ -81,15 +98,19 @@
 		computed: {
 			// 列表长度
 			count():number{
-				if(this.page == "search"){
-					if(this.type == "topic"){
-						return this.topicList.length
-					}
-					if(this.type == 'user'){
-						return  this.userList.length
-					}
+				let count = this.dataList.length
+				switch (this.type){
+					case "topic":
+					count = this.topicList.length
+						break;
+					case "user":
+					count = this.userList.length
+						break;
+					case "comment":
+					count = this.commentList.length
+						break;
 				}
-				return this.dataList.length
+				return count
 			},
 		},
 		created() {
@@ -104,6 +125,16 @@
 			uni.$off("onUpdateArticleChange",this.onUpdateArticleChange)
 		},
 		methods: {
+			onDeleteSuccess(){
+				this.refreshData(null)
+				this.$emit("onDeleteSuccess")
+			},
+			// 打开发帖页面
+			openAddPost(){
+				uni.navigateTo({
+					url: '/pages/add-post/add-post',
+				});
+			},
 			// 监听帖子变化
 			onUpdateArticleChange(e:updateArticleChangeEvent){
 				const aRefs = this.$refs["articleListItem"] as ComponentPublicInstance[]
@@ -138,6 +169,8 @@
 				this.dataList.length = 0
 				this.currentPage = 1
 				this.isFirstLoad = true
+				this.isEnded = false
+				this.loading = false
 				this.loadData(loadComplete)
 			},
 			loadData(loadComplete : (() => void) | null) {
@@ -159,8 +192,62 @@
 						this.loadSearchUserList(loadComplete)
 					}
 						break;
+					case "user-space":
+					if(this.type == "article"){
+						this.loadArticleList(loadComplete)
+					} else if(this.type == "comment"){
+						this.loadCommentListByUserId(loadComplete)
+					}
+						break;
 				}
 				
+			},
+			// 获取用户评论列表
+			loadCommentListByUserId(loadComplete : (() => void) | null){
+				uni.request<Result<CommentItemResult>>({
+					url: getURL(`/user/${this.user_id}/comment/${Math.floor(this.currentPage)}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as CommentItemResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.commentList = resData.data
+						} else {
+							this.commentList.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
 			},
 			// 搜索话题列表
 			loadSearchTopicList(loadComplete : (() => void) | null){
@@ -255,11 +342,14 @@
 			},
 			// 获取帖子列表
 			loadArticleList(loadComplete : (() => void) | null){
+				const p = Math.floor(this.currentPage)
 				// 首页
-				let url =  `/category/${this.category_id}/article/${Math.floor(this.currentPage)}`
+				let url =  `/category/${this.category_id}/article/${p}`
 				// 搜索页
 				if(this.page == "search"){
-					url = `/search/article/${Math.floor(this.currentPage)}?keyword=${this.keyword}`
+					url = `/search/article/${p}?keyword=${this.keyword}`
+				} else if(this.page == "user-space"){
+					url = `/user/${this.user_id}/article/${p}`
 				}
 				
 				uni.request<Result<ListResult>>({
