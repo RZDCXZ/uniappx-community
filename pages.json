@@ -131,32 +131,32 @@
 			"path" : "pages/user-follow-list/user-follow-list",
 			"style" : 
 			{
-				"navigationBarTitleText" : "",
-				"enablePullDownRefresh" : false
+				"navigationBarTitleText" : "关注列表",
+				"enablePullDownRefresh" : true
 			}
 		},
 		{
 			"path" : "pages/user-fans-list/user-fans-list",
 			"style" : 
 			{
-				"navigationBarTitleText" : "",
-				"enablePullDownRefresh" : false
+				"navigationBarTitleText" : "粉丝列表",
+				"enablePullDownRefresh" : true
 			}
 		},
 		{
 			"path" : "pages/my-collection/my-collection",
 			"style" : 
 			{
-				"navigationBarTitleText" : "",
-				"enablePullDownRefresh" : false
+				"navigationBarTitleText" : "我的收藏",
+				"enablePullDownRefresh" : true
 			}
 		},
 		{
 			"path" : "pages/user-history/user-history",
 			"style" : 
 			{
-				"navigationBarTitleText" : "",
-				"enablePullDownRefresh" : false
+				"navigationBarTitleText" : "历史记录",
+				"enablePullDownRefresh" : true
 			}
 		},
 		{

@@ -10,14 +10,14 @@
 							<text class="space-data-value">{{ user.articles_count }}</text>
 							<text class="space-data-title">帖子</text>
 						</view>
-						<view class="space-data-item">
+						<navigator class="space-data-item" :url="'/pages/user-follow-list/user-follow-list?user_id='+user.id">
 							<text class="space-data-value">{{ user.follows_count }}</text>
 							<text class="space-data-title">关注</text>
-						</view>
-						<view class="space-data-item">
+						</navigator>
+						<navigator class="space-data-item" :url="'/pages/user-fans-list/user-fans-list?user_id='+user.id">
 							<text class="space-data-value">{{ user.fans_count }}</text>
 							<text class="space-data-title">粉丝</text>
-						</view>
+						</navigator>
 					</view>
 					<view class="space-actions" v-if="isSelf">
 						<main-btn @click="openUserEditInfo()" width="330rpx" height="65rpx">编辑资料</main-btn>

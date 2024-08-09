@@ -2,21 +2,105 @@
 	<!-- #ifdef APP -->
 	<scroll-view style="flex:1">
 	<!-- #endif -->
-		
+		<view v-if="!isFirstLoad && List.length == 0" class="flex-1">
+			<tip />
+		</view>
+		<article-list-item v-for="(item,index) in List" :key="index" :item="item"></article-list-item>
+		<loading-more v-if="!isFirstLoad && List.length > 0" :loading="loading" :isEnded="isEnded"></loading-more>
 	<!-- #ifdef APP -->
 	</scroll-view>
 	<!-- #endif -->
 </template>
 
 <script>
+	import { Result,ListItem,ListResult } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
 	export default {
 		data() {
 			return {
-				
+				user_id:0,
+				loading: false,
+				List: [] as ListItem[],
+				isEnded: false,
+				currentPage: 1,
+				isFirstLoad:true
 			}
 		},
+		onShow() {
+			this.refreshData(null)
+		},
+		onPullDownRefresh() {
+			this.refreshData(()=>{
+				uni.showToast({
+					title: '刷新成功',
+					icon: 'none'
+				});
+				uni.stopPullDownRefresh()
+			})
+		},
+		onReachBottom() {
+			this.loadData(null)
+		},
 		methods: {
-			
+			refreshData(loadComplete : (() => void) | null) {
+				this.List.length = 0
+				this.currentPage = 1
+				this.isFirstLoad = true
+				this.isEnded = false
+				this.loading = false
+				this.loadData(loadComplete)
+			},
+			loadData(loadComplete : (() => void) | null) {
+				if (this.loading || this.isEnded) {
+					return
+				}
+				this.loading = true
+				uni.request<Result<ListResult>>({
+					url: getURL(`/mycollections/${Math.floor(this.currentPage)}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as ListResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.List = resData.data
+						} else {
+							this.List.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
 		}
 	}
 </script>

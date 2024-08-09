@@ -27,3 +27,17 @@ export function generateUniqueId():string {
 	// 将时间戳和随机数拼接起来
 	return timestamp + randomNum.toString()
 }
+
+// 性别选项0=不限，1=男，2=女
+export const sexOptions = ["不限","男","女"] as string[]
+// 获取性别
+export function getSexText(sex:number) : string {
+	return sexOptions[sex]
+}
+
+// 情感选项 0=不限，1=未婚，2=已婚
+export const emotionOptions = ["不限","未婚","已婚"] as string[]
+// 获取情感
+export function getEmotionText(qg:number) : string {
+	return emotionOptions[qg]
+}
