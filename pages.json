@@ -162,8 +162,8 @@
 			"path" : "pages/user-blacklist/user-blacklist",
 			"style" : 
 			{
-				"navigationBarTitleText" : "",
-				"enablePullDownRefresh" : false
+				"navigationBarTitleText" : "黑名单",
+				"enablePullDownRefresh" : true
 			}
 		},
 		{
