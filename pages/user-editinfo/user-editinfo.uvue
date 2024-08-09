@@ -2,25 +2,245 @@
 	<!-- #ifdef APP -->
 	<scroll-view style="flex:1">
 	<!-- #endif -->
-		
+		<navbar title="编辑资料" type="text" right-text="完成" @clickRight="sumbit"></navbar>
+		<view class="avatar-input">
+			<avatar :src="avatar" width="175rpx" height="175rpx" @click="updateAvatar"></avatar>
+			<text class="avatar-input-tip">点击更换头像</text>
+		</view>
+		<cell title="昵称" :border="true" :is-column="true">
+			<input v-model="name" class="nickname-input" type="text" placeholder="请输入你的昵称"/>
+		</cell>
+		<cell title="性别" :border="true" :right-text="sexText" @click="openSexPicker"></cell>
+		<f-picker mode="date" @confirm="confirmBirthdayPicker">
+			<cell title="生日" :border="true" :right-text="birthday == '' ? '未填写' : birthday"></cell>
+		</f-picker>
+		<cell title="情感" :border="true" :right-text="qgText" @click="openEmotionPicker()"></cell>
+		<f-city-picker @confirm="confirmPathPicker">
+			<cell title="所在地" :border="true" :right-text="path == '' ? '未填写' : path"></cell>
+		</f-city-picker>
+		<view class="divider"></view>
+		<cell title="个性签名" :show-arrow="false"></cell>
+		<textarea :value="desc" placeholder="请输入你的个性签名" class="desc-input" @input="handleDescInput"/>
+		<view style="height: 300rpx;"></view>
 	<!-- #ifdef APP -->
 	</scroll-view>
 	<!-- #endif -->
 </template>
 
 <script>
+	import { citypickerChangeEvent } from "@/components/f-city-picker/type.uts"
+	import { defaultResult,Result,UserDetail } from "@/common/type.uts"
+	import { getURL } from '@/common/request.uts'
+	import { userState,getToken,updateUserStateAvatar,updateInfo } from "@/store/user.uts"
+	import {
+		sexOptions,
+		getSexText,
+		emotionOptions,
+		getEmotionText
+	} from "@/common/utils.uts"
 	export default {
 		data() {
 			return {
-				
+				// 默认头像
+				avatar:"/static/default-avatar.png",
+				birthday:"",
+				path:"",
+				name:"",
+				sex:0,
+				qg:0,
+				desc:""
+			}
+		},
+		onLoad() {
+			// 初始化头像地址
+			if(userState.avatar != null){
+				this.avatar = userState.avatar as string
+			}
+			if(userState.birthday != null){
+				this.birthday = userState.birthday as string
+			}
+			if(userState.path != null){
+				this.path = userState.path as string
+			}
+			if(userState.username != null){
+				this.name = userState.username as string
+			}
+			if(userState.desc != null){
+				this.desc = userState.desc as string
+			}
+			this.sex = userState.sex as number
+			this.qg = userState.qg as number
+		},
+		computed: {
+			sexText(): string {
+				return getSexText(this.sex)
+			},
+			qgText(): string {
+				return getEmotionText(this.qg)
 			}
 		},
 		methods: {
-			
+			sumbit(){
+				uni.showLoading({
+					title: '修改中...',
+					mask: true
+				});
+				
+				const data = {
+					name:this.name,
+					sex:this.sex,
+					qg:this.qg,
+					birthday:this.birthday,
+					path:this.path,
+					desc:this.desc
+				} as UTSJSONObject
+				
+				uni.request<Result<UserDetail>>({
+					url:getURL("/user/changeinfo"),
+					data,
+					method:"POST",
+					header:{
+						token:getToken()
+					},
+					success:(res)=>{
+						let r = res.data
+						if(r === null) return
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						// 全局通知用户信息修改
+						uni.$emit("onUpdateInfoSuccess","info")
+						// 同步本地用户信息
+						updateInfo(r.data as UserDetail)
+						
+						uni.showToast({
+							title: '修改成功',
+							icon: 'none'
+						});
+						
+						setTimeout(function() {
+							uni.navigateBack({
+								delta: 1
+							});
+						}, 300);
+					},
+					fail:(err)=>{
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete:()=>{
+						uni.hideLoading()
+					}
+				})
+			},
+			handleDescInput(e:UniInputEvent){
+				this.desc = e.detail.value
+			},
+			openSexPicker(){
+				uni.showActionSheet({
+					title:"请选择性别",
+					itemList: sexOptions,
+					success:(res:ShowActionSheetSuccess)=>{
+						this.sex = res.tapIndex ?? 0
+						console.log(this.sex);
+					}
+				})
+			},
+			openEmotionPicker(){
+				uni.showActionSheet({
+					title:"请选择情感情况",
+					itemList: emotionOptions,
+					success:(res:ShowActionSheetSuccess)=>{
+						this.qg = res.tapIndex ?? 0
+						console.log(this.qg);
+					}
+				})
+			},
+			confirmPathPicker(e:citypickerChangeEvent){
+				this.path = e.label
+			},
+			confirmBirthdayPicker(e:string){
+				this.birthday = e
+			}, 
+			updateAvatar(){
+				uni.chooseImage({
+					count:1,
+					sizeType:["compressed"],
+					sourceType:['album','camera'],
+					success:(res)=>{
+						uni.showLoading({
+							title: '上传头像中...',
+							mask: true
+						});
+						uni.uploadFile({
+							url:getURL("/user/changeavatar"),
+							filePath:res.tempFilePaths[0],
+							name:"avatar",
+							header: {
+								token:getToken()
+							},
+							success:(res)=>{
+								let d = JSON.parse<defaultResult>(res.data)
+								if(d == null) return
+								if(d.code == 0){
+									uni.showToast({
+										title: d.msg,
+										icon: 'none'
+									});
+									return
+								}
+								const src = d.data as string
+								uni.showToast({
+									title: '修改头像成功',
+									icon: 'none'
+								});
+								// 更新本地用户信息
+								updateUserStateAvatar(src)
+								
+								this.avatar = src
+								
+								// 通知全局修改用户信息,例如个人空间
+								uni.$emit("onUpdateInfoSuccess","avatar")
+							},
+							complete:()=>{
+								uni.hideLoading()
+							}
+						})
+					}
+				})
+			}
 		}
 	}
 </script>
 
 <style>
-
+.avatar-input {
+	align-items: center;
+	justify-content: center;
+	padding-top: 60rpx;
+	padding-bottom: 50rpx;
+}
+.avatar-input-tip {
+	font-size: 14px;
+	margin-top: 25rpx;
+	color: #0d0d0d;
+}
+.desc-input {
+	background-color: #f9f9f9;
+	margin: 0 30rpx;
+	height: 225rpx;
+	padding: 25rpx;
+	width: 690rpx;
+}
+.nickname-input {
+	height: 90rpx;
+	font-size: 15px;
+	color: #424242;
+}
 </style>

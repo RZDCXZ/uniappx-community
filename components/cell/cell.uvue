@@ -1,8 +1,8 @@
 <template>
-	<view class="cell" :hover-class="hover ? 'cell-hover' : ''">
+	<view class="cell" :class="{ 'cell-column':isColumn }" :hover-class="hover ? 'cell-hover' : ''">
 		<text class="cell-title">{{ title }}</text>
 		<slot/>
-		<view class="cell-right">
+		<view class="cell-right" v-if="!isColumn">
 			<text class="cell-right-text" v-if="rightText != ''">{{ rightText }}</text>
 			<text class="iconfont cell-icon" v-if="showArrow">{{ '\ue60c' }}</text>
 		</view>
@@ -28,6 +28,10 @@
 			hover:{
 				type:Boolean,
 				default:true
+			},
+			isColumn:{
+				type:Boolean,
+				default:false
 			}
 		},
 		data() {
@@ -45,6 +49,10 @@
 	align-items: center;
 	padding: 0 30rpx;
 	background-color: #ffffff;
+}
+.cell-column {
+	flex-direction: column;
+	align-items: flex-start;
 }
 .cell-hover {
 	background-color: #f4f4f4;

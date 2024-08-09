@@ -1,0 +1,219 @@
+<template>
+	<view v-if="show" class="popup-mask" @click="close"></view>
+	<view class="popup" :class="show ? 'popup-show' : ''">
+		<view class="popup-header">
+			<text class="iconfont popup-action" style="font-size: 22px;" @click="close">×</text>
+			<text class="popup-title">选择地址</text>
+			<text class="popup-action" style="color: #949494;" @click="confirm">完成</text>
+		</view>
+		<picker-view indicator-style="height: 40px;" class="picker-view" :value="pickerValue" @change="pickerChange">
+			<picker-view-column>
+				<view v-for="(item,index) in provinceDataList" :key="index">
+					<text class="picker-item">{{item.label}}</text>
+				</view>
+			</picker-view-column>
+			<picker-view-column>
+				<view v-for="(item,index) in cityDataList" :key="index">
+					<text class="picker-item">{{item.label}}</text>
+				</view>
+			</picker-view-column>
+			<picker-view-column>
+				<view v-for="(item,index) in areaDataList" :key="index">
+					<text class="picker-item">{{item.label}}</text>
+				</view>
+			</picker-view-column>
+		</picker-view>
+	</view>
+	<view @click.stop="open">
+		<slot></slot>
+	</view>
+</template>
+
+<script>
+	import { PropType,ComponentPublicInstance } from "vue"
+	import { cityItem, citypickerChangeEvent } from "./type"
+	import provinceData from './city-data/province';
+	import cityData from './city-data/city';
+	import areaData from './city-data/area';
+	export default {
+		emits: ["confirm"],
+		data() {
+			return {
+				pickerValue: [0, 0, 0] as number[],
+				provinceDataList: provinceData as cityItem[],
+				cityDataList: cityData[0] as cityItem[],
+				areaDataList: areaData[0][0] as cityItem[],
+				citypickerRef: null as ComponentPublicInstance | null,
+				show:false
+			};
+		},
+		created() {
+			this.init()
+		},
+		// props: {
+		// 	/* 默认值 */
+		// 	pickerValueDefault: {
+		// 		type: Array as PropType<number[]>,
+		// 		default() : number[] {
+		// 			return [0, 0, 0] as number[]
+		// 		}
+		// 	},
+		// },
+		watch: {
+			pickerValueDefault() {
+				this.init();
+			}
+		},
+		mounted() {
+			// this.citypickerRef = this.$refs["citypicker"] as ComponentPublicInstance
+		},
+		methods: {
+			open() {
+				this.show = true
+			},
+			close() {
+				this.show = false
+			},
+			init() {
+				//this.handPickValueDefault(); // 对 pickerValueDefault 做兼容处理
+
+				let pickerValueDefault = [0, 0, 0] as number[]
+				// if (this.pickerValueDefault != null) {
+				// 	pickerValueDefault = this.pickerValueDefault as number[]
+				// }
+
+				this.cityDataList = cityData[pickerValueDefault[0]];
+				this.areaDataList = areaData[pickerValueDefault[0]][pickerValueDefault[1]];
+				this.pickerValue = pickerValueDefault;
+			},
+			// handPickValueDefault() {
+			// 	const pickerValueDefault = this.pickerValueDefault as number[]
+
+			// 	let provinceIndex = 0
+			// 	let cityIndex = 0
+			// 	let areaIndex = 0
+			// 	if(pickerValueDefault.length != 3){
+			// 		return
+			// 	}
+			// 	provinceIndex = pickerValueDefault[0] as number
+			// 	cityIndex = pickerValueDefault[1] as number
+			// 	areaIndex = pickerValueDefault[2] as number
+			// 	if (provinceIndex !== 0 || cityIndex !== 0 || areaIndex !== 0) {
+			// 		if (provinceIndex > provinceData.length - 1) {
+			// 			this.pickerValueDefault[0] as number = provinceIndex as number = parseInt(provinceData.length - 1);
+			// 		}
+			// 		if (cityIndex > cityData[provinceIndex].length - 1) {
+			// 			this.pickerValueDefault[1] as number = cityIndex as number = parseInt(cityData[provinceIndex].length - 1);
+			// 		}
+			// 		if (areaIndex > areaData[provinceIndex][cityIndex].length - 1) {
+			// 			this.pickerValueDefault[2] as number = parseInt(areaData[provinceIndex][cityIndex].length - 1);
+			// 		}
+			// 	}
+			// },
+			pickerChange(e : PickerViewChangeEvent) {
+				let changePickerValue = e.detail.value;
+				if (this.pickerValue[0] !== changePickerValue[0]) {
+					// 第一级发生滚动
+					this.cityDataList = cityData[changePickerValue[0]];
+					this.areaDataList = areaData[changePickerValue[0]][0];
+					changePickerValue[1] = 0;
+					changePickerValue[2] = 0;
+				} else if (this.pickerValue[1] !== changePickerValue[1]) {
+					// 第二级滚动
+					this.areaDataList =
+						areaData[changePickerValue[0]][changePickerValue[1]];
+					changePickerValue[2] = 0;
+				}
+				this.pickerValue = changePickerValue;
+				// this._$emit('onChange');
+			},
+			confirm() {
+				let pickObj = {
+					label: this._getLabel(),
+					value: this.pickerValue,
+					cityCode: this._getCityCode()
+				} as citypickerChangeEvent;
+				this.$emit("confirm", pickObj);
+				this.close()
+			},
+			// _$emit(emitName:string) {
+			// 	let pickObj = {
+			// 		label: this._getLabel(),
+			// 		value: this.pickerValue,
+			// 		cityCode: this._getCityCode()
+			// 	} as citypickerChangeEvent;
+			// 	this.$emit(emitName, pickObj);
+			// },
+			_getLabel() : string {
+				let pcikerLabel =
+					this.provinceDataList[this.pickerValue[0]].label +
+					'-' +
+					this.cityDataList[this.pickerValue[1]].label +
+					'-' +
+					this.areaDataList[this.pickerValue[2]].label;
+				return pcikerLabel;
+			},
+			_getCityCode() : string {
+				return this.areaDataList[this.pickerValue[2]].value;
+			}
+		}
+	};
+</script>
+
+<style>
+	.popup-mask {
+		position: fixed;
+		left: 0;
+		top: 0;
+		right:0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.3);
+		z-index: 99;
+	}
+	.popup {
+		position: fixed;
+		bottom: 0;
+		right: 0;
+		left: 0;
+		background-color: #ffffff;
+		z-index: 100;
+		border-top-left-radius: 15px;
+		border-top-right-radius: 15px;
+		transform: translateY(1000px);
+		opacity: 0;
+		transition-property: transform,opacity;
+		transition-duration: 400ms;
+	}
+	.popup-show {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	.popup-header {
+		
+		height: 112rpx;
+		flex-direction: row;
+		align-items: center;
+		border-bottom: 1px solid #ececec;
+	}
+	.popup-action {
+		font-size: 16px;
+		width: 100rpx;
+		height: 112rpx;
+		text-align: center;
+		line-height: 112rpx;
+	}
+	.popup-title {
+		flex: 1;text-align: center;font-weight: bold;font-size: 16px;
+	}
+	.picker-view {
+		width: 750rpx;
+		height: 500rpx;
+	}
+
+	.picker-item {
+		text-align: center;
+		line-height: 40px;
+		text-overflow: ellipsis;
+		font-size: 16px;
+	}
+</style>

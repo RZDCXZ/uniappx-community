@@ -81,6 +81,7 @@
 	import { TabsSwiperItem } from "@/components/tabs-swiper/type.uts"
 	import headTabsSwiper from "@/components/tabs-swiper/head-tabs-swiper.uvue"
 	import longPage from '@/pages/long-list/long-list-page.uvue';
+	import { getSexText } from "@/common/utils.uts"
 	
 	// 举报违规选项
 	type ReasonOption = {
@@ -150,9 +151,7 @@
 		},
 		computed: {
 			sex(): string {
-				// 性别选项
-				const sexOptions = ["未知","男生","女生"] as string[]
-				return sexOptions[this.user.sex]
+				return getSexText(this.user.sex)
 			},
 			// 是否是登录者本人
 			isSelf():boolean{
@@ -165,6 +164,10 @@
 				this.user.id = uid
 			}
 			this.loadUserDetail()
+			uni.$on("onUpdateInfoSuccess",this.onUpdateInfoSuccess)
+		},
+		onUnload() {
+			uni.$off("onUpdateInfoSuccess",this.onUpdateInfoSuccess)
 		},
 		onReady() {
 			this.popup = this.$refs["popup"] as ComponentPublicInstance
@@ -176,6 +179,10 @@
 			})
 		},
 		methods: {
+			onUpdateInfoSuccess(_:string){
+				this.loadUserDetail()
+				this.refreshData(null)
+			},
 			openUserEditInfo(){
 				uni.navigateTo({
 					url: '/pages/user-editinfo/user-editinfo'

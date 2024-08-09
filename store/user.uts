@@ -189,3 +189,22 @@ export function AuthAction(callback:()=>void){
 		url: '/pages/user-login/user-login',
 	});
 }
+
+// 更新头像
+export function updateUserStateAvatar(src:string){
+	userState.avatar = src
+	uni.setStorageSync("user_info",userState)
+}
+
+// 更新资料
+export function updateInfo(data:UserDetail){
+	userState.name = data.name
+	userState.username = data.username
+	userState.age = data.age
+	userState.sex = data.sex
+	userState.qg = data.qg
+	userState.path = data.path
+	userState.birthday = data.birthday
+	userState.desc = data.desc
+	uni.setStorageSync("user_info",userState)
+}

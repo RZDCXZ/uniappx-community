@@ -20,6 +20,7 @@
 			<slot name="right">
 				<view v-if="showRightIcon" class="navbar-icon" @click="$emit('clickRight')">
 					<text class="iconfont" v-if="rightIcon != ''">{{ icons[rightIcon] }}</text>
+					<text class="search-btn" v-if="rightText !='' ">{{ rightText }}</text>
 				</view>
 			</slot>
 		</template>
@@ -55,6 +56,10 @@
 			showRightIcon:{
 				type:Boolean,
 				default:true
+			},
+			rightText:{
+				type: String,
+				default: ""
 			}
 		},
 		data() {

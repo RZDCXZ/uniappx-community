@@ -141,7 +141,7 @@
 						day:this.day,
 						label:`${this.year}-${this._getValue(this.month)}-${this._getValue(this.day)}`
 					} as datepickerChangeEvent;
-					this.$emit("confirm", pickObj);
+					this.$emit("confirm", pickObj.label);
 						break;
 				}
 				this.close()
