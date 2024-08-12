@@ -1,0 +1,87 @@
+<template>
+	<text class="feedback-time">{{ item.create_time }}</text>
+	<view class="feedback" :class="{ 'feedback-self':(item.type == 'user') }">
+		<avatar :src="item.avatar" width="84rpx" height="84rpx" style="margin: 0 20rpx;"></avatar>
+		<view class="feedback-body" :class="{ 'feedback-body-self' : (item.type == 'user') }">
+			<text class="feedback-text">{{ item.content }}</text>
+			<view class="feedback-img" v-if="item.images.length > 0">
+				<image v-for="(img,index) in item.images" :key="index" :src="img" mode="aspectFill"
+					class="feedback-img-item" @click="previewImage(img)"></image>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import { PropType } from "vue"
+	import { FeedbackItem } from "@/common/type.uts"
+	export default {
+		name: "feedback-item",
+		props: {
+			item: {
+				type: Object as PropType<FeedbackItem>,
+				required: true
+			},
+		},
+		data() {
+			return {
+
+			};
+		},
+		methods: {
+			previewImage(img : string) {
+				uni.previewImage({
+					current: img,
+					urls: this.item.images
+				})
+			}
+		},
+	}
+</script>
+
+<style>
+	.feedback-time {
+		text-align: center;
+		color: #898989;
+		font-size: 14px;
+		margin-top: 20rpx;
+	}
+
+	.feedback {
+		flex-direction: row;
+		align-items: flex-start;
+		padding: 25rpx 10rpx;
+	}
+
+	.feedback-self {
+		flex-direction: row-reverse;
+	}
+
+	.feedback-body {
+		background-color: #f4f4f4;
+		border-radius: 8px;
+		padding: 20rpx;
+		max-width: 475rpx;
+	}
+
+	.feedback-body-self {
+		background-color: rgba(240, 100, 135, 0.1);
+	}
+
+	.feedback-text {
+		line-height: 1.6;
+		font-size: 16px;
+	}
+
+	.feedback-img {
+		flex-direction: row;
+	}
+
+	.feedback-img-item {
+		width: 130rpx;
+		height: 130rpx;
+		padding: 5rpx;
+		border-radius: 6rpx;
+		background-color: #f4f4f4;
+	}
+</style>

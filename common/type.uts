@@ -249,3 +249,59 @@ export type onAddArticleSuccessEvent = {
 	category_id:number
 	topic_id:number
 }
+
+export type FeedbackItem = {
+	id: number;
+	content: string | null;
+	images: string[];
+	type: string;
+	create_time: string  | null;
+	name: string | null;
+	avatar: string | null;
+}
+
+export type FeedbackItemResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: FeedbackItem[]
+}
+
+// 聊天会话列表
+export type Conversation = {
+	id: number;
+	target_id: number;
+	unread_count: number;
+	last_msg_note: string | null;
+	update_time: string | null;
+	name: string | null;
+	avatar: string | null;
+}
+
+// 聊天会话列表分页结果
+export type ConversationResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: Conversation[]
+}
+
+// 聊天消息
+export type ChatItem = {
+	id: number;
+	user_id: number;
+	target_id: number;
+	is_revoke: number;
+	is_push: number;
+	type: string;
+	state: number;
+	body: string;
+	create_time: string | null;
+	update_time: string | null;
+	client_create_time: string | null;
+	name: string | null;
+	avatar: string | null;
+	conversation_id: number;
+}

@@ -1,0 +1,79 @@
+<template>
+	<view class="chatlist">
+		<text class="chat-time">{{ item.client_create_time }}</text>
+		<view class="chat" :class="{ 'chat-self': isself }">
+			<avatar :src="item.avatar" width="84rpx" height="84rpx" style="margin: 0 20rpx;"></avatar>
+			<view class="chat-body" :class="{ 'chat-body-self' : isself }">
+				<text class="chat-text">{{ item.body }}</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import { userState } from '@/store/user.uts'
+	import { PropType } from "vue"
+	import { ChatItem } from "@/common/type.uts"
+	export default {
+		name:"chat-item",
+		props: {
+			item: {
+				type: Object as PropType<ChatItem>,
+				required:true
+			},
+		},
+		computed: {
+			isself(): boolean {
+				return userState.id == this.item.user_id
+			}
+		},
+		data() {
+			return {
+				
+			};
+		},
+		methods: {
+			
+		},
+	}
+</script>
+
+<style>
+.chat-time {
+	text-align: center;
+	color: #898989;
+	font-size: 14px;
+	margin-top: 20rpx;
+}
+.chat {
+	flex-direction: row;
+	align-items: flex-start;
+	padding: 25rpx 10rpx;
+}
+.chat-self {
+	flex-direction: row-reverse;
+}
+.chat-body {
+	background-color: #f4f4f4;
+	border-radius: 8px;
+	padding: 20rpx;
+	max-width: 475rpx;
+}
+.chat-body-self {
+	background-color: rgba(240, 100, 135, 0.1);
+}
+.chat-text {
+	line-height: 1.6;
+	font-size: 16px;
+}
+.chat-img {
+	flex-direction: row;
+}
+.chat-img-item {
+	width: 130rpx;
+	height: 130rpx;
+	padding: 5rpx;
+	border-radius: 6rpx;
+	background-color: #f4f4f4;
+}
+</style>

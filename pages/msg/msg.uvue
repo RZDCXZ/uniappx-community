@@ -2,25 +2,219 @@
 	<!-- #ifdef APP -->
 	<scroll-view style="flex:1">
 	<!-- #endif -->
+		<view class="msg-item" hover-class="msg-item-hover" v-for="(item,index) in list" :key="index" @click="openChat(item)">
+			<avatar :src="item.avatar" width="100rpx" height="100rpx" style="margin-right: 20rpx;"></avatar>
+			<view class="msg-item-body">
+				<text class="msg-item-nickname">{{ item.name }}</text>
+				<text class="msg-item-content">{{ item.last_msg_note }}</text>
+			</view>
+			<view class="msg-item-info">
+				<text class="msg-item-time">{{ item.update_time }}</text>
+				<text class="msg-item-badge" v-if="item.unread_count > 0">{{ item.unread_count > 99 ? '99+' : item.unread_count }}</text>
+			</view>
+		</view>
 		
+		<!-- 暂无数据 -->
+		<tip v-if="!isFirstLoad && list.length == 0"></tip>
+		
+		<loading-more v-if="isFirstLoad || list.length > 0" :loading="loading" :isEnded="isEnded"></loading-more>
 	<!-- #ifdef APP -->
 	</scroll-view>
 	<!-- #endif -->
 </template>
 
 <script>
+	import { Conversation,ConversationResult,Result } from '@/common/type.uts';
+	import { getURL } from "@/common/request.uts"
+	import { getToken,loginState } from "@/store/user.uts"
+	import { openSocket } from "@/common/socket.uts"
 	export default {
 		data() {
 			return {
-				
+				list: [] as Conversation[],
+				loading: false,
+				isEnded: false,
+				currentPage: 1,
+				isFirstLoad:true
+			}
+		},
+		onLoad() {
+			this.refreshData(null)
+			// 监听会话变化
+			uni.$on("onUpdateConversation",this.onUpdateConversation)
+		},
+		onShow(){
+			if(this.loginState){
+				openSocket()
+			}
+		},
+		onUnload() {
+			uni.$off("onUpdateConversation",this.onUpdateConversation)
+		},
+		onPullDownRefresh() {
+			this.refreshData(()=>{
+				uni.showToast({
+					title: '刷新成功',
+					icon: 'none'
+				});
+				uni.stopPullDownRefresh()
+			})
+		},
+		onReachBottom() {
+			this.loadData(null)
+		},
+		computed: {
+			// 登录状态
+			loginState(): boolean {
+				return loginState.value
 			}
 		},
 		methods: {
-			
+			// 监听会话变化
+			onUpdateConversation(e:Conversation | null){
+				// 登录或者退出触发
+				if(e == null){
+					// 已登录，直接刷新数据
+					if(this.loginState){
+						this.refreshData(null)
+					}
+					// 退出登录，清除会话列表
+					else {
+						this.list.length = 0
+					}
+					return
+				}
+				// 发起会话 或 聊天中 触发
+				// 查询会话是否存在
+				let i = this.list.findIndex((o:Conversation):boolean => {
+					return o.id == e.id
+				})
+				// 不存在直接刷新
+				if(i == -1){
+					this.refreshData(null)
+					return
+				}
+				// 存在则修改并置顶
+				this.list[i].avatar = e.avatar
+				this.list[i].name = e.name
+				this.list[i].last_msg_note = e.last_msg_note
+				this.list[i].unread_count = e.unread_count
+				this.list[i].update_time = e.update_time
+				this._toFirst(this.list,i)
+			},
+			// 数组置顶
+			_toFirst(arr: Conversation[], index : number) : Conversation[]{
+				if(index != 0){
+					arr.unshift(arr.splice(index,1)[0])
+				}
+				return arr;
+			},
+			openChat(item : Conversation){
+				uni.navigateTo({
+					url: `/pages/chat/chat?id=${item.id}&target_id=${item.target_id}&title=${item.name}`
+				});
+			},
+			refreshData(loadComplete : (() => void) | null) {
+				this.list.length = 0
+				this.currentPage = 1
+				this.isFirstLoad = true
+				this.isEnded = false
+				this.loading = false
+				this.loadData(loadComplete)
+			},
+			loadData(loadComplete : (() => void) | null) {
+				if (this.loading || this.isEnded) {
+					return
+				}
+				this.loading = true
+				uni.request<Result<ConversationResult>>({
+					url: getURL(`/im/conversation/${Math.floor(this.currentPage)}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as ConversationResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.list = resData.data
+						} else {
+							this.list.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
 		}
 	}
 </script>
 
 <style>
-
+.msg-item {
+	flex-direction: row;
+	align-items: stretch;
+	padding: 20rpx 30rpx;
+}
+.msg-item-hover {
+	background-color: #f4f4f4;
+}
+.msg-item-body {
+	max-width: 420rpx;
+}
+.msg-item-nickname {
+	font-size: 17px;
+	font-weight: bold;
+	margin: 10rpx 0;
+	lines: 1;
+}
+.msg-item-content {
+	font-size: 14px;
+	color: #727272;
+	lines: 1;
+}
+.msg-item-info {
+	margin-left: auto;
+	align-items: flex-end;
+	flex-shrink: 0;
+}
+.msg-item-time {
+	font-size: 12px;
+	color: #777777;
+	margin: 10rpx 0;
+}
+.msg-item-badge {
+	color: #ffffff;
+	background-color: #f84c2f;
+	font-size: 11px;
+	padding: 4rpx 8rpx;
+	border-radius: 30rpx;
+	font-weight: bold;
+}
 </style>

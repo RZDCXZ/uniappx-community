@@ -10,11 +10,13 @@
 							<text class="space-data-value">{{ user.articles_count }}</text>
 							<text class="space-data-title">帖子</text>
 						</view>
-						<navigator class="space-data-item" :url="'/pages/user-follow-list/user-follow-list?user_id='+user.id">
+						<navigator class="space-data-item"
+							:url="'/pages/user-follow-list/user-follow-list?user_id='+user.id">
 							<text class="space-data-value">{{ user.follows_count }}</text>
 							<text class="space-data-title">关注</text>
 						</navigator>
-						<navigator class="space-data-item" :url="'/pages/user-fans-list/user-fans-list?user_id='+user.id">
+						<navigator class="space-data-item"
+							:url="'/pages/user-fans-list/user-fans-list?user_id='+user.id">
 							<text class="space-data-value">{{ user.fans_count }}</text>
 							<text class="space-data-title">粉丝</text>
 						</navigator>
@@ -25,7 +27,7 @@
 					<view class="space-actions" v-else>
 						<main-btn v-if="isblacked" @click="handleBlack()" width="330rpx" height="65rpx">解除拉黑</main-btn>
 						<follow-button v-else type="main-btn" :user_id="user.id" v-model="isfollow"></follow-button>
-						<view class="space-action-msg">
+						<view class="space-action-msg" @click="openChat">
 							<text class="iconfont space-action-msg-icon">{{ '\ue648' }}</text>
 						</view>
 					</view>
@@ -40,10 +42,11 @@
 			</view>
 		</template>
 		<swiper-item class="flex-1" v-for="(item,index) in tabs" :key="index">
-			<long-page :isAdmin="isSelf" ref="longPage" page="user-space" :id="'list_'+item.id" :user_id="user.id" :type="item.type" :preload="item.preload" @onDeleteSuccess="loadUserDetail"></long-page>
+			<long-page :isAdmin="isSelf" ref="longPage" page="user-space" :id="'list_'+item.id" :user_id="user.id"
+				:type="item.type" :preload="item.preload" @onDeleteSuccess="loadUserDetail"></long-page>
 		</swiper-item>
 	</head-tabs-swiper>
-	
+
 	<!-- 更多弹框 -->
 	<popup ref="popup">
 		<view class="more-popup">
@@ -57,7 +60,7 @@
 			</view>
 		</view>
 	</popup>
-	
+
 	<!-- 举报弹框 -->
 	<popup ref="reportPopup" title="举报原因" :show-cancel="false" @confirm="confirmReport">
 		<radio-group name="reason" style="height: 940rpx;width: 750rpx;" @change="handleReportChange">
@@ -71,24 +74,24 @@
 			</view>
 		</radio-group>
 	</popup>
-	
+
 </template>
 
 <script>
-	import { UserDetail2,Result,defaultResult } from '@/common/type.uts'
+	import { UserDetail2, Result, defaultResult,Conversation } from '@/common/type.uts'
 	import { getURL } from '@/common/request.uts';
-	import { getToken,AuthAction,userState } from "@/store/user.uts"
+	import { getToken, AuthAction, userState } from "@/store/user.uts"
 	import { TabsSwiperItem } from "@/components/tabs-swiper/type.uts"
 	import headTabsSwiper from "@/components/tabs-swiper/head-tabs-swiper.uvue"
 	import longPage from '@/pages/long-list/long-list-page.uvue';
 	import { getSexText } from "@/common/utils.uts"
-	
+
 	// 举报违规选项
 	type ReasonOption = {
-		title:string
-		list:string[]
+		title : string
+		list : string[]
 	}
-	
+
 	export default {
 		components: {
 			headTabsSwiper,
@@ -109,10 +112,10 @@
 					"preload": false
 				}] as TabsSwiperItem[],
 
-				title:"个人空间",
-				isfollow:false,
-				isblacked:false,
-				
+				title: "个人空间",
+				isfollow: false,
+				isblacked: false,
+
 				user: {
 					"name": "",
 					"id": 0,
@@ -132,68 +135,118 @@
 					"isfollow": false,
 					"isblacked": false
 				} as UserDetail2,
-				
-				popup: null  as ComponentPublicInstance | null,
-				reportPopup: null  as ComponentPublicInstance | null,
-				
-				reasonContent:"",
-				reasonOptions:[{
-					title:"违规",
-					list:["低俗色情","侮辱谩骂","违法行为","政治敏感","垃圾广告","未成年人有害行为"]
-				},{
-					title:"不友善",
-					list:["不尊重女性","引战、制造冲突","恶意诋毁","刷水/骗赞","感官不适"]
-				},{
-					title:"个人信息问题",
-					list:["头像/昵称/签名违规","冒充官号/其他用户"]
+
+				popup: null as ComponentPublicInstance | null,
+				reportPopup: null as ComponentPublicInstance | null,
+
+				reasonContent: "",
+				reasonOptions: [{
+					title: "违规",
+					list: ["低俗色情", "侮辱谩骂", "违法行为", "政治敏感", "垃圾广告", "未成年人有害行为"]
+				}, {
+					title: "不友善",
+					list: ["不尊重女性", "引战、制造冲突", "恶意诋毁", "刷水/骗赞", "感官不适"]
+				}, {
+					title: "个人信息问题",
+					list: ["头像/昵称/签名违规", "冒充官号/其他用户"]
 				}] as ReasonOption[],
 			}
 		},
 		computed: {
-			sex(): string {
+			sex() : string {
 				return getSexText(this.user.sex)
 			},
 			// 是否是登录者本人
-			isSelf():boolean{
+			isSelf() : boolean {
 				return this.user.id === userState.id
 			}
 		},
-		onLoad(options:OnLoadOptions) {
-			if(options.has("user_id")){
+		onLoad(options : OnLoadOptions) {
+			if (options.has("user_id")) {
 				const uid = parseInt(options.get("user_id") as string)
 				this.user.id = uid
 			}
 			this.loadUserDetail()
-			uni.$on("onUpdateInfoSuccess",this.onUpdateInfoSuccess)
+			uni.$on("onUpdateInfoSuccess", this.onUpdateInfoSuccess)
 		},
 		onUnload() {
-			uni.$off("onUpdateInfoSuccess",this.onUpdateInfoSuccess)
+			uni.$off("onUpdateInfoSuccess", this.onUpdateInfoSuccess)
 		},
 		onReady() {
 			this.popup = this.$refs["popup"] as ComponentPublicInstance
 			this.reportPopup = this.$refs["reportPopup"] as ComponentPublicInstance
 		},
 		onPullDownRefresh() {
-			this.refreshData(()=>{
+			this.refreshData(() => {
 				uni.stopPullDownRefresh()
 			})
 		},
 		methods: {
-			onUpdateInfoSuccess(_:string){
+			// 发起聊天
+			openChat() {
+				AuthAction(() => {
+					uni.showLoading({
+						title: '发起聊天中...',
+						mask: true
+					});
+					uni.request<Result<Conversation>>({
+						url: getURL("/im/create_conversation"),
+						method: "POST",
+						header: {
+							token: getToken()
+						},
+						data: {
+							target_id: this.user.id
+						},
+						success: (res) => {
+							let r = res.data
+							if (r == null) return
+							if (res.statusCode != 200) {
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								return
+							}
+							
+							if(r.data == null) return
+							
+							let resData = r.data as Conversation
+							
+							// 通知消息页 更新 会话列表数据
+							uni.$emit("onUpdateConversation", resData)
+							
+							uni.navigateTo({
+								url: `/pages/chat/chat?id=${resData.id}&target_id=${resData.target_id}&title=${resData.name}`
+							});
+						},
+						fail: (err) => {
+							uni.showToast({
+								title: err.errMsg,
+								icon: 'none'
+							});
+						},
+						complete: () => {
+							uni.hideLoading()
+						}
+					})
+				})
+			},
+			onUpdateInfoSuccess(_ : string) {
 				this.loadUserDetail()
 				this.refreshData(null)
 			},
-			openUserEditInfo(){
+			openUserEditInfo() {
 				uni.navigateTo({
 					url: '/pages/user-editinfo/user-editinfo'
 				});
 			},
-			handleReportChange(e: UniRadioGroupChangeEvent){
+			handleReportChange(e : UniRadioGroupChangeEvent) {
 				this.reasonContent = e.detail.value
 			},
 			// 提交举报事件
-			confirmReport(){
-				AuthAction(()=>{
+			confirmReport() {
+				AuthAction(() => {
 					uni.showLoading({
 						title: '提交中...',
 						mask: true
@@ -202,7 +255,7 @@
 						url: getURL(`/report/save`),
 						method: 'POST',
 						header: {
-							token:getToken()
+							token: getToken()
 						},
 						data: {
 							report_uid: this.user.id,
@@ -210,15 +263,15 @@
 						},
 						success: res => {
 							let r = res.data
-							if(r == null) return
-							if(res.statusCode !=200){
+							if (r == null) return
+							if (res.statusCode != 200) {
 								uni.showToast({
 									title: r.msg,
 									icon: 'none'
 								});
 								return
 							}
-							
+
 							uni.showToast({
 								title: r.msg,
 								icon: 'none'
@@ -232,24 +285,24 @@
 						},
 						complete: () => {
 							uni.hideLoading()
-							setTimeout(()=>{
+							setTimeout(() => {
 								this.reportPopup?.$callMethod("close")
-							},400)
+							}, 400)
 						}
 					});
 				})
 			},
 			// 打开举报弹框
-			openReportPopup(){
+			openReportPopup() {
 				this.popup?.$callMethod("close")
 				this.reportPopup?.$callMethod("open")
 			},
-			refreshData(loadComplete : (() => void) | null){
-				(this.$refs["longPage"] as ComponentPublicInstance[])[this.tabIndex].$callMethod("refreshData",loadComplete)
+			refreshData(loadComplete : (() => void) | null) {
+				(this.$refs["longPage"] as ComponentPublicInstance[])[this.tabIndex].$callMethod("refreshData", loadComplete)
 			},
-			handleBlack(){
+			handleBlack() {
 				this.popup?.$callMethod("close")
-				if(this.isblacked){
+				if (this.isblacked) {
 					this.doBlack()
 					return
 				}
@@ -258,14 +311,14 @@
 					content: '拉黑后用户不能关注你，给你评论及@你，你也将不会再推荐此用户内容',
 					confirmText: '直接拉黑',
 					success: res => {
-						if(res.confirm){
+						if (res.confirm) {
 							this.doBlack()
 						}
 					},
 				});
 			},
-			doBlack(){
-				AuthAction(()=>{
+			doBlack() {
+				AuthAction(() => {
 					uni.showLoading({
 						title: '操作中...',
 						mask: true
@@ -275,26 +328,26 @@
 						url: getURL(`/${action}/${this.user.id}`),
 						method: 'POST',
 						header: {
-							token:getToken()
+							token: getToken()
 						},
 						success: res => {
 							let r = res.data
-							if(r == null) return
-							if(res.statusCode !=200){
+							if (r == null) return
+							if (res.statusCode != 200) {
 								uni.showToast({
 									title: r.msg,
 									icon: 'none'
 								});
 								return
 							}
-							
+
 							// 修改拉黑状态
 							this.isblacked = !this.isblacked
 							uni.showToast({
 								title: r.msg,
 								icon: 'none'
 							});
-							
+
 							// 刷新列表数据
 							this.refreshData(null)
 						},
@@ -310,24 +363,24 @@
 					});
 				})
 			},
-			openMore(){
+			openMore() {
 				this.popup?.$callMethod("open")
 			},
 			// 获取用户详情
-			loadUserDetail(){
+			loadUserDetail() {
 				uni.showLoading({
 					title: '加载中...',
 					mask: false
 				});
 				uni.request<Result<UserDetail2>>({
 					url: getURL(`/user_info/${this.user.id}`),
-					header:{
-						token:getToken()
+					header: {
+						token: getToken()
 					},
 					success: res => {
 						let r = res.data
-						if(r == null) return
-						if(res.statusCode !=200){
+						if (r == null) return
+						if (res.statusCode != 200) {
 							uni.showToast({
 								title: r.msg,
 								icon: 'none'
@@ -335,12 +388,12 @@
 							return
 						}
 						this.user = r.data as UserDetail2
-						if(this.user.name != null){
+						if (this.user.name != null) {
 							this.title = this.user.name as string
 						}
 						this.isfollow = this.user.isfollow as boolean
 						this.isblacked = this.user.isblacked as boolean
-						
+
 						this.loadData(this.tabIndex)
 					},
 					fail: (err) => {
@@ -350,7 +403,7 @@
 						});
 					},
 					complete: () => {
-						setTimeout(function() {
+						setTimeout(function () {
 							uni.hideLoading()
 						}, 200);
 					}
@@ -358,7 +411,7 @@
 			},
 			// 加载数据时调用
 			loadData(index : number) {
-				(this.$refs["longPage"] as ComponentPublicInstance[])[index].$callMethod("loadData",null)
+				(this.$refs["longPage"] as ComponentPublicInstance[])[index].$callMethod("loadData", null)
 			},
 			// 切换tab时调用
 			onSwiperChange(i : number) {
@@ -369,104 +422,121 @@
 </script>
 
 <style>
-.space-header {
-	flex-direction: row;
-	align-items: center;
-	padding: 35rpx;
-}
-.space-data {
-	flex-direction: row;
-	margin-bottom: 25rpx;
-}
-.space-data-item {
-	flex: 1;
-	justify-content: center;
-	align-items: center;
-}
-.space-data-value {
-	font-size: 22px;
-	color: #070707;
-	font-weight: bold;
-}
-.space-data-title {
-	font-size: 13px;
-	color: #101010;
-}
-.space-actions {
-	flex-direction: row;
-	justify-content: center;
-}
-.space-action-msg {
-	width: 65rpx;
-	height: 65rpx;
-	border-radius: 5px;
-	border: 1rpx solid #dedede;
-	align-items: center;
-	justify-content: center;
-	margin-left: 10rpx;
-}
-.space-action-msg-icon {
-	font-size: 20px;
-	color: #535353;
-}
-.space-info {
-	padding: 0 35rpx;
-	margin-top: 15rpx;
-	line-height: 1.5;
-	font-size: 15px;
-	color: #8e8e90;
-}
-.space-tags {
-	flex-direction: row;
-	padding: 0 35rpx;
-	margin-top: 15rpx;
-	margin-bottom: 20rpx;
-}
-.space-tag {
-	font-size: 12px;
-	border: 1rpx solid #e0e0e0;
-	border-radius: 50px;
-	padding: 10rpx 20rpx;
-	margin-right: 10rpx;
-}
-.more-popup {
-	height: 230rpx;
-	background-color: #f4f4f4;
-	flex-direction: row;
-}
-.more-item {
-	flex: 1;
-	align-items: center;
-	justify-content: center;
-}
-.more-item-icon {
-	font-size: 25px;
-	margin-bottom: 25rpx;
-	background-color: #ffffff;
-	width: 100rpx;
-	height: 100rpx;
-	text-align: center;
-	line-height: 100rpx;
-	border-radius: 50px;
-	color: #5a5a5a;
-}
-.reason-title {
-	font-size: 15px;
-	margin: 35rpx 30rpx;
-	color: #828282;
-}
-.reason-box {
-	flex-direction: row;
-	flex-wrap: wrap;
-}
-.reason-item {
-	width: 375rpx;
-	flex-direction: row;
-	padding-left: 30rpx;
-	padding-bottom: 35rpx;
-}
-.reason-item-text {
-	margin-left: 10rpx;
-	width: 260rpx;
-}
+	.space-header {
+		flex-direction: row;
+		align-items: center;
+		padding: 35rpx;
+	}
+
+	.space-data {
+		flex-direction: row;
+		margin-bottom: 25rpx;
+	}
+
+	.space-data-item {
+		flex: 1;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.space-data-value {
+		font-size: 22px;
+		color: #070707;
+		font-weight: bold;
+	}
+
+	.space-data-title {
+		font-size: 13px;
+		color: #101010;
+	}
+
+	.space-actions {
+		flex-direction: row;
+		justify-content: center;
+	}
+
+	.space-action-msg {
+		width: 65rpx;
+		height: 65rpx;
+		border-radius: 5px;
+		border: 1rpx solid #dedede;
+		align-items: center;
+		justify-content: center;
+		margin-left: 10rpx;
+	}
+
+	.space-action-msg-icon {
+		font-size: 20px;
+		color: #535353;
+	}
+
+	.space-info {
+		padding: 0 35rpx;
+		margin-top: 15rpx;
+		line-height: 1.5;
+		font-size: 15px;
+		color: #8e8e90;
+	}
+
+	.space-tags {
+		flex-direction: row;
+		padding: 0 35rpx;
+		margin-top: 15rpx;
+		margin-bottom: 20rpx;
+	}
+
+	.space-tag {
+		font-size: 12px;
+		border: 1rpx solid #e0e0e0;
+		border-radius: 50px;
+		padding: 10rpx 20rpx;
+		margin-right: 10rpx;
+	}
+
+	.more-popup {
+		height: 230rpx;
+		background-color: #f4f4f4;
+		flex-direction: row;
+	}
+
+	.more-item {
+		flex: 1;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.more-item-icon {
+		font-size: 25px;
+		margin-bottom: 25rpx;
+		background-color: #ffffff;
+		width: 100rpx;
+		height: 100rpx;
+		text-align: center;
+		line-height: 100rpx;
+		border-radius: 50px;
+		color: #5a5a5a;
+	}
+
+	.reason-title {
+		font-size: 15px;
+		margin: 35rpx 30rpx;
+		color: #828282;
+	}
+
+	.reason-box {
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+
+	.reason-item {
+		width: 375rpx;
+		flex-direction: row;
+		padding-left: 30rpx;
+		padding-bottom: 35rpx;
+	}
+
+	.reason-item-text {
+		margin-left: 10rpx;
+		width: 260rpx;
+	}
 </style>

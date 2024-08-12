@@ -2,6 +2,27 @@
 	<!-- #ifdef APP -->
 	<scroll-view style="flex:1">
 	<!-- #endif -->
+		<!-- 反馈列表 -->
+		<feedback-item v-for="(item,index) in List" :key="index" :item="item"></feedback-item>
+		
+		<!-- loading -->
+		<loading :circle="true" v-if="loading && List.length == 0"></loading>
+		
+		<view v-if="!isFirstLoad && List.length == 0" class="flex-1">
+			<tip />
+		</view>
+		
+		<!-- 用于滚动底部 -->
+		<view id="chat-bottom"></view>
+		
+		<navigator url="/pages/user-feedback-form/user-feedback-form">
+			<view class="feedback-action">
+				<text class="iconfont feedback-action-icon">{{ '\ue668' }}</text>
+				<text class="feedback-action-text">意见反馈</text>
+			</view>
+		</navigator>
+		
+		<view style="height: 95rpx;"></view>
 		
 	<!-- #ifdef APP -->
 	</scroll-view>
@@ -9,18 +30,121 @@
 </template>
 
 <script>
+	import { FeedbackItem,FeedbackItemResult,Result } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
 	export default {
 		data() {
 			return {
-				
+				List: [] as FeedbackItem[],
+				loading: false,
+				isEnded: false,
+				currentPage: 1,
+				isFirstLoad:true
 			}
 		},
+		onShow() {
+			this.refreshData(()=>{
+				// 回到底部
+				this.$nextTick(()=>{
+					this.goToBottom()
+				})
+			})
+		},
+		onPullDownRefresh() {
+			this.loadData(()=>{
+				uni.stopPullDownRefresh()
+			})
+		},
 		methods: {
-			
+			goToBottom(){
+				uni.pageScrollTo({
+					selector:"#chat-bottom",
+					duration: 100
+				})
+			},
+			refreshData(loadComplete : (() => void) | null) {
+				this.List.length = 0
+				this.currentPage = 1
+				this.isFirstLoad = true
+				this.isEnded = false
+				this.loading = false
+				this.loadData(loadComplete)
+			},
+			loadData(loadComplete : (() => void) | null) {
+				if (this.loading || this.isEnded) {
+					return
+				}
+				this.loading = true
+				uni.request<Result<FeedbackItemResult>>({
+					url: getURL(`/feedback/${Math.floor(this.currentPage)}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as FeedbackItemResult | null
+						if(resData == null) return
+						
+						// 倒序排序，最新的数据在下面
+						resData.data.sort((a:FeedbackItem,b:FeedbackItem):number => a.id - b.id)
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.List = resData.data
+						} else {
+							this.List = [ ...resData.data, ...this.List ]
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
 		}
 	}
 </script>
 
 <style>
-
+.feedback-action {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 95rpx;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	background-color: #ffffff;
+	border-top: 1px solid #eeeeee;
+}
+.feedback-action-icon {
+	margin-right: 20rpx;
+}
+.feedback-action-text {
+	font-size: 16px;
+}
 </style>

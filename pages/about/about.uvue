@@ -2,25 +2,81 @@
 	<!-- #ifdef APP -->
 	<scroll-view style="flex:1">
 	<!-- #endif -->
-		
+		<view class="app-logo">
+			<avatar src="/static/default-avatar.png" width="175rpx" height="175rpx"></avatar>
+			<text class="app-version">version {{ appVersion }}</text>
+		</view>
+		<cell title="新版本检测" @click="checkUpdate"></cell>
+		<cell title="用户协议" @click="openWebview(agreementUrl)"></cell>
+		<cell title="隐私政策" @click="openWebview(privacyUrl)"></cell>
+
+		<uni-upgrade-center-app ref="upgradePopup" />
+
 	<!-- #ifdef APP -->
 	</scroll-view>
 	<!-- #endif -->
 </template>
 
 <script>
+	import { UniUpgradeCenterResult } from "@/uni_modules/uni-upgrade-center-app/utils/call-check-version"
+	import checkUpdate from "@/uni_modules/uni-upgrade-center-app/utils/check-update"
+	import { agreementUrl, privacyUrl } from "@/common/config.uts"
 	export default {
 		data() {
 			return {
-				
+				appVersion: "",
+				agreementUrl: "",
+				privacyUrl: ""
 			}
 		},
+		onLoad() {
+			// 获取app版本信息
+			const res = uni.getAppBaseInfo()
+			this.appVersion = res.appVersion as string
+			this.agreementUrl = agreementUrl
+			this.privacyUrl = privacyUrl
+		},
 		methods: {
-			
+			// 检查更新
+			checkUpdate() {
+				uni.showLoading({
+					title: '请求中...',
+					mask: true
+				});
+				checkUpdate(this.$refs["upgradePopup"] as ComponentPublicInstance).catch((err)=>{
+					let e = JSON.parse<UTSJSONObject>(JSON.stringify(err))
+					if(e != null){
+						let title = e.get("message") as string
+						uni.showToast({
+							title,
+							icon: 'none'
+						});
+					}
+				})
+				.finally(()=>{
+					uni.hideLoading()
+				})
+			},
+			openWebview(url : string) {
+				uni.navigateTo({
+					url: '/pages/webview/webview?url=' + url,
+				});
+			},
 		}
 	}
 </script>
 
 <style>
+	.app-logo {
+		align-items: center;
+		justify-content: center;
+		padding-top: 60rpx;
+		padding-bottom: 50rpx;
+	}
 
+	.app-version {
+		margin-top: 25rpx;
+		font-size: 14px;
+		color: #0d0d0d;
+	}
 </style>

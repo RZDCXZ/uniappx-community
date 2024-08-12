@@ -5,9 +5,11 @@
 		</swiper-item>
 	</tabs-swiper>
 	<add-post-btn/>
+	<uni-upgrade-center-app ref="upgradePopup" />
 </template>
 
 <script>
+	import checkUpdate from "@/uni_modules/uni-upgrade-center-app/utils/check-update"
 	import type { articleNav,Result,onAddArticleSuccessEvent } from "@/common/type.uts"
 	import { getURL } from "@/common/request.uts"
 	import type { TabsSwiperItem } from '@/components/tabs-swiper/type.uts'
@@ -49,6 +51,9 @@
 		onLoad() {
 			this.loadTabs(null)
 			uni.$on("onAddArticleSuccess",this.onAddArticleSuccess)
+		},
+		onReady() {
+			checkUpdate(this.$refs["upgradePopup"] as ComponentPublicInstance)
 		},
 		onUnload() {
 			uni.$off("onAddArticleSuccess",this.onAddArticleSuccess)

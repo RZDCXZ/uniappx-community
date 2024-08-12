@@ -1,0 +1,99 @@
+<template>
+	<scroll-view class="chat-scroller" :scroll-with-animation="true">
+		<chat-item v-for="(item,index) in list" :key="index" :item="item"></chat-item>
+	</scroll-view>
+	<view class="chat-action">
+		<textarea :auto-focus="false" class="chat-input" :auto-height="true" v-model="content" placeholder="说几句吧"/>
+		<main-btn width="100rpx" height="60rpx" font-size="14px" :disabled="content == ''" style="margin-left: 10rpx;margin-bottom: 5rpx;" @click="send">发送</main-btn>
+	</view>
+</template>
+
+<script>
+	import { ChatItem } from "@/common/type.uts"
+	export default {
+		data() {
+			return {
+				content:"",
+				list: [{
+					"id": 96,
+					"user_id": 1873,
+					"target_id": 1630,
+					"is_revoke": 0,
+					"is_push": 1,
+					"type": "text",
+					"state": 100,
+					"body": "333",
+					"create_time": "2024-01-24 01:50:40",
+					"update_time": "2024-01-24 01:50:40",
+					"client_create_time": "2024-01-24 01:50:40",
+					"name": "哈哈哈",
+					"avatar": "http://sqapi2.dishawang.com/storage/uploads/a48a12a09a6654712f2d430d02dbc572.jpeg",
+					"conversation_id": 26
+				},
+				{
+					"id": 95,
+					"user_id": 1630,
+					"target_id": 7,
+					"is_revoke": 0,
+					"is_push": 1,
+					"type": "text",
+					"state": 100,
+					"body": "1222",
+					"create_time": "2024-01-24 01:50:34",
+					"update_time": "2024-01-24 01:50:34",
+					"client_create_time": "2024-01-24 01:50:33",
+					"name": "18999617599",
+					"avatar": null,
+					"conversation_id": 26
+				},
+				{
+					"id": 83,
+					"user_id": 1873,
+					"target_id": 7,
+					"is_revoke": 0,
+					"is_push": 1,
+					"type": "text",
+					"state": 100,
+					"body": "爱来",
+					"create_time": "2024-01-24 01:01:24",
+					"update_time": "2024-01-24 01:01:24",
+					"client_create_time": "2024-01-24 01:01:24",
+					"name": "18999617599",
+					"avatar": null,
+					"conversation_id": 26
+				}] as ChatItem[]
+			}
+		},
+		methods: {
+			send(){
+				
+			}
+		}
+	}
+</script>
+
+<style>
+	.chat-scroller {
+		flex: 1;
+		box-sizing: border-box;
+	}
+	.chat-action {
+		min-height: 95rpx;
+		flex-direction: row;
+		align-items: flex-end;
+		background-color: #ffffff;
+		border-top: 1px solid #eeeeee;
+		padding-left: 28rpx;
+		padding-right: 28rpx;
+		padding-bottom: 20rpx;
+		flex-shrink: 0;
+	}
+	.chat-input {
+		width: 590rpx;
+		background-color: #f4f4f4;
+		border-radius: 5px;
+		padding: 16rpx 20rpx;
+		margin-top: 20rpx;
+		max-height: 500rpx;
+	}
+</style>

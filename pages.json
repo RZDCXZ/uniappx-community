@@ -20,8 +20,8 @@
 			"path" : "pages/msg/msg",
 			"style" : 
 			{
-				"navigationBarTitleText" : "消息页",
-				"enablePullDownRefresh" : false
+				"navigationBarTitleText" : "消息列表",
+				"enablePullDownRefresh" : true
 			}
 		},
 		{
@@ -106,15 +106,15 @@
 			"path" : "pages/user-feedback/user-feedback",
 			"style" : 
 			{
-				"navigationBarTitleText" : "",
-				"enablePullDownRefresh" : false
+				"navigationBarTitleText" : "我的反馈",
+				"enablePullDownRefresh" : true
 			}
 		},
 		{
 			"path" : "pages/about/about",
 			"style" : 
 			{
-				"navigationBarTitleText" : "",
+				"navigationBarTitleText" : "关于社区",
 				"enablePullDownRefresh" : false
 			}
 		},
@@ -240,6 +240,21 @@
 			"style" : 
 			{
 				"navigationBarTitleText" : "选择话题"
+			}
+		},
+		{
+			"path" : "pages/user-feedback-form/user-feedback-form",
+			"style" : 
+			{
+				"navigationBarTitleText" : "",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path" : "pages/chat/chat",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
 			}
 		}
 	],

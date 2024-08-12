@@ -1,0 +1,108 @@
+import { websocketURL } from "@/common/config.uts"
+import { defaultResult } from '@/common/type.uts';
+import { getURL } from '@/common/request.uts';
+import { getToken } from '@/store/user.uts';
+// 连接状态
+export const isConnect = ref<boolean>(false)
+// 客户端ID
+const client_id = ref<string>("")
+// 在线状态
+export const isOnline = ref<boolean>(false)
+// 连接中
+export const onlining = ref<boolean>(false)
+
+// 打开websocket
+export function openSocket() {
+	// 绑定上线（防止用户处于离线状态）
+	handleBindOnline()
+	// 已连接，直接返回
+	if (isConnect.value) return
+	uni.connectSocket({
+		url: websocketURL
+	})
+	// 监听打开
+	uni.onSocketOpen((_) => {
+		console.log("已连接")
+		isConnect.value = true
+	})
+	// 监听关闭
+	uni.onSocketClose((res : OnSocketCloseCallbackResult) => {
+		// 已断开
+		isConnect.value = false
+		client_id.value = ""
+		isOnline.value = false
+		if (res.code == 1000) {
+			console.log("websocket已干净关闭，未尝试重新连接")
+		} else {
+			console.log("websocket意外断开，正在尝试重新连接")
+		}
+	})
+	// 监听失败
+	uni.onSocketError((res : OnSocketErrorCallbackResult) => {
+		// 已断开
+		isConnect.value = false
+		client_id.value = ""
+		isOnline.value = false
+		console.log("失败 socket")
+		console.log(res)
+	})
+
+	// 监听接收消息
+	uni.onSocketMessage((res : OnSocketMessageCallbackResult) => {
+		console.log("消息 socket")
+		let d = JSON.parse(res.data as string) as UTSJSONObject
+		const type = d.get("type") as string
+		switch (type) {
+			case "bind": // 绑定上线
+				client_id.value = d.get("data") as string
+				handleBindOnline()
+				break;
+		}
+	})
+}
+
+// 关闭socket
+export function closeSocket() {
+	uni.closeSocket({ code: 1000 })
+}
+
+// 绑定上线
+export function handleBindOnline() {
+	if (isConnect.value && client_id.value != '' && !isOnline.value && !onlining.value) {
+		onlining.value = true
+		const cid = client_id.value as string
+		uni.request<defaultResult>({
+			url: getURL("/im/bind_online"),
+			method: 'POST',
+			header: {
+				token: getToken()
+			},
+			data: {
+				client_id: cid
+			},
+			success: res => {
+				let r = res.data
+				if (r == null) return
+				// 请求失败
+				if (res.statusCode != 200) {
+					uni.showToast({
+						title: r.msg,
+						icon: 'none'
+					});
+					return
+				}
+				isOnline.value = true
+				console.log("用户上线")
+			},
+			fail: (err) => {
+				uni.showToast({
+					title: err.errMsg,
+					icon: 'none'
+				});
+			},
+			complete: () => {
+				onlining.value = false
+			}
+		});
+	}
+}

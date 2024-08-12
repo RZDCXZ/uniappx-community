@@ -1,0 +1,129 @@
+<template>
+	<navbar type="text" title="意见反馈">
+		<template #right>
+			<view class="navbar-right">
+				<main-btn :disabled="disabled" width="138rpx" height="60rpx" font-size="14px" @click="submit">提交反馈</main-btn>
+			</view>
+		</template>
+	</navbar>
+	<!-- #ifdef APP -->
+	<scroll-view style="flex:1;background-color: #f4f4f4;">
+	<!-- #endif -->
+		<view style="background-color: #ffffff;">
+			<textarea :auto-focus="true" :auto-height="true" v-model="content" placeholder="请说明具体问题(300字以内)~" class="add-textarea"></textarea>	
+			<upload-images ref="upload" style="margin-bottom: 60rpx;"></upload-images>
+			
+		</view>
+		
+	<!-- #ifdef APP -->
+	</scroll-view>
+	<!-- #endif -->
+</template>
+
+<script>
+	import { defaultResult } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+	export default {
+		data() {
+			return {
+				content:"",
+			}
+		},
+		computed: {
+			disabled(): boolean {
+				return this.content.length == 0
+			}
+		},
+		methods: {
+			submit(){
+				// 拿到上传组件节点
+				const uploadRef = this.$refs["upload"] as ComponentPublicInstance
+				// 判断是否还有图片正在上传
+				if(uploadRef.$callMethod("isUploading") as boolean){
+					uni.showToast({
+						title: '还有图片正在上传中...',
+						icon: 'none'
+					});
+					return
+				}
+				// 获取图片数组
+				let images = uploadRef.$callMethod("getValue") as string[]
+				// 请求参数
+				let data = {
+				  images,
+				  content:this.content
+				} as  UTSJSONObject
+				
+				uni.showLoading({
+					title: '提交中...',
+					mask: false
+				});
+				
+				uni.request<defaultResult>({
+					url: getURL("/feedback/save"),
+					method: 'POST',
+					data,
+					header:{
+						token:getToken()
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						
+						// 请求失败
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						uni.showToast({
+							title: r.msg,
+							icon: 'none'
+						});
+						
+						setTimeout(function() {
+							uni.navigateBack({
+								delta: 1
+							});
+						}, 300);
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						uni.hideLoading()
+					}
+				});
+			},
+		}
+	}
+</script>
+
+<style>
+.navbar-right {
+	height: 45px;
+	align-items: center;
+	justify-content: center;
+	margin-right: 34rpx;
+}
+.cell-tip {
+	color: #f0748a;
+	background-color: #fff1f6;
+	border-radius: 4px;
+	margin-left: 18rpx;
+	font-size: 13px;
+	padding: 5rpx 10rpx;
+}
+.add-textarea {
+	width: 750rpx;
+	max-height: 500rpx;
+	padding: 60rpx 30rpx;
+}
+</style>

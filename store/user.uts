@@ -1,5 +1,6 @@
 import type { UserDetail,Result } from "@/common/type.uts"
 import { getURL } from "@/common/request.uts"
+import { openSocket,closeSocket } from "@/common/socket.uts"
 // state
 export const userState = reactive({
 	"name": "",
@@ -40,6 +41,10 @@ export function login(data:UserDetail){
 	updateUserState(data)
 	uni.setStorageSync("user_info",data);
 	loginState.value = true
+	// 触发获取聊天会话列表
+	uni.$emit("onUpdateConversation",null)
+	// 打开websocket
+	openSocket()
 }
 
 // 更新用户状态
@@ -85,6 +90,9 @@ export function isLogin():boolean{
 export function initCurrentUser(){
 	// 获取缓存中的用户信息
 	getUserInfo(true)
+	if(loginState.value){
+		openSocket()
+	}
 }
 
 // 获取用户信息
@@ -155,6 +163,10 @@ export function logout(){
 	uni.removeStorageSync("user_token")
 	uni.removeStorageSync("user_info")
 	loginState.value = false
+	// 触发清除聊天会话列表
+	uni.$emit("onUpdateConversation",null)
+	// 关闭socket
+	closeSocket()
 }
 
 // 需要登录才能跳转

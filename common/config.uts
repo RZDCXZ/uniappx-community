@@ -1,6 +1,8 @@
 // 请求前缀
 export const baseURL = "http://sqapi2.dishawang.com/api/v1"
 
+export const websocketURL = "wss://sqapi2.dishawang.com/ws"
+
 // 用户协议
 export const agreementUrl = "http://sqapi2.dishawang.com/agreement"
 
