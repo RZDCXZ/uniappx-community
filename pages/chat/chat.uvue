@@ -1,72 +1,235 @@
 <template>
-	<scroll-view class="chat-scroller" :scroll-with-animation="true">
-		<chat-item v-for="(item,index) in list" :key="index" :item="item"></chat-item>
+	<scroll-view :scroll-top="scrollTop" class="chat-scroller" :scroll-with-animation="true" @scrolltolower="loadData(null)">
+		<view style="margin-top: auto;">
+			<chat-item v-for="(item,index) in list" :key="index" :item="item"></chat-item>
+			<view class="loadMore" v-if="list.length > 5">
+				<loading-more :isEnded="isEnded" :loading="loading"></loading-more>
+			</view>
+		</view>
 	</scroll-view>
 	<view class="chat-action">
-		<textarea :auto-focus="false" class="chat-input" :auto-height="true" v-model="content" placeholder="说几句吧"/>
-		<main-btn width="100rpx" height="60rpx" font-size="14px" :disabled="content == ''" style="margin-left: 10rpx;margin-bottom: 5rpx;" @click="send">发送</main-btn>
+		<textarea :auto-focus="false" class="chat-input" :auto-height="true" v-model="content" placeholder="说几句吧" />
+		<main-btn width="100rpx" height="60rpx" font-size="14px" :disabled="content == '' || sendLoading"
+			style="margin-left: 10rpx;margin-bottom: 5rpx;" @click="send">{{ sendLoading ? '发送中' : '发送' }}</main-btn>
 	</view>
 </template>
 
 <script>
-	import { ChatItem } from "@/common/type.uts"
+	import { ChatItem,ChatItemResult,Result,Conversation } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+	import { setCurrentConversation } from "@/common/socket.uts"
 	export default {
 		data() {
 			return {
-				content:"",
-				list: [{
-					"id": 96,
-					"user_id": 1873,
-					"target_id": 1630,
-					"is_revoke": 0,
-					"is_push": 1,
-					"type": "text",
-					"state": 100,
-					"body": "333",
-					"create_time": "2024-01-24 01:50:40",
-					"update_time": "2024-01-24 01:50:40",
-					"client_create_time": "2024-01-24 01:50:40",
-					"name": "哈哈哈",
-					"avatar": "http://sqapi2.dishawang.com/storage/uploads/a48a12a09a6654712f2d430d02dbc572.jpeg",
-					"conversation_id": 26
-				},
-				{
-					"id": 95,
-					"user_id": 1630,
-					"target_id": 7,
-					"is_revoke": 0,
-					"is_push": 1,
-					"type": "text",
-					"state": 100,
-					"body": "1222",
-					"create_time": "2024-01-24 01:50:34",
-					"update_time": "2024-01-24 01:50:34",
-					"client_create_time": "2024-01-24 01:50:33",
-					"name": "18999617599",
-					"avatar": null,
-					"conversation_id": 26
-				},
-				{
-					"id": 83,
-					"user_id": 1873,
-					"target_id": 7,
-					"is_revoke": 0,
-					"is_push": 1,
-					"type": "text",
-					"state": 100,
-					"body": "爱来",
-					"create_time": "2024-01-24 01:01:24",
-					"update_time": "2024-01-24 01:01:24",
-					"client_create_time": "2024-01-24 01:01:24",
-					"name": "18999617599",
-					"avatar": null,
-					"conversation_id": 26
-				}] as ChatItem[]
+				content: "",
+				list: [] as ChatItem[],
+				isEnded: false,
+				loading: false,
+				currentPage: 1,
+				sendLoading: false,
+				scrollTop:0,
+				id:0,
+				target_id:0
 			}
 		},
+		onLoad(options:OnLoadOptions) {
+			// 会话ID
+			if(options.has("id")){
+				this.id = parseInt(options.get("id") as string)
+			}
+			// 聊天对象ID
+			if(options.has("target_id")){
+				this.target_id = parseInt(options.get("target_id") as string)
+			}
+			// 页面标题
+			if(options.has("title")){
+				const title = options.get("title") as string
+				uni.setNavigationBarTitle({
+					title
+				})
+			}
+			// 设置当前聊天对象
+			setCurrentConversation(this.id, this.target_id)
+			// 获取聊天记录
+			this.refreshData(null)
+			// 监听接收信息
+			uni.$on("onMessage",this.onMessage)
+			// 更新未读数
+			this.read()
+		},
+		onUnload() {
+			// 删除当前聊天对象
+			setCurrentConversation(0, 0)
+			uni.$off("onMessage",this.onMessage)
+		},
 		methods: {
-			send(){
-				
+			// 接收消息
+			onMessage(e:ChatItem){
+				console.log("onMessage",e)
+				// 属于当前会话，直接添加数据
+				if(e.conversation_id == this.id){
+					// 将数据渲染到页面
+					this.addMessage(e)
+					// 更新未读数
+					this.read()
+				}
+			},
+			// 更新未读数
+			read(){
+				uni.request<Result<Conversation>>({
+					url: getURL(`/im/read_conversation/${this.id}`),
+					method: 'POST',
+					header:{
+						token:getToken()
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						const resData = r.data as Conversation | null
+						if(resData == null) return
+						// 通知聊天会话列表更新未读数
+						uni.$emit("onUpdateNoReadCount",resData.id)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+				});
+			},
+			refreshData(loadComplete : (() => void) | null) {
+				this.list.length = 0
+				this.currentPage = 1
+				this.isEnded = false
+				this.loading = false
+				this.loadData(loadComplete)
+			},
+			loadData(loadComplete : (() => void) | null) {
+				if (this.loading || this.isEnded) {
+					return
+				}
+				this.loading = true
+				uni.request<Result<ChatItemResult>>({
+					url: getURL(`/im/${this.id}/message/${Math.floor(this.currentPage)}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as ChatItemResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.list = resData.data
+						} else {
+							this.list.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
+			send() {
+				this.sendLoading = true
+
+				uni.request<Result<ChatItem>>({
+					url:getURL("/im/send"),
+					method:"POST",
+					header:{
+						token:getToken()
+					},
+					data: {
+						target_id:this.target_id,
+						type:"text",
+						body:this.content,
+						client_create_time: Date.now()
+					},
+					success:(res)=>{
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						if(r.data == null) return
+						let d = r.data as ChatItem
+						/**
+						 * 消息状态state：
+						 * 100 发送成功
+						 * 101 对方已把你拉黑
+						 * 102 你把对方拉黑了
+						 * 103 对方已被系统封禁
+						 * 104 禁止发送（内容不合法）
+						 */
+						if(d.state != 100){
+							let title = d.state_text != null ? d.state_text as string : '发送失败'
+							uni.showToast({
+								title,
+								icon: 'none'
+							});
+						}
+						
+						this.addMessage(d)
+						this.content = ""
+					},
+					fail:(err)=>{
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete:()=>{
+						this.sendLoading = false
+					}
+				})
+			},
+			// 添加数据
+			addMessage(e:ChatItem){
+				// 将最新的数据追加到列表头部
+				this.list.unshift(e)
+				this.goToBottom()
+			},
+			// 滚动到底部
+			goToBottom(){
+				setTimeout(()=>{
+					this.scrollTop = this.scrollTop == 1 ? 0 : 1
+				},300)
 			}
 		}
 	}
@@ -76,7 +239,13 @@
 	.chat-scroller {
 		flex: 1;
 		box-sizing: border-box;
+		transform: rotate(180deg);
 	}
+
+	.loadMore {
+		transform: rotate(180deg);
+	}
+
 	.chat-action {
 		min-height: 95rpx;
 		flex-direction: row;
@@ -88,6 +257,7 @@
 		padding-bottom: 20rpx;
 		flex-shrink: 0;
 	}
+
 	.chat-input {
 		width: 590rpx;
 		background-color: #f4f4f4;

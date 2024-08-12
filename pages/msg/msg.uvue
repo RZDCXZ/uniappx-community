@@ -42,6 +42,7 @@
 			this.refreshData(null)
 			// 监听会话变化
 			uni.$on("onUpdateConversation",this.onUpdateConversation)
+			uni.$on("onUpdateNoReadCount",this.onUpdateNoReadCount)
 		},
 		onShow(){
 			if(this.loginState){
@@ -50,6 +51,7 @@
 		},
 		onUnload() {
 			uni.$off("onUpdateConversation",this.onUpdateConversation)
+			uni.$off("onUpdateNoReadCount",this.onUpdateNoReadCount)
 		},
 		onPullDownRefresh() {
 			this.refreshData(()=>{
@@ -70,6 +72,12 @@
 			}
 		},
 		methods: {
+			onUpdateNoReadCount(id:number){
+				let item = this.list.find((o:Conversation):boolean => o.id == id)
+				if(item != null){
+					item.unread_count = 0
+				}
+			},
 			// 监听会话变化
 			onUpdateConversation(e:Conversation | null){
 				// 登录或者退出触发

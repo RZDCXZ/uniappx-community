@@ -39,6 +39,9 @@
 </script>
 
 <style>
+.chatlist {
+	transform: rotate(180deg);
+}
 .chat-time {
 	text-align: center;
 	color: #898989;

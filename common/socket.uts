@@ -1,5 +1,5 @@
 import { websocketURL } from "@/common/config.uts"
-import { defaultResult } from '@/common/type.uts';
+import { defaultResult,ChatItem,Conversation } from '@/common/type.uts';
 import { getURL } from '@/common/request.uts';
 import { getToken } from '@/store/user.uts';
 // 连接状态
@@ -10,35 +10,51 @@ const client_id = ref<string>("")
 export const isOnline = ref<boolean>(false)
 // 连接中
 export const onlining = ref<boolean>(false)
+// 当前聊天会话ID
+export const current_conversation_id = ref<number>(0)
+// 当前聊天对象ID
+export const current_target_id = ref<number>(0)
+// 总未读数
+export const total_unread_count = ref<number>(0)
+
+// 设置当前会话信息
+export function setCurrentConversation(conversation_id : number, target_id : number){
+	current_conversation_id.value = conversation_id
+	current_target_id.value = target_id
+	
+}
 
 // 打开websocket
-export function openSocket() {
+export function openSocket(){
 	// 绑定上线（防止用户处于离线状态）
 	handleBindOnline()
 	// 已连接，直接返回
-	if (isConnect.value) return
+	if(isConnect.value) return
 	uni.connectSocket({
-		url: websocketURL
+		url:websocketURL
 	})
 	// 监听打开
-	uni.onSocketOpen((_) => {
+	uni.onSocketOpen((_)=>{
 		console.log("已连接")
 		isConnect.value = true
+		// 重置重连次数
+		resetReconnectAttempts()
 	})
 	// 监听关闭
-	uni.onSocketClose((res : OnSocketCloseCallbackResult) => {
+	uni.onSocketClose((res:OnSocketCloseCallbackResult)=>{
 		// 已断开
 		isConnect.value = false
 		client_id.value = ""
 		isOnline.value = false
-		if (res.code == 1000) {
+		if(res.code == 1000){
 			console.log("websocket已干净关闭，未尝试重新连接")
 		} else {
 			console.log("websocket意外断开，正在尝试重新连接")
+			reconnect()
 		}
 	})
 	// 监听失败
-	uni.onSocketError((res : OnSocketErrorCallbackResult) => {
+	uni.onSocketError((res:OnSocketErrorCallbackResult)=>{
 		// 已断开
 		isConnect.value = false
 		client_id.value = ""
@@ -46,45 +62,67 @@ export function openSocket() {
 		console.log("失败 socket")
 		console.log(res)
 	})
-
+	
 	// 监听接收消息
-	uni.onSocketMessage((res : OnSocketMessageCallbackResult) => {
+	uni.onSocketMessage((res:OnSocketMessageCallbackResult)=>{
 		console.log("消息 socket")
 		let d = JSON.parse(res.data as string) as UTSJSONObject
 		const type = d.get("type") as string
-		switch (type) {
+		switch (type){
 			case "bind": // 绑定上线
-				client_id.value = d.get("data") as string
-				handleBindOnline()
+			client_id.value = d.get("data") as string
+			handleBindOnline()
+				break;
+			case "message": // 接收消息
+			let data2 = JSON.parse<ChatItem>(JSON.stringify(d.get("data")))
+			uni.$emit("onMessage",data2)
+				break;
+			case "conversation": // 更新会话列表
+			let data1 = JSON.parse<Conversation>(JSON.stringify(d.get("data")))
+			uni.$emit('onUpdateConversation',data1)
+				break;
+			case "total_unread_count": // 总未读数更新
+			total_unread_count.value = d.get("data") as number
+			let total = total_unread_count.value
+			if(total > 0){
+				uni.setTabBarBadge({
+					index:2,
+					text:total > 99 ? "99+" : total.toString()
+				})
+			} else {
+				uni.removeTabBarBadge({
+					index: 2
+				})
+			}
 				break;
 		}
 	})
 }
 
 // 关闭socket
-export function closeSocket() {
-	uni.closeSocket({ code: 1000 })
+export function closeSocket(){
+	uni.closeSocket({ code:1000 })
 }
 
 // 绑定上线
-export function handleBindOnline() {
-	if (isConnect.value && client_id.value != '' && !isOnline.value && !onlining.value) {
+export function handleBindOnline(){
+	if(isConnect.value && client_id.value != '' && !isOnline.value && !onlining.value){
 		onlining.value = true
 		const cid = client_id.value as string
 		uni.request<defaultResult>({
 			url: getURL("/im/bind_online"),
 			method: 'POST',
 			header: {
-				token: getToken()
+				token:getToken()
 			},
 			data: {
-				client_id: cid
+				client_id:cid
 			},
 			success: res => {
 				let r = res.data
-				if (r == null) return
+				if(r == null) return
 				// 请求失败
-				if (res.statusCode != 200) {
+				if(res.statusCode != 200){
 					uni.showToast({
 						title: r.msg,
 						icon: 'none'
@@ -105,4 +143,48 @@ export function handleBindOnline() {
 			}
 		});
 	}
+}
+
+
+// 已经重连次数
+let reconnectAttemptCount = ref<number>(0)
+// 最大自动重连数
+let reconnectAttempts = 5
+// 重连倒计时定时器
+let reconnectInterval = 0
+
+function reconnect():void {
+	console.log("重连中...")
+	// 如果没有超过最大重连数，继续
+	if(reconnectAttemptCount.value < reconnectAttempts){
+		// 重连次数+1
+		reconnectAttemptCount.value++
+		// 延迟重连
+		reconnectInterval = setTimeout(()=>{
+			openSocket()
+		}, getReconnectDelay(reconnectAttemptCount.value))
+	} else {
+		console.log("已经达到最大重连尝试次数")
+	}
+}
+
+// 获取重连倒计时
+function getReconnectDelay(attempt:number) : number {
+	// 最小延迟时间（毫秒）
+	const baseDelay = 1000;
+	// 最大延迟时间（毫秒）
+	const maxDelay = 10000;
+	// 根据已经重连次数，计算出本次重连倒计时
+	const delay = baseDelay * (2 * attempt) + Math.random() * 1000
+	// 取最小值
+	return Math.min(delay,maxDelay)
+}
+
+// 重置重连次数
+function resetReconnectAttempts():void {
+	if(reconnectInterval > 0){
+		clearInterval(reconnectInterval)
+		reconnectInterval = 0
+	}
+	reconnectAttemptCount.value = 0
 }

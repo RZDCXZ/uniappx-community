@@ -303,5 +303,14 @@ export type ChatItem = {
 	client_create_time: string | null;
 	name: string | null;
 	avatar: string | null;
-	conversation_id: number;
+	conversation_id: number | null;
+	state_text: string | null;
+}
+
+export type ChatItemResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: ChatItem[]
 }
