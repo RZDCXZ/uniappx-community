@@ -1,0 +1,399 @@
+
+	import { getToken } from "@/store/user"
+	import { getURL } from "@/common/request.uts"
+	import type { Result,ListItem,ListResult,onAddArticleSuccessEvent } from "@/common/type.uts"
+	type tab = { __$originalPosition: UTSSourceMapPosition<"tab", "pages/topic-detail/topic-detail.uvue", 54, 7>;
+		type:string,
+		name:string,
+		id:string
+	}
+	
+	type TopicDetail = { __$originalPosition: UTSSourceMapPosition<"TopicDetail", "pages/topic-detail/topic-detail.uvue", 60, 7>;
+		id: number;
+		title: string;
+		cover: string;
+		desc: string;
+		create_time: string | null;
+		update_time: string | null;
+		category_id: number;
+		article_count: number;
+		today_article_count: number;
+		category_name: string | null;
+	}
+	
+	export default {
+		data() {
+			return {
+				// 状态栏高度
+				statusBarHeight:0,
+				marginTop:0,
+				
+				// 封面和介绍高度
+				$headerHeight:0,
+				// 导航栏dom
+				$navbarView: null as UniElement | null,
+				// 导航栏标题dom
+				$navbarTitle: null as UniElement | null,
+				
+				// tabbar选项
+				tabs:[{
+					type:"hot",
+					name:"热门",
+					id:"hot"
+				},{
+					type:"new",
+					name:"最新",
+					id:"new"
+				}] as tab[],
+				tabActiveId:"hot",
+				
+				topic:{
+					"id": 0,
+					"title": "",
+					"cover": "",
+					"desc": "",
+					"create_time": null,
+					"update_time": "",
+					"category_id": 7,
+					"article_count": 0,
+					"today_article_count": 0,
+					"category_name": "分类"
+				} as TopicDetail,
+				
+				// 帖子列表
+				list:[] as ListItem[],
+				
+				page:1,
+				isEnded:false,
+				loading:false,
+				
+				// 当前滚动高度
+				currentScrollTop:0,
+				// 滚动位置
+				scrollTop:0
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			this.statusBarHeight = uni.getSystemInfoSync().statusBarHeight
+			this.marginTop = this.statusBarHeight + 45
+			
+			// 获取当前话题ID
+			if(options.has("id")){
+				this.topic.id = parseInt(options.get("id") as string)
+				this.loadTopicDetail()
+				// 加载列表
+				this.loadList(null)
+			}
+			uni.$on("onAddArticleSuccess",this.onAddArticleSuccess)
+		},
+		onUnload() {
+			uni.$off("onAddArticleSuccess",this.onAddArticleSuccess)
+		},
+		onReady() {
+			this.$navbarView = this.$refs["navbar"] as UniElement
+			this.$navbarTitle = this.$refs["navbarTitle"] as UniElement
+			
+			this.$headerHeight = (this.$refs["header"] as UniElement).offsetHeight
+		},
+		// 触发下拉刷新
+		onPullDownRefresh() {
+			this.refreshData(()=>{
+				uni.showToast({
+					title: '刷新成功',
+					icon: 'none'
+				});
+				uni.stopPullDownRefresh()
+			})
+		},
+		methods: {
+			// 监听发帖成功事件，刷新对应的页面
+			onAddArticleSuccess(_:onAddArticleSuccessEvent){
+				this.loadTopicDetail()
+				// 加载列表
+				this.loadList(null)
+			},
+			// 刷新数据
+			refreshData(loadComplete: (()=>void) | null ){
+				// 清空数据，返回第一页
+				this.list.length = 0
+				this.page = 1
+				this.isEnded = false
+				this.loadList(loadComplete)
+			},
+			// 上拉加载更多
+			loadMore(){
+				if(this.loading || this.isEnded) return
+				this.loadList(null)
+			},
+			// 加载帖子列表
+			loadList(loadComplete: (()=>void) | null ){
+				// 开启上拉加载状态
+				this.loading = true
+				uni.request<Result<ListResult>>({
+					url: getURL(`/topic/${this.topic.id}/article/${this.page}?order=${this.tabActiveId}`),
+					header:{
+						token:getToken()
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as ListResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.page == 1){
+							this.list = resData.data
+						} else {
+							this.list.push(...resData.data)
+						}
+						// console.log(resData.data)
+						
+						// 页码+1
+						this.page = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						// uni.hideLoading()
+						if(loadComplete != null){
+							loadComplete()
+						}
+					}
+				});
+			},
+			// 获取话题详情
+			loadTopicDetail(){
+				uni.showLoading({
+					title: '加载中...',
+					mask: false
+				});
+				uni.request<Result<TopicDetail>>({
+					url: getURL(`/topic/${this.topic.id}`),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						this.topic = r.data as TopicDetail
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						setTimeout(function() {
+							uni.hideLoading()
+						}, 200);
+					}
+				});
+			},
+			// 切换tab选项
+			onTabClick(id:string){
+				if(this.tabActiveId == id){
+					return
+				}
+				this.tabActiveId = id
+				
+				// 重置页码
+				this.page = 1
+				this.isEnded = false
+				this.list.length = 0
+				
+				// 确定滚动的高度
+				let h = this.$headerHeight
+				if(this.currentScrollTop > h){
+					// 拿到dom节点，控制css样式
+					let bannerRef = this.$refs["banner"] as UniElement
+					
+					// 先把图片变透明
+					bannerRef.style.setProperty("opacity",0)
+					
+					this.$nextTick(()=>{
+						this.scrollTop = this.scrollTop == h ? h+1 : h
+						
+						// 倒计时200毫秒之后再显示，确保滚动完
+						setTimeout(()=>{
+							bannerRef.style.setProperty("opacity",1)
+						},200)
+					})
+				}
+				
+				// 请求列表
+				this.loadList(null)
+			},
+			back(){
+				uni.navigateBack({
+					delta: 1
+				});
+			},
+			handleScroll(e:UniScrollEvent){
+				const scrollTop = e.detail.scrollTop
+				this.currentScrollTop = scrollTop
+				// 渐变导航栏初始透明度
+				const colorStart = 0.8
+				const colorEnd = 0
+				
+				// 第一个渐变色透明度变化
+				let colorStartChange = 1 - (1-colorStart)/this.$headerHeight * (this.$headerHeight - scrollTop)
+				if(colorStartChange > 1){
+					colorStartChange = 1
+				}
+				
+				// 第二个渐变色透明度变化
+				let colorEndChange = 1 - (1-colorEnd)/this.$headerHeight * (this.$headerHeight - scrollTop)
+				if(colorEndChange > 1){
+					colorEndChange = 1
+				}
+				
+				// 控制导航栏渐变色变化
+				this.$navbarView?.style?.setProperty("background-image",`linear-gradient(to bottom,rgba(255,255,255,${colorStartChange}),rgba(255,255,255,${colorEndChange}))`)
+				
+				// 控制标题显示
+				// this.$navbarTitle?.style?.setProperty("display",colorEndChange == 1 ? "flex" : "none")
+				this.$navbarTitle?.style?.setProperty("opacity",colorEndChange == 1 ? 1 : 0)
+				
+			}
+		}
+	}
+
+
+import _easycom_loading from '@/components/loading/loading.uvue'
+import _easycom_tip from '@/components/tip/tip.uvue'
+import _easycom_article_list_item from '@/components/article-list-item/article-list-item.uvue'
+import _easycom_loading_more from '@/components/loading-more/loading-more.uvue'
+import _easycom_add_post_btn from '@/components/add-post-btn/add-post-btn.uvue'
+function GenPagesTopicDetailTopicDetailRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_loading = resolveEasyComponent("loading",_easycom_loading)
+const _component_tip = resolveEasyComponent("tip",_easycom_tip)
+const _component_article_list_item = resolveEasyComponent("article-list-item",_easycom_article_list_item)
+const _component_loading_more = resolveEasyComponent("loading-more",_easycom_loading_more)
+const _component_add_post_btn = resolveEasyComponent("add-post-btn",_easycom_add_post_btn)
+
+  return createElementVNode(Fragment, null, [
+    createElementVNode("list-view", utsMapOf({
+      class: "flex-1",
+      onScroll: _ctx.handleScroll,
+      onScrolltolower: _ctx.loadMore,
+      "scroll-top": _ctx.scrollTop
+    }), [
+      createElementVNode("sticky-header", null, [
+        createElementVNode("view", utsMapOf({
+          ref: "navbar",
+          class: "navbar"
+        }), [
+          createElementVNode("view", utsMapOf({
+            style: normalizeStyle('height:' + _ctx.statusBarHeight + 'px;')
+          }), null, 4 /* STYLE */),
+          createElementVNode("view", utsMapOf({ class: "navbar-box" }), [
+            createElementVNode("view", utsMapOf({
+              class: "navbar-icon",
+              onClick: _ctx.back
+            }), [
+              createElementVNode("text", utsMapOf({ class: "iconfont" }), toDisplayString('\ue60d'))
+            ], 8 /* PROPS */, ["onClick"]),
+            createElementVNode("text", utsMapOf({
+              ref: "navbarTitle",
+              class: "navbar-title"
+            }), "话题标题", 512 /* NEED_PATCH */)
+          ])
+        ], 512 /* NEED_PATCH */)
+      ]),
+      createElementVNode("list-item", utsMapOf({
+        ref: "header",
+        style: normalizeStyle(['margin-top: -'+_ctx.marginTop+'px;', utsMapOf({"height":"590rpx"})]),
+        type: 1
+      }), [
+        createElementVNode("image", utsMapOf({
+          ref: "banner",
+          class: "banner-img",
+          src: _ctx.topic.cover,
+          mode: "aspectFill"
+        }), null, 8 /* PROPS */, ["src"]),
+        createElementVNode("view", utsMapOf({ class: "topic-title-box" }), [
+          createElementVNode("text", utsMapOf({ class: "topic-title" }), toDisplayString(_ctx.topic.title), 1 /* TEXT */),
+          createElementVNode("text", utsMapOf({ class: "topic-nav" }), toDisplayString(_ctx.topic.category_name), 1 /* TEXT */)
+        ]),
+        createElementVNode("text", utsMapOf({ class: "topic-desc" }), toDisplayString(_ctx.topic.desc), 1 /* TEXT */),
+        createElementVNode("text", utsMapOf({ class: "topic-info" }), "动态：" + toDisplayString(_ctx.topic.article_count) + "条 · 今日：" + toDisplayString(_ctx.topic.today_article_count) + "条", 1 /* TEXT */),
+        createElementVNode("view", utsMapOf({ class: "divider" }))
+      ], 4 /* STYLE */),
+      createElementVNode("sticky-header", null, [
+        createElementVNode("view", utsMapOf({ class: "tab" }), [
+          createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.tabs, (item, index, _, _): VNode => {
+            return createElementVNode("text", utsMapOf({
+              class: normalizeClass(["tab-item", _ctx.tabActiveId == item.id ? 'tab-item-active' : '']),
+              key: index,
+              onClick: () => {_ctx.onTabClick(item.id)}
+            }), toDisplayString(item.name), 11 /* TEXT, CLASS, PROPS */, ["onClick"])
+          }), 128 /* KEYED_FRAGMENT */)
+        ])
+      ]),
+      _ctx.list.length == 0
+        ? createElementVNode("list-item", utsMapOf({
+            key: 0,
+            style: normalizeStyle(utsMapOf({"height":"1200px"})),
+            type: 2
+          }), [
+            createElementVNode("view", utsMapOf({
+              style: normalizeStyle(utsMapOf({"height":"400px"}))
+            }), [
+              isTrue(_ctx.loading)
+                ? createVNode(_component_loading, utsMapOf({
+                    key: 0,
+                    circle: true
+                  }))
+                : createVNode(_component_tip, utsMapOf({
+                    key: 1,
+                    title: "暂无数据~"
+                  }))
+            ], 4 /* STYLE */)
+          ], 4 /* STYLE */)
+        : createCommentVNode("v-if", true),
+      createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.list, (item, index, _, _): VNode => {
+        return createElementVNode("list-item", utsMapOf({
+          key: index,
+          type: 0
+        }), [
+          createVNode(_component_article_list_item, utsMapOf({
+            inTopicDetail: true,
+            item: item
+          }), null, 8 /* PROPS */, ["item"])
+        ])
+      }), 128 /* KEYED_FRAGMENT */),
+      createElementVNode("list-item", utsMapOf({ type: 4 }), [
+        createVNode(_component_loading_more, utsMapOf({
+          loading: _ctx.loading,
+          isEnded: _ctx.isEnded
+        }), null, 8 /* PROPS */, ["loading", "isEnded"])
+      ])
+    ], 40 /* PROPS, NEED_HYDRATION */, ["onScroll", "onScrolltolower", "scroll-top"]),
+    createVNode(_component_add_post_btn, utsMapOf({
+      topic_id: _ctx.topic.id,
+      topic_title: _ctx.topic.title
+    }), null, 8 /* PROPS */, ["topic_id", "topic_title"])
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenPagesTopicDetailTopicDetailStyles = [utsMapOf([["navbar", padStyleMapOf(utsMapOf([["backgroundImage", "linear-gradient(to bottom,rgba(255,255,255,0.8),rgba(255,255,255,0))"]]))], ["navbar-box", padStyleMapOf(utsMapOf([["height", 45], ["flexDirection", "row"], ["alignItems", "center"]]))], ["navbar-icon", padStyleMapOf(utsMapOf([["width", 45], ["height", 45], ["alignItems", "center"], ["justifyContent", "center"]]))], ["navbar-title", padStyleMapOf(utsMapOf([["opacity", 0]]))], ["banner-img", padStyleMapOf(utsMapOf([["height", "335rpx"], ["width", "750rpx"]]))], ["topic-title-box", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["justifyContent", "space-between"], ["alignItems", "center"], ["marginTop", "30rpx"], ["paddingTop", 0], ["paddingRight", "35rpx"], ["paddingBottom", 0], ["paddingLeft", "35rpx"]]))], ["topic-title", padStyleMapOf(utsMapOf([["fontSize", 19], ["fontWeight", "bold"], ["color", "#202020"]]))], ["topic-nav", padStyleMapOf(utsMapOf([["backgroundColor", "#fff1f4"], ["color", "#f96a88"], ["fontSize", 14], ["borderRadius", 5], ["paddingTop", "10rpx"], ["paddingRight", "10rpx"], ["paddingBottom", "10rpx"], ["paddingLeft", "10rpx"]]))], ["topic-desc", padStyleMapOf(utsMapOf([["color", "#888888"], ["fontSize", 16], ["marginTop", "20rpx"], ["paddingTop", 0], ["paddingRight", "35rpx"], ["paddingBottom", 0], ["paddingLeft", "35rpx"]]))], ["topic-info", padStyleMapOf(utsMapOf([["fontSize", 13], ["color", "#000000"], ["marginTop", "30rpx"], ["marginRight", 0], ["marginBottom", "30rpx"], ["marginLeft", 0], ["paddingTop", 0], ["paddingRight", "35rpx"], ["paddingBottom", 0], ["paddingLeft", "35rpx"]]))], ["tab", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["justifyContent", "center"], ["alignItems", "stretch"], ["backgroundColor", "#ffffff"]]))], ["tab-item", padStyleMapOf(utsMapOf([["color", "#414141"], ["fontSize", 17], ["paddingTop", 12], ["paddingRight", 25], ["paddingBottom", 12], ["paddingLeft", 25]]))], ["tab-item-active", padStyleMapOf(utsMapOf([["color", "#f96a88"]]))]])]

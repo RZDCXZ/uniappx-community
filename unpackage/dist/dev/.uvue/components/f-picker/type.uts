@@ -1,0 +1,6 @@
+export type datepickerChangeEvent = {
+	year:number
+	month:number
+	day:number
+	label:string
+}

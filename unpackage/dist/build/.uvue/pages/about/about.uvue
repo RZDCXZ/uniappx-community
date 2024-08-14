@@ -1,0 +1,86 @@
+
+	import { UniUpgradeCenterResult } from "@/uni_modules/uni-upgrade-center-app/utils/call-check-version"
+	import checkUpdate from "@/uni_modules/uni-upgrade-center-app/utils/check-update"
+	import { agreementUrl, privacyUrl } from "@/common/config.uts"
+	export default {
+		data() {
+			return {
+				appVersion: "",
+				agreementUrl: "",
+				privacyUrl: ""
+			}
+		},
+		onLoad() {
+			// 获取app版本信息
+			const res = uni.getAppBaseInfo()
+			this.appVersion = res.appVersion as string
+			this.agreementUrl = agreementUrl
+			this.privacyUrl = privacyUrl
+		},
+		methods: {
+			// 检查更新
+			checkUpdate() {
+				uni.showLoading({
+					title: '请求中...',
+					mask: true
+				});
+				checkUpdate(this.$refs["upgradePopup"] as ComponentPublicInstance).catch((err)=>{
+					let e = JSON.parse<UTSJSONObject>(JSON.stringify(err))
+					if(e != null){
+						let title = e.get("message") as string
+						uni.showToast({
+							title,
+							icon: 'none'
+						});
+					}
+				})
+				.finally(()=>{
+					uni.hideLoading()
+				})
+			},
+			openWebview(url : string) {
+				uni.navigateTo({
+					url: '/pages/webview/webview?url=' + url,
+				});
+			},
+		}
+	}
+
+
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+import _easycom_cell from '@/components/cell/cell.uvue'
+import _easycom_uni_upgrade_center_app from '@/uni_modules/uni-upgrade-center-app/components/uni-upgrade-center-app/uni-upgrade-center-app.uvue'
+function GenPagesAboutAboutRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+const _component_cell = resolveEasyComponent("cell",_easycom_cell)
+const _component_uni_upgrade_center_app = resolveEasyComponent("uni-upgrade-center-app",_easycom_uni_upgrade_center_app)
+
+  return createElementVNode("scroll-view", utsMapOf({
+    style: normalizeStyle(utsMapOf({"flex":"1"}))
+  }), [
+    createElementVNode("view", utsMapOf({ class: "app-logo" }), [
+      createVNode(_component_avatar, utsMapOf({
+        src: "/static/default-avatar.png",
+        width: "175rpx",
+        height: "175rpx"
+      })),
+      createElementVNode("text", utsMapOf({ class: "app-version" }), "version " + toDisplayString(_ctx.appVersion), 1)
+    ]),
+    createVNode(_component_cell, utsMapOf({
+      title: "新版本检测",
+      onClick: _ctx.checkUpdate
+    }), null, 8, ["onClick"]),
+    createVNode(_component_cell, utsMapOf({
+      title: "用户协议",
+      onClick: () => {_ctx.openWebview(_ctx.agreementUrl)}
+    }), null, 8, ["onClick"]),
+    createVNode(_component_cell, utsMapOf({
+      title: "隐私政策",
+      onClick: () => {_ctx.openWebview(_ctx.privacyUrl)}
+    }), null, 8, ["onClick"]),
+    createVNode(_component_uni_upgrade_center_app, utsMapOf({ ref: "upgradePopup" }), null, 512)
+  ], 4)
+}
+const GenPagesAboutAboutStyles = [utsMapOf([["app-logo", padStyleMapOf(utsMapOf([["alignItems", "center"], ["justifyContent", "center"], ["paddingTop", "60rpx"], ["paddingBottom", "50rpx"]]))], ["app-version", padStyleMapOf(utsMapOf([["marginTop", "25rpx"], ["fontSize", 14], ["color", "#0d0d0d"]]))]])]

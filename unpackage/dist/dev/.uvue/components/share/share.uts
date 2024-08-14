@@ -1,0 +1,25 @@
+
+import Intent from 'android.content.Intent';
+
+export default function share(text:string,title:string = "分享到"){
+
+	const context = UTSAndroid.getUniActivity()!;
+	const intent = new Intent(Intent.ACTION_SEND)
+	intent.setType("text/plain");
+	intent.putExtra(Intent.EXTRA_TEXT, text);
+	context.startActivity(Intent.createChooser(intent, title));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

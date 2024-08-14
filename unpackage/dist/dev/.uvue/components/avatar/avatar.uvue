@@ -1,0 +1,61 @@
+
+	export default {
+		name:"avatar",
+		props: {
+			src: {
+				type: String,
+				default: ""
+			},
+			width: {
+				type: String,
+				default: "75rpx"
+			},
+			height:{
+				type: String,
+				default: "75rpx"
+			}
+		},
+		computed: {
+			url(): string {
+				return this.src == "" ? '/static/default-avatar.png' : this.src
+			}
+		},
+		data() {
+			return {
+				tip:"加载中..."
+			};
+		},
+		methods: {
+			// 加载完成之后
+			load(){
+				this.tip = ""
+			},
+			// 图片加载失败
+			error(e:UniImageErrorEvent) {
+				e.target?.setAttribute("src","/static/default-avatar.png")
+			}
+		},
+	}
+
+
+function GenComponentsAvatarAvatarRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return createElementVNode("view", utsMapOf({ class: "avatar-box" }), [
+    _ctx.tip != ''
+      ? createElementVNode("text", utsMapOf({
+          key: 0,
+          class: "avatar-tip"
+        }), toDisplayString(_ctx.tip), 1 /* TEXT */)
+      : createCommentVNode("v-if", true),
+    createElementVNode("image", utsMapOf({
+      src: _ctx.url,
+      mode: "aspectFill",
+      "fade-show": true,
+      style: normalizeStyle(utsMapOf({ width:_ctx.width,height:_ctx.height })),
+      onLoad: _ctx.load,
+      onError: _ctx.error
+    }), null, 44 /* STYLE, PROPS, NEED_HYDRATION */, ["src", "onLoad", "onError"])
+  ])
+}
+const GenComponentsAvatarAvatarStyles = [utsMapOf([["avatar-box", padStyleMapOf(utsMapOf([["borderRadius", 50], ["backgroundColor", "#f2f2f2"], ["position", "relative"], ["alignItems", "center"], ["justifyContent", "center"]]))], ["avatar-tip", padStyleMapOf(utsMapOf([["fontSize", 7], ["position", "absolute"], ["color", "#a6a6a6"]]))]])]

@@ -1,0 +1,189 @@
+
+	import { Result,CommentDetail,ReplyEmit,CommentItem,updateArticleChangeEvent } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken,AuthAction } from "@/store/user"
+	export default {
+		data() {
+			return {
+				isfollow:false,
+				reply_count:0,
+				scrollIntoView:"",
+				
+				item:{
+					"id": 1766,
+					"article_id": 1034,
+					"user_id": 1108,
+					"reply_count": 0,
+					"content": "阿里健康",
+					"comment_id": null,
+					"create_time": "2021-04-15 17:40:53",
+					"avatar": null,
+					"name": "13163224966",
+					"isfollow": false
+				} as CommentDetail
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			if(options.has("id")){
+				this.item.id = parseInt(options.get("id") as string)
+				// 加载评论详情
+				this.loadCommentDetail()
+			}
+			uni.$on("onSendCommentSuccess",this.onSendCommentSuccess)
+			// 监听帖子变化
+			uni.$on("onUpdateArticleChange",this.onUpdateArticleChange)
+		},
+		onUnload() {
+			uni.$off("onSendCommentSuccess",this.onSendCommentSuccess)
+			uni.$off("onUpdateArticleChange",this.onUpdateArticleChange)
+		},
+		methods: {
+			// 监听帖子变化
+			onUpdateArticleChange(e:updateArticleChangeEvent){
+				if(e.key == "updateFollow" && this.item.user_id == e.id){
+					this.isfollow = e.value == "true" ? true : false 
+				}
+			},
+			// 评论/回复成功回调
+			onSendCommentSuccess(e:CommentItem){
+				// 如果是评论，直接终止
+				if(e.comment_id == null) return
+				// 回复数+1
+				this.reply_count = Math.floor(this.reply_count + 1)
+				// 滚动到评论位置
+				this.scrollIntoView = ""
+				this.$nextTick(()=>{
+					this.scrollIntoView = "divider"
+				})
+			},
+			// 显示隐藏评论框
+			toggleCommentPopup(show:boolean){
+				AuthAction(()=>{
+					let popup = this.$refs["popup"] as ComponentPublicInstance
+					popup.$callMethod("toggleCommentPopup",show,null,this.item.id)
+				})
+			},
+			// 打开回复框
+			handleReply(e:ReplyEmit){
+				AuthAction(()=>{
+					let popup = this.$refs["popup"] as ComponentPublicInstance
+					popup.$callMethod("toggleCommentPopup",true,e.placeholder,e.reply_id)
+				})
+			},
+			// 触底事件
+			onScrollBottom(){
+				// 加载更多评论
+				(this.$refs["comment"] as ComponentPublicInstance).$callMethod("loadCommentList")
+			},
+			// 打开个人空间页
+			openUserSpace(user_id:number){
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id='+user_id,
+				});
+			},
+			// 加载评论详情
+			loadCommentDetail(){
+				uni.showLoading({
+					title: '加载中...',
+					mask: false
+				});
+				uni.request<Result<CommentDetail>>({
+					url: getURL(`/comment/${this.item.id}`),
+					header:{
+						token:getToken()
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+			
+						this.item = r.data as CommentDetail
+						this.isfollow = this.item.isfollow
+						this.reply_count = this.item.reply_count
+						
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						setTimeout(function() {
+							uni.hideLoading()
+						}, 200);
+					}
+				});
+			},
+		}
+	}
+
+
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+import _easycom_follow_button from '@/components/follow-button/follow-button.uvue'
+import _easycom_comment from '@/components/comment/comment.uvue'
+import _easycom_comment_popup from '@/components/comment-popup/comment-popup.uvue'
+function GenPagesCommentDetailCommentDetailRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+const _component_follow_button = resolveEasyComponent("follow-button",_easycom_follow_button)
+const _component_comment = resolveEasyComponent("comment",_easycom_comment)
+const _component_comment_popup = resolveEasyComponent("comment-popup",_easycom_comment_popup)
+
+  return createElementVNode("scroll-view", utsMapOf({
+    "scroll-into-view": _ctx.scrollIntoView,
+    "scroll-with-animation": true,
+    style: normalizeStyle(utsMapOf({"flex":"1","background-color":"#f9f9f9"})),
+    onScrolltolower: _ctx.onScrollBottom
+  }), [
+    createElementVNode("view", utsMapOf({ class: "list-item-header" }), [
+      createVNode(_component_avatar, utsMapOf({
+        src: _ctx.item.avatar,
+        style: normalizeStyle(utsMapOf({"margin-right":"27rpx"})),
+        onClick: () => {_ctx.openUserSpace(_ctx.item.user_id)}
+      }), null, 8 /* PROPS */, ["src", "style", "onClick"]),
+      createElementVNode("view", utsMapOf({
+        onClick: () => {_ctx.openUserSpace(_ctx.item.user_id)}
+      }), [
+        createElementVNode("text", utsMapOf({ class: "nickname" }), toDisplayString(_ctx.item.name), 1 /* TEXT */),
+        createElementVNode("text", utsMapOf({ class: "time" }), toDisplayString(_ctx.item.create_time), 1 /* TEXT */)
+      ], 8 /* PROPS */, ["onClick"]),
+      createVNode(_component_follow_button, utsMapOf({
+        type: "button",
+        modelValue: _ctx.isfollow,
+        "onUpdate:modelValue": $event => {(_ctx.isfollow) = $event},
+        user_id: _ctx.item.user_id
+      }), null, 8 /* PROPS */, ["modelValue", "onUpdate:modelValue", "user_id"])
+    ]),
+    createElementVNode("text", utsMapOf({ class: "content" }), toDisplayString(_ctx.item.content), 1 /* TEXT */),
+    createElementVNode("view", utsMapOf({
+      class: "divider",
+      id: "divider"
+    })),
+    createVNode(_component_comment, utsMapOf({
+      ref: "comment",
+      isreply: true,
+      comment_id: _ctx.item.id,
+      support_count: _ctx.reply_count,
+      onReply: _ctx.handleReply
+    }), null, 8 /* PROPS */, ["comment_id", "support_count", "onReply"]),
+    createElementVNode("view", utsMapOf({ class: "action-bar" }), [
+      createElementVNode("view", utsMapOf({
+        class: "action-input",
+        onClick: () => {_ctx.toggleCommentPopup(true)}
+      }), [
+        createElementVNode("text", utsMapOf({ class: "placeholder" }), "说点什么..."),
+        createElementVNode("text", utsMapOf({ class: "iconfont emotion" }), toDisplayString('\ue64e'))
+      ], 8 /* PROPS */, ["onClick"])
+    ]),
+    createVNode(_component_comment_popup, utsMapOf({ ref: "popup" }), null, 512 /* NEED_PATCH */)
+  ], 44 /* STYLE, PROPS, NEED_HYDRATION */, ["scroll-into-view", "onScrolltolower"])
+}
+const GenPagesCommentDetailCommentDetailStyles = [utsMapOf([["list-item-header", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["alignItems", "center"], ["paddingTop", "26rpx"], ["paddingLeft", "33rpx"], ["paddingRight", "33rpx"], ["backgroundColor", "#ffffff"]]))], ["time", padStyleMapOf(utsMapOf([["fontSize", 13], ["color", "#a7a7a7"], ["marginTop", "10rpx"]]))], ["nickname", padStyleMapOf(utsMapOf([["color", "#050505"], ["textOverflow", "ellipsis"], ["maxWidth", "240rpx"], ["height", "34rpx"], ["fontSize", 15], ["fontWeight", "bold"]]))], ["content", padStyleMapOf(utsMapOf([["paddingTop", "25rpx"], ["paddingLeft", "33rpx"], ["paddingRight", "33rpx"], ["fontSize", 16], ["lineHeight", 1.5], ["paddingBottom", "20rpx"], ["backgroundColor", "#ffffff"]]))], ["content-image", padStyleMapOf(utsMapOf([["width", "750rpx"], ["backgroundColor", "#f0f0f0"]]))], ["action-bar", padStyleMapOf(utsMapOf([["backgroundColor", "#ffffff"], ["position", "fixed"], ["bottom", 0], ["left", 0], ["right", 0], ["borderTopWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderTopColor", "#f2f2f2"], ["zIndex", 100], ["height", "103rpx"], ["paddingLeft", "28rpx"], ["paddingRight", "28rpx"], ["flexDirection", "row"], ["alignItems", "center"]]))], ["action-input", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["backgroundColor", "#f4f4f4"], ["height", "73rpx"], ["flex", 1], ["borderRadius", 5], ["alignItems", "center"], ["justifyContent", "space-between"], ["paddingTop", 0], ["paddingRight", "20rpx"], ["paddingBottom", 0], ["paddingLeft", "20rpx"]]))], ["placeholder", padStyleMapOf(utsMapOf([["fontSize", 14], ["color", "#949494"]]))], ["emotion", padStyleMapOf(utsMapOf([["fontSize", 20], ["color", "#191919"]]))]])]

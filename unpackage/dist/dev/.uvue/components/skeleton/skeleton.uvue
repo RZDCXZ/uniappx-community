@@ -1,0 +1,128 @@
+
+	export default {
+		name:"skeleton",
+		data() {
+			return {
+				screenWidth:0
+			};
+		},
+		mounted() {
+			const systemInfo = uni.getSystemInfoSync()
+			this.screenWidth = systemInfo.screenWidth
+			
+			let ctx = (this.$refs["skeleton"] as UniElement).getDrawableContext()
+			if(ctx == null){
+				return
+			}
+			// 清空绘制数据
+			ctx.reset()
+			
+			this.draw(ctx,0)
+			this.draw(ctx,495)
+			
+			// 将绘制的内容更新到画布上
+			ctx.update()
+		},
+		methods: {
+			draw(ctx: DrawableContext , start: number) {
+				// 屏幕宽度
+				const screenWidth = this.screenWidth
+				// 左右间隔
+				const p = uni.rpx2px(30)
+				// 骨架屏颜色
+				ctx.fillStyle = "#f0f0f0"
+				
+				// 头像
+				// 创建空白路径
+				ctx.beginPath()
+				// 绘制一段弧线
+				ctx.arc(p + 20, start + 35, 20, 0,2*Math.PI, false)
+				// 填充
+				ctx.fill()
+				
+				// 昵称
+				// 设置线条宽度
+				ctx.lineWidth = 15
+				// 线条末端圆角
+				ctx.lineCap = "round"
+				// 创建空白路径
+				ctx.beginPath()
+				// 移动到(x,y)坐标
+				ctx.moveTo(p + 60,start + 35)
+				// 将路径最后一点连接到（x,y）坐标
+				ctx.lineTo(p + 110,start + 35)
+				// 填充
+				ctx.stroke()
+				
+				// 关注
+				ctx.beginPath()
+				// 移动到(x,y)坐标
+				ctx.moveTo(p + screenWidth - 16 - 50 ,start + 35)
+				// 将路径最后一点连接到（x,y）坐标
+				ctx.lineTo(p + screenWidth - 16 - 25 ,start + 35)
+				// 填充
+				ctx.stroke()
+				
+				// 标题
+				ctx.beginPath()
+				// 移动到(x,y)坐标
+				ctx.moveTo(p + 10 ,start + 80)
+				// 将路径最后一点连接到（x,y）坐标
+				ctx.lineTo(screenWidth - 2*p + 10 ,start + 80)
+				// 填充
+				ctx.stroke()
+				
+				// 图片
+				// 绘制一个实心矩形
+				ctx.fillRect(0,start + 100, screenWidth,290)
+				
+				// 描述
+				ctx.beginPath()
+				// 移动到(x,y)坐标
+				ctx.moveTo(p + 10 ,start + 410)
+				// 将路径最后一点连接到（x,y）坐标
+				ctx.lineTo(screenWidth - 2*p + 10 ,start + 410)
+				// 填充
+				ctx.stroke()
+
+				ctx.beginPath()
+				// 移动到(x,y)坐标
+				ctx.moveTo(p + 10 ,start + 435)
+				// 将路径最后一点连接到（x,y）坐标
+				ctx.lineTo(screenWidth - 2*p + 10 ,start + 435)
+				// 填充
+				ctx.stroke()
+				
+				ctx.beginPath()
+				// 移动到(x,y)坐标
+				ctx.moveTo(p + 10 ,start + 460)
+				// 将路径最后一点连接到（x,y）坐标
+				ctx.lineTo(screenWidth - 100 ,start + 460)
+				// 填充
+				ctx.stroke()
+				
+				// 分割线
+				ctx.lineWidth = 10
+				ctx.lineCap = "butt"
+				ctx.beginPath()
+				// 移动到(x,y)坐标
+				ctx.moveTo(0 ,start + 485)
+				// 将路径最后一点连接到（x,y）坐标
+				ctx.lineTo(screenWidth,start + 485)
+				// 填充
+				ctx.stroke()
+				
+			}
+		},
+	}
+
+
+function GenComponentsSkeletonSkeletonRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return createElementVNode("view", utsMapOf({
+    ref: "skeleton",
+    style: normalizeStyle(utsMapOf({"width":"750rpx","height":"990px"}))
+  }), null, 4 /* STYLE */)
+}
+const GenComponentsSkeletonSkeletonStyles = []

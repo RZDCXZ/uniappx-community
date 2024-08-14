@@ -1,0 +1,73 @@
+
+	import { isValidPhoneNumber } from "@/common/utils.uts"
+	export default {
+		data() {
+			return {
+				phone:"",
+			}
+		},
+		computed: {
+			disabled(): boolean {
+				return this.phone.trim().length != 11
+			}
+		},
+		methods: {
+			openGetCode(){
+				if(!isValidPhoneNumber(this.phone)){
+					uni.showToast({
+						title: '请输入合法手机号',
+						icon: 'none'
+					});
+					return
+				}
+				
+				uni.navigateTo({
+					url: `/pages/user-getcode/user-getcode?phone=${this.phone}&type=bindphone`
+				});
+			}
+		}
+	}
+
+
+import _easycom_navbar from '@/components/navbar/navbar.uvue'
+import _easycom_login_input from '@/components/login-input/login-input.uvue'
+import _easycom_main_btn from '@/components/main-btn/main-btn.uvue'
+function GenPagesUserBindphoneUserBindphoneRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_navbar = resolveEasyComponent("navbar",_easycom_navbar)
+const _component_login_input = resolveEasyComponent("login-input",_easycom_login_input)
+const _component_main_btn = resolveEasyComponent("main-btn",_easycom_main_btn)
+
+  return createElementVNode(Fragment, null, [
+    createVNode(_component_navbar),
+    createElementVNode("view", utsMapOf({ class: "login-page" }), [
+      createElementVNode("text", utsMapOf({ class: "login-title" }), "绑定"),
+      createVNode(_component_login_input, utsMapOf({
+        "auto-focus": true,
+        fontSize: "24px",
+        modelValue: _ctx.phone,
+        "onUpdate:modelValue": $event => {(_ctx.phone) = $event},
+        type: "tel",
+        placeholder: "输入手机号",
+        maxlength: 11,
+        "confirm-type": "send",
+        onConfirm: _ctx.openGetCode
+      }), null, 8 /* PROPS */, ["modelValue", "onUpdate:modelValue", "onConfirm"]),
+      createElementVNode("view", utsMapOf({ class: "login-bottom" }), [
+        createVNode(_component_main_btn, utsMapOf({
+          disabled: _ctx.disabled,
+          borderRadius: "0",
+          width: "750rpx",
+          height: "98rpx",
+          fontSize: "18px",
+          onClick: _ctx.openGetCode
+        }), utsMapOf({
+          default: withSlotCtx((): any[] => ["获取验证码"]),
+          _: 1 /* STABLE */
+        }), 8 /* PROPS */, ["disabled", "onClick"])
+      ])
+    ])
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenPagesUserBindphoneUserBindphoneStyles = []

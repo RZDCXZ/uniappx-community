@@ -1,0 +1,55 @@
+
+	export default {
+		name:"main-btn",
+		emits:["click"],
+		props: {
+			disabled: {
+				type: Boolean,
+				default: false
+			},
+			width:{
+				type: String,
+				default: "280rpx"
+			},
+			height:{
+				type: String,
+				default: "80rpx"
+			},
+			fontSize:{
+				type: String,
+				default: "15px"
+			},
+			borderRadius:{
+				type: String,
+				default: "5px"
+			},
+		},
+		methods: {
+			handleClick() {
+				if(this.disabled){
+					return
+				}
+				this.$emit("click")
+			}
+		},
+	}
+
+
+function GenComponentsMainBtnMainBtnRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return createElementVNode("view", utsMapOf({
+    class: normalizeClass(["main-btn", utsMapOf({ 'main-btn-disabled':_ctx.disabled })]),
+    style: normalizeStyle(utsMapOf({ width:_ctx.width,height:_ctx.height,borderRadius:_ctx.borderRadius })),
+    "hover-class":  _ctx.disabled ? '' : 'main-btn-hover' ,
+    onClick: _ctx.handleClick
+  }), [
+    createElementVNode("text", utsMapOf({
+      class: "main-btn-text",
+      style: normalizeStyle(utsMapOf({ fontSize:_ctx.fontSize }))
+    }), [
+      renderSlot(_ctx.$slots, "default")
+    ], 4 /* STYLE */)
+  ], 14 /* CLASS, STYLE, PROPS */, ["hover-class", "onClick"])
+}
+const GenComponentsMainBtnMainBtnStyles = [utsMapOf([["main-btn", padStyleMapOf(utsMapOf([["alignItems", "center"], ["justifyContent", "center"], ["backgroundImage", "linear-gradient(to bottom right,#fc6672,#e47989)"]]))], ["main-btn-text", padStyleMapOf(utsMapOf([["color", "#ffffff"], ["fontWeight", "bold"]]))], ["main-btn-hover", padStyleMapOf(utsMapOf([["backgroundImage", "linear-gradient(to bottom right,#fd6373,#fd6373)"]]))], ["main-btn-disabled", padStyleMapOf(utsMapOf([["backgroundColor", "#d9d9d9"], ["backgroundImage", "linear-gradient(to bottom right,#d9d9d9,#d9d9d9)"]]))]])]

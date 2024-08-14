@@ -1,0 +1,76 @@
+
+	export default {
+		name:"popup",
+		emits:["confirm"],
+		props: {
+			title:{
+				type:String,
+				default:""
+			},
+			showCancel: {
+				type: Boolean,
+				default: true
+			}
+		},
+		data() {
+			return {
+				show:false
+			};
+		},
+		methods: {
+			open(){
+				this.show = true
+			},
+			close() {
+				this.show = false
+			}
+		},
+	}
+
+
+function GenComponentsPopupPopupRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return createElementVNode(Fragment, null, [
+    isTrue(_ctx.show)
+      ? createElementVNode("view", utsMapOf({
+          key: 0,
+          class: "popup-mask",
+          onClick: _ctx.close
+        }), null, 8 /* PROPS */, ["onClick"])
+      : createCommentVNode("v-if", true),
+    createElementVNode("view", utsMapOf({
+      class: normalizeClass(["popup", _ctx.show ? 'popup-show' : ''])
+    }), [
+      _ctx.title != ''
+        ? createElementVNode("view", utsMapOf({
+            key: 0,
+            class: "popup-header"
+          }), [
+            createElementVNode("text", utsMapOf({
+              class: "iconfont popup-action",
+              style: normalizeStyle(utsMapOf({"font-size":"22px"})),
+              onClick: _ctx.close
+            }), "×", 12 /* STYLE, PROPS */, ["onClick"]),
+            createElementVNode("text", utsMapOf({ class: "popup-title" }), toDisplayString(_ctx.title), 1 /* TEXT */),
+            createElementVNode("text", utsMapOf({
+              class: "popup-action",
+              style: normalizeStyle(utsMapOf({"color":"#949494"})),
+              onClick: () => {_ctx.$emit('confirm')}
+            }), "完成", 12 /* STYLE, PROPS */, ["onClick"])
+          ])
+        : createCommentVNode("v-if", true),
+      renderSlot(_ctx.$slots, "default"),
+      isTrue(_ctx.showCancel)
+        ? createElementVNode("view", utsMapOf({
+            key: 1,
+            class: "popup-cancel",
+            onClick: _ctx.close
+          }), [
+            createElementVNode("text", null, "取消")
+          ], 8 /* PROPS */, ["onClick"])
+        : createCommentVNode("v-if", true)
+    ], 2 /* CLASS */)
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenComponentsPopupPopupStyles = [utsMapOf([["popup-mask", padStyleMapOf(utsMapOf([["position", "fixed"], ["left", 0], ["top", 0], ["right", 0], ["bottom", 0], ["backgroundColor", "rgba(0,0,0,0.3)"], ["zIndex", 99]]))], ["popup", padStyleMapOf(utsMapOf([["position", "fixed"], ["bottom", 0], ["right", 0], ["left", 0], ["backgroundColor", "#ffffff"], ["zIndex", 100], ["borderTopLeftRadius", 15], ["borderTopRightRadius", 15], ["transform", "translateY(1000px)"], ["opacity", 0], ["transitionProperty", "transform,opacity"], ["transitionDuration", "400ms"]]))], ["popup-show", padStyleMapOf(utsMapOf([["opacity", 1], ["transform", "translateY(0)"]]))], ["popup-header", padStyleMapOf(utsMapOf([["height", "112rpx"], ["flexDirection", "row"], ["alignItems", "center"], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#ececec"]]))], ["popup-action", padStyleMapOf(utsMapOf([["fontSize", 16], ["width", "100rpx"], ["height", "112rpx"], ["textAlign", "center"], ["lineHeight", "112rpx"]]))], ["popup-title", padStyleMapOf(utsMapOf([["flex", 1], ["textAlign", "center"], ["fontWeight", "bold"], ["fontSize", 16]]))], ["popup-cancel", padStyleMapOf(utsMapOf([["height", "100rpx"], ["width", "750rpx"], ["alignItems", "center"], ["justifyContent", "center"]]))], ["@TRANSITION", utsMapOf([["popup", utsMapOf([["property", "transform,opacity"], ["duration", "400ms"]])]])]])]

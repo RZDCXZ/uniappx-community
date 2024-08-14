@@ -1,0 +1,238 @@
+
+	import { PropType } from 'vue'
+	import { datepickerChangeEvent } from "./type"
+	export default {
+		name:"f-picker",
+		emits:["confirm"],
+		props: {
+			title:{
+				type:String,
+				default:""
+			},
+			mode:{
+				type:String,
+				default:"selector"
+			},
+			range:{
+				type:Array as PropType<string[]>,
+				default() : string[] {
+					return [] as string[]
+				}
+			}
+		},
+		data() {
+			return {
+				t:"选择",
+				value:[0] as number[],
+				show:false,
+				
+				years: [] as number[],
+				year: 0 as number,
+				months: [] as number[],
+				month: 0 as number,
+				days: [] as number[],
+				day: 0 as number,
+			};
+		},
+		created() {
+			if(this.title != ""){
+				this.t = this.title
+			} else {
+				switch (this.mode){
+					case "selector":
+					this.t = ""
+						break;
+					case "date":
+					this.t = "选择日期"
+						break;
+				}
+			}
+			this.init()
+		},
+		methods: {
+			// 初始化
+			init(){
+				if(this.mode == "date"){
+					const date = new Date()
+					const _years : number[] = []
+					const _year = date.getFullYear()
+					const _months : number[] = []
+					const _month : number = date.getMonth() + 1
+					const _days : number[] = []
+					const _day = date.getDate()
+					for (let i = 1949; i <= _year; i++) {
+					    _years.push(i)
+					}
+					for (let i = 1; i <= 12; i++) {
+					    _months.push(i)
+					}
+					for (let i = 1; i <= 31; i++) {
+					    _days.push(i)
+					}
+					
+					this.years = _years
+					this.year = _year
+					this.months = _months
+					this.month = _month
+					this.days = _days
+					this.day = _day
+					this.value = [_year - 2000, _month - 1, _day - 1] as number[]
+				}
+			},
+			open(){
+				this.show = true
+			},
+			close() {
+				this.show = false
+			},
+			change(e:UniPickerViewChangeEvent){
+				const val = e.detail.value
+				this.value = val
+				if(this.mode == "date"){
+					this.year = this.years[val[0]]
+					this.month = this.months[val[1]]
+					this.day = this.days[val[2]]
+				}
+			},
+			confirm(){
+				switch (this.mode){
+					case "selector":
+					this.$emit("confirm",this.value[0] as number)
+						break;
+					case "date":
+					let pickObj = {
+						year:this.year,
+						month:this.month,
+						day:this.day,
+						label:`${this.year}-${this._getValue(this.month)}-${this._getValue(this.day)}`
+					} as datepickerChangeEvent;
+					this.$emit("confirm", pickObj.label);
+						break;
+				}
+				this.close()
+			},
+			_getValue(v:number):string{
+				if(v >= 10){
+					return v.toString()
+				}
+				return `0${v}`
+			}
+		},
+	}
+
+
+function GenComponentsFPickerFPickerRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_picker_view_column = resolveComponent("picker-view-column")
+const _component_picker_view = resolveComponent("picker-view")
+
+  return createElementVNode(Fragment, null, [
+    isTrue(_ctx.show)
+      ? createElementVNode("view", utsMapOf({
+          key: 0,
+          class: "popup-mask",
+          onClick: withModifiers(_ctx.close, ["stop"])
+        }), null, 8, ["onClick"])
+      : createCommentVNode("v-if", true),
+    createElementVNode("view", utsMapOf({
+      class: normalizeClass(["popup", _ctx.show ? 'popup-show' : ''])
+    }), [
+      createElementVNode("view", utsMapOf({ class: "popup-header" }), [
+        createElementVNode("text", utsMapOf({
+          class: "iconfont popup-action",
+          style: normalizeStyle(utsMapOf({"font-size":"22px"})),
+          onClick: _ctx.close
+        }), "×", 12, ["onClick"]),
+        createElementVNode("text", utsMapOf({ class: "popup-title" }), toDisplayString(_ctx.t), 1),
+        createElementVNode("text", utsMapOf({
+          class: "popup-action",
+          style: normalizeStyle(utsMapOf({"color":"#949494"})),
+          onClick: _ctx.confirm
+        }), "完成", 12, ["onClick"])
+      ]),
+      _ctx.mode == 'selector'
+        ? createVNode(_component_picker_view, utsMapOf({
+            key: 0,
+            class: "popup-picker",
+            "indicator-style": "height: 50px;background-color:rgba(0,0,0,0.05);",
+            onChange: _ctx.change
+          }), utsMapOf({
+            default: withSlotCtx((): any[] => [
+              createVNode(_component_picker_view_column, null, utsMapOf({
+                default: withSlotCtx((): any[] => [
+                  createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.range, (item, index, _, _): VNode => {
+                    return createElementVNode("view", utsMapOf({
+                      class: "popup-picker-item",
+                      key: index
+                    }), [
+                      createElementVNode("text", utsMapOf({ class: "popup-picker-text" }), toDisplayString(item), 1)
+                    ])
+                  }), 128 /* KEYED_FRAGMENT */)
+                ]),
+                _: 1
+              }))
+            ]),
+            _: 1
+          }), 8, ["onChange"])
+        : _ctx.mode == 'date'
+          ? createVNode(_component_picker_view, utsMapOf({
+              key: 1,
+              class: "popup-picker",
+              "indicator-style": "height: 50px;background-color:rgba(0,0,0,0.05);",
+              value: _ctx.value,
+              onChange: _ctx.change
+            }), utsMapOf({
+              default: withSlotCtx((): any[] => [
+                createVNode(_component_picker_view_column, null, utsMapOf({
+                  default: withSlotCtx((): any[] => [
+                    createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.years, (item, index, _, _): VNode => {
+                      return createElementVNode("view", utsMapOf({
+                        class: "popup-picker-item",
+                        key: index
+                      }), [
+                        createElementVNode("text", utsMapOf({ class: "popup-picker-text" }), toDisplayString(item) + "年", 1)
+                      ])
+                    }), 128 /* KEYED_FRAGMENT */)
+                  ]),
+                  _: 1
+                })),
+                createVNode(_component_picker_view_column, null, utsMapOf({
+                  default: withSlotCtx((): any[] => [
+                    createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.months, (item, index, _, _): VNode => {
+                      return createElementVNode("view", utsMapOf({
+                        class: "popup-picker-item",
+                        key: index
+                      }), [
+                        createElementVNode("text", utsMapOf({ class: "popup-picker-text" }), toDisplayString(item) + "月", 1)
+                      ])
+                    }), 128 /* KEYED_FRAGMENT */)
+                  ]),
+                  _: 1
+                })),
+                createVNode(_component_picker_view_column, null, utsMapOf({
+                  default: withSlotCtx((): any[] => [
+                    createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.days, (item, index, _, _): VNode => {
+                      return createElementVNode("view", utsMapOf({
+                        class: "popup-picker-item",
+                        key: index
+                      }), [
+                        createElementVNode("text", utsMapOf({ class: "popup-picker-text" }), toDisplayString(item) + "日", 1)
+                      ])
+                    }), 128 /* KEYED_FRAGMENT */)
+                  ]),
+                  _: 1
+                }))
+              ]),
+              _: 1
+            }), 8, ["value", "onChange"])
+          : createCommentVNode("v-if", true)
+    ], 2),
+    createElementVNode("view", utsMapOf({
+      onClick: withModifiers(_ctx.open, ["stop"])
+    }), [
+      renderSlot(_ctx.$slots, "default")
+    ], 8, ["onClick"])
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenComponentsFPickerFPickerStyles = [utsMapOf([["popup-mask", padStyleMapOf(utsMapOf([["position", "fixed"], ["left", 0], ["top", 0], ["right", 0], ["bottom", 0], ["backgroundColor", "rgba(0,0,0,0.3)"], ["zIndex", 99]]))], ["popup", padStyleMapOf(utsMapOf([["position", "fixed"], ["bottom", 0], ["right", 0], ["left", 0], ["backgroundColor", "#ffffff"], ["zIndex", 100], ["borderTopLeftRadius", 15], ["borderTopRightRadius", 15], ["transform", "translateY(1000px)"], ["opacity", 0], ["transitionProperty", "transform,opacity"], ["transitionDuration", "400ms"]]))], ["popup-show", padStyleMapOf(utsMapOf([["opacity", 1], ["transform", "translateY(0)"]]))], ["popup-header", padStyleMapOf(utsMapOf([["height", "112rpx"], ["flexDirection", "row"], ["alignItems", "center"], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#ececec"]]))], ["popup-action", padStyleMapOf(utsMapOf([["fontSize", 16], ["width", "100rpx"], ["height", "112rpx"], ["textAlign", "center"], ["lineHeight", "112rpx"]]))], ["popup-title", padStyleMapOf(utsMapOf([["flex", 1], ["textAlign", "center"], ["fontWeight", "bold"], ["fontSize", 16]]))], ["popup-picker", padStyleMapOf(utsMapOf([["height", "400rpx"]]))], ["popup-picker-item", padStyleMapOf(utsMapOf([["height", 50]]))], ["popup-picker-text", padStyleMapOf(utsMapOf([["textAlign", "center"], ["lineHeight", "50px"]]))], ["@TRANSITION", utsMapOf([["popup", utsMapOf([["property", "transform,opacity"], ["duration", "400ms"]])]])]])]

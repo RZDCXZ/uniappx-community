@@ -1,0 +1,22 @@
+{
+  "id": "__UNI__E905653",
+  "name": "uniappx社区交友",
+  "description": "",
+  "version": {
+    "name": "1.0.0",
+    "code": "100"
+  },
+  "uni-app-x": {},
+  "app": {
+    "distribute": {
+      "icons": {
+        "android": {
+          "hdpi": "",
+          "xhdpi": "",
+          "xxhdpi": "",
+          "xxxhdpi": ""
+        }
+      }
+    }
+  }
+}

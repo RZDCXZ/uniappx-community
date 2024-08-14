@@ -1,0 +1,59 @@
+
+	import { agreementUrl,privacyUrl } from "@/common/config.uts"
+	export default {
+		emits:["update:modelValue"],
+		name:"agreement",
+		props: {
+			modelValue: {
+				type: Boolean,
+				default: false
+			},
+		},
+		data() {
+			return {
+				agreementUrl:"",
+				privacyUrl:""
+			};
+		},
+		created() {
+			this.agreementUrl = agreementUrl
+			this.privacyUrl = privacyUrl
+		},
+		methods: {
+			openWebview(url:string){
+				uni.navigateTo({
+					url: '/pages/webview/webview?url=' + url,
+				});
+			},
+			handleIsAgree() {
+				this.$emit("update:modelValue",!this.modelValue)
+			}
+		},
+	}
+
+
+function GenComponentsAgreementAgreementRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_radio = resolveComponent("radio")
+
+  return createElementVNode("view", utsMapOf({ class: "agreement" }), [
+    createVNode(_component_radio, utsMapOf({
+      checked: _ctx.modelValue,
+      onClick: _ctx.handleIsAgree,
+      value: "1",
+      color: "#fd6373"
+    }), null, 8, ["checked", "onClick"]),
+    createElementVNode("text", utsMapOf({ class: "agreement-text" }), "已阅读并同意"),
+    createElementVNode("text", utsMapOf({
+      class: "agreement-text link",
+      onClick: () => {_ctx.openWebview(_ctx.agreementUrl)}
+    }), "用户协议", 8, ["onClick"]),
+    createElementVNode("text", utsMapOf({ class: "agreement-text" }), "和"),
+    createElementVNode("text", utsMapOf({
+      class: "agreement-text link",
+      onClick: () => {_ctx.openWebview(_ctx.privacyUrl)}
+    }), "隐私政策", 8, ["onClick"])
+  ])
+}
+const GenComponentsAgreementAgreementStyles = [utsMapOf([["agreement", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["justifyContent", "center"], ["marginBottom", "40rpx"], ["alignItems", "center"]]))], ["agreement-text", padStyleMapOf(utsMapOf([["fontSize", 13], ["color", "#6e6e6e"]]))], ["link", padStyleMapOf(utsMapOf([["color", "#264060"], ["paddingTop", 0], ["paddingRight", "10rpx"], ["paddingBottom", 0], ["paddingLeft", "10rpx"]]))]])]

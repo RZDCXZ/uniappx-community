@@ -1,0 +1,218 @@
+
+	import { CommentItem,CommentItemResult,Result,ReplyEmit } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	export default {
+		emits:["reply"],
+		name: "comment",
+		props: {
+			support_count: {
+				type: Number,
+				default: 0
+			},
+			article_id:{
+				type: Number,
+				default: 0
+			},
+			// 是否在回复页
+			isreply:{
+				type:Boolean,
+				default:false
+			},
+			// 父级评论ID
+			comment_id:{
+				type:Number,
+				default:0
+			}
+		},
+		created() {
+			this.loadCommentList()
+			uni.$on("onSendCommentSuccess",this.onSendCommentSuccess)
+		},
+		unmounted() {
+			uni.$off("onSendCommentSuccess",this.onSendCommentSuccess)
+		},
+		data() {
+			return {
+				commentList: [] as CommentItem[],
+				isEnded:false,
+				currentPage:1,
+				loading:false,
+				isFirstLoad:true
+			};
+		},
+		methods:{
+			handleRichItemClick(e:UniRichTextItemClickEvent){
+				uni.navigateTo({
+					url: e.detail.href as string
+				});
+			},
+			// 回复
+			handleReply(name:string | null,reply_id:number){
+				const placeholder = "回复@"+name
+				this.$emit("reply",{
+					placeholder,
+					reply_id
+				} as ReplyEmit)
+			},
+			// 回复/评论成功回调
+			onSendCommentSuccess(e:CommentItem){
+				// 回复
+				if(!this.isreply && e.comment_id != null){
+					let i = this.commentList.findIndex((o:CommentItem):boolean => o.id == e.comment_id)
+					if(i == -1) return
+					// 回复数+1
+					this.commentList[i].reply_count = Math.floor(this.commentList[i].reply_count + 1)
+				} 
+				// 评论
+				else {
+					this.commentList = [ e,...this.commentList ]
+				}	
+			},
+			openUserSpace(user_id:number){
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id='+user_id,
+				});
+			},
+			openCommentDetail(id:number){
+				uni.navigateTo({
+					url: '/pages/comment-detail/comment-detail?id='+id,
+				});
+			},
+			loadCommentList(){
+				if(this.loading || this.isEnded){
+					return
+				}
+				this.loading = true
+				const page = Math.floor(this.currentPage)
+				let url = `/article/${this.article_id}/comment/${page}`
+				
+				// 回复列表
+				if(this.isreply){
+					url = `/comment/${this.comment_id}/replies/${page}`
+				}
+				
+				uni.request<Result<CommentItemResult>>({
+					url:getURL(url),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						const resData = r.data as CommentItemResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.commentList = resData.data
+						} else {
+							this.commentList.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+					}
+				})
+			}
+		}
+	}
+
+
+import _easycom_tip from '@/components/tip/tip.uvue'
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+import _easycom_loading_more from '@/components/loading-more/loading-more.uvue'
+function GenComponentsCommentCommentRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_tip = resolveEasyComponent("tip",_easycom_tip)
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+const _component_loading_more = resolveEasyComponent("loading-more",_easycom_loading_more)
+
+  return createElementVNode(Fragment, null, [
+    createElementVNode("view", utsMapOf({ class: "comment-section" }), [
+      createElementVNode("text", utsMapOf({ class: "comment-title" }), toDisplayString(_ctx.isreply ? `${_ctx.support_count} 条回复` : '评论'), 1),
+      isTrue(!_ctx.isreply)
+        ? createElementVNode("text", utsMapOf({
+            key: 0,
+            class: "comment-count"
+          }), toDisplayString(_ctx.support_count) + "人表态", 1)
+        : createCommentVNode("v-if", true)
+    ]),
+    isTrue(_ctx.commentList.length == 0 && !_ctx.isFirstLoad)
+      ? createVNode(_component_tip, utsMapOf({
+          key: 0,
+          title: "暂无评论~"
+        }))
+      : createCommentVNode("v-if", true),
+    createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.commentList, (ct, ctI, _, _): VNode => {
+      return createElementVNode("view", utsMapOf({
+        class: "comment",
+        key: ctI
+      }), [
+        createElementVNode("view", utsMapOf({ class: "flex" }), [
+          createVNode(_component_avatar, utsMapOf({
+            src: ct.avatar,
+            style: normalizeStyle(utsMapOf({"margin-right":"27rpx"})),
+            onClick: () => {_ctx.openUserSpace(ct.user_id)}
+          }), null, 8, ["src", "style", "onClick"]),
+          createElementVNode("text", utsMapOf({
+            class: "comment-nickname",
+            onClick: () => {_ctx.openUserSpace(ct.user_id)}
+          }), toDisplayString(ct.name), 9, ["onClick"]),
+          createElementVNode("text", utsMapOf({ class: "comment-time" }), toDisplayString(ct.create_time), 1)
+        ]),
+        createElementVNode("text", utsMapOf({ class: "comment-content" }), toDisplayString(ct.content), 1),
+        ct.quote != null
+          ? createElementVNode("rich-text", utsMapOf({
+              key: 0,
+              class: "comment-quote",
+              nodes: `<a href='/pages/user-space/user-space?user_id=${ct.quote?.user_id}'>${ct.quote?.name}</a>：<span>${ct.quote?.content}</span>`,
+              onItemclick: _ctx.handleRichItemClick
+            }), null, 40, ["nodes", "onItemclick"])
+          : createCommentVNode("v-if", true),
+        ct.reply_count > 0
+          ? createElementVNode("view", utsMapOf({
+              key: 1,
+              class: "reply",
+              "hover-class": "reply-hover",
+              onClick: () => {_ctx.openCommentDetail(ct.id)}
+            }), [
+              createElementVNode("text", utsMapOf({ class: "reply-text" }), toDisplayString(ct.reply_count) + "条回复", 1),
+              createElementVNode("text", utsMapOf({ class: "iconfont reply-icon" }), toDisplayString('\ue60c'))
+            ], 8, ["onClick"])
+          : createElementVNode("view", utsMapOf({
+              key: 2,
+              class: "reply",
+              style: normalizeStyle(_ctx.isreply ? 'background:#ffffff;' : ''),
+              "hover-class": "reply-hover",
+              onClick: () => {_ctx.handleReply(ct.name,ct.id)}
+            }), [
+              createElementVNode("text", utsMapOf({ class: "reply-text" }), "回复")
+            ], 12, ["onClick"])
+      ])
+    }), 128 /* KEYED_FRAGMENT */),
+    isTrue(_ctx.isFirstLoad || _ctx.commentList.length > 0)
+      ? createVNode(_component_loading_more, utsMapOf({
+          key: 1,
+          loading: _ctx.loading,
+          isEnded: _ctx.isEnded
+        }), null, 8, ["loading", "isEnded"])
+      : createCommentVNode("v-if", true)
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenComponentsCommentCommentStyles = [utsMapOf([["comment-section", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["height", "80rpx"], ["width", "750rpx"], ["alignItems", "center"], ["paddingTop", 0], ["paddingRight", "32rpx"], ["paddingBottom", 0], ["paddingLeft", "32rpx"], ["justifyContent", "space-between"]]))], ["comment-title", padStyleMapOf(utsMapOf([["fontSize", 16], ["fontWeight", "bold"]]))], ["comment-count", padStyleMapOf(utsMapOf([["fontSize", 13], ["color", "#8b8b8b"]]))], ["comment", padStyleMapOf(utsMapOf([["paddingTop", "20rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "30rpx"]]))], ["comment-nickname", padStyleMapOf(utsMapOf([["maxWidth", "224rpx"], ["textOverflow", "ellipsis"], ["height", "30rpx"], ["fontSize", 14], ["marginTop", "15rpx"], ["lineHeight", 1.2], ["marginRight", "10rpx"]]))], ["comment-time", padStyleMapOf(utsMapOf([["fontSize", 13], ["color", "#a7a7a7"], ["marginTop", "15rpx"], ["marginLeft", "auto"], ["lineHeight", 1.2]]))], ["comment-content", padStyleMapOf(utsMapOf([["fontSize", 16], ["width", "590rpx"], ["marginLeft", "98rpx"], ["lineHeight", 1.5], ["marginTop", "10rpx"]]))], ["reply", padStyleMapOf(utsMapOf([["backgroundColor", "#f8f8f8"], ["borderRadius", 50], ["paddingTop", "10rpx"], ["paddingRight", "18rpx"], ["paddingBottom", "10rpx"], ["paddingLeft", "18rpx"], ["alignSelf", "flex-start"], ["marginLeft", "98rpx"], ["marginTop", "20rpx"], ["flexDirection", "row"]]))], ["reply-hover", padStyleMapOf(utsMapOf([["backgroundColor", "#f2f2f2"]]))], ["reply-text", padStyleMapOf(utsMapOf([["color", "#0a0a0a"], ["fontSize", 12]]))], ["reply-icon", padStyleMapOf(utsMapOf([["color", "#0a0a0a"], ["fontSize", 12], ["marginLeft", "5rpx"]]))], ["comment-quote", padStyleMapOf(utsMapOf([["width", "590rpx"], ["marginLeft", "98rpx"], ["marginTop", "10rpx"], ["borderLeftWidth", "2rpx"], ["borderLeftStyle", "solid"], ["borderLeftColor", "#bbbbbb"], ["paddingLeft", "20rpx"]]))]])]

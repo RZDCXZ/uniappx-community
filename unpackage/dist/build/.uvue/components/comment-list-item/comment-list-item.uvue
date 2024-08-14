@@ -1,0 +1,121 @@
+
+	import { CommentItem,defaultResult } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+	import { PropType } from "vue"
+	export default {
+		emits:["onDeleteSuccess"],
+		name:"comment-list-item",
+		props: {
+			item: {
+				type: Object as PropType<CommentItem>,
+				required:true 
+			},
+			isAdmin: {
+				type:Boolean,
+				default:false
+			},
+		},
+		methods: {
+			openDetail() {
+				uni.navigateTo({
+					url: '/pages/detail/detail?id='+this.item.article_id,
+				});
+			},
+			deleteItem(){
+				uni.showModal({
+					title: '',
+					content: '是否要删除该评论？',
+					confirmText: '删除',
+					success: res => {
+						if(!res.confirm){
+							return
+						}
+						uni.showLoading({
+							title: '删除中...',
+							mask: true
+						});
+						uni.request<defaultResult>({
+							url: getURL(`/comment/delete/${this.item.id}`),
+							method: 'POST',
+							header: {
+								token:getToken()
+							},
+							success: res => {
+								let r = res.data
+								if(r == null) return
+								if(res.statusCode !=200){
+									uni.showToast({
+										title: r.msg,
+										icon: 'none'
+									});
+									return
+								}
+								
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								
+								this.$emit("onDeleteSuccess")
+							},
+							fail: (err) => {
+								uni.showToast({
+									title: err.errMsg,
+									icon: 'none'
+								});
+							},
+							complete: () => {
+								uni.hideLoading()
+							}
+						});
+					},
+				});
+			},
+		},
+	}
+
+
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+function GenComponentsCommentListItemCommentListItemRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+
+  return createElementVNode(Fragment, null, [
+    createElementVNode("view", utsMapOf({ class: "list-item-header" }), [
+      createVNode(_component_avatar, utsMapOf({
+        src: _ctx.item.avatar,
+        style: normalizeStyle(utsMapOf({"margin-right":"27rpx"}))
+      }), null, 8, ["src", "style"]),
+      createElementVNode("view", null, [
+        createElementVNode("text", utsMapOf({ class: "nickname" }), toDisplayString(_ctx.item.name), 1),
+        createElementVNode("text", utsMapOf({ class: "time" }), toDisplayString(_ctx.item.create_time), 1)
+      ]),
+      isTrue(_ctx.isAdmin)
+        ? createElementVNode("text", utsMapOf({
+            key: 0,
+            class: "iconfont delete-icon",
+            onClick: withModifiers(_ctx.deleteItem, ["stop"])
+          }), toDisplayString('\ue605'), 8, ["onClick"])
+        : createCommentVNode("v-if", true)
+    ]),
+    createElementVNode("text", utsMapOf({ class: "content" }), toDisplayString(_ctx.item.content), 1),
+    createElementVNode("view", utsMapOf({
+      class: "quote",
+      onClick: withModifiers(_ctx.openDetail, ["stop"])
+    }), [
+      createElementVNode("text", utsMapOf({ class: "quote-text" }), toDisplayString(_ctx.item.article_title), 1),
+      _ctx.item.article_cover != null
+        ? createElementVNode("image", utsMapOf({
+            key: 0,
+            src: _ctx.item.article_cover,
+            mode: "aspectFill",
+            class: "quote-img"
+          }), null, 8, ["src"])
+        : createCommentVNode("v-if", true)
+    ], 8, ["onClick"]),
+    createElementVNode("view", utsMapOf({ class: "divider" }))
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenComponentsCommentListItemCommentListItemStyles = [utsMapOf([["list-item-header", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["alignItems", "center"], ["paddingTop", "26rpx"], ["paddingLeft", "33rpx"], ["paddingRight", "33rpx"]]))], ["time", padStyleMapOf(utsMapOf([["fontSize", 13], ["color", "#a7a7a7"], ["marginTop", "10rpx"]]))], ["nickname", padStyleMapOf(utsMapOf([["color", "#050505"], ["textOverflow", "ellipsis"], ["maxWidth", "240rpx"], ["height", "34rpx"], ["fontSize", 15], ["fontWeight", "bold"]]))], ["content", padStyleMapOf(utsMapOf([["paddingTop", "25rpx"], ["paddingLeft", "33rpx"], ["paddingRight", "33rpx"], ["fontSize", 16], ["lineHeight", 1.5]]))], ["quote", padStyleMapOf(utsMapOf([["width", "690rpx"], ["marginLeft", "30rpx"], ["marginRight", "30rpx"], ["height", "96rpx"], ["flexDirection", "row"], ["alignItems", "center"], ["backgroundColor", "#f9f9f9"], ["borderRadius", 5], ["marginTop", "30rpx"], ["marginBottom", "30rpx"]]))], ["quote-text", padStyleMapOf(utsMapOf([["width", "530rpx"], ["textOverflow", "ellipsis"], ["height", "35rpx"], ["marginRight", "30rpx"], ["marginLeft", "30rpx"], ["fontSize", 15]]))], ["quote-img", padStyleMapOf(utsMapOf([["width", "96rpx"], ["height", "96rpx"], ["marginLeft", "auto"]]))], ["delete-icon", padStyleMapOf(utsMapOf([["marginLeft", "auto"], ["paddingTop", "10rpx"], ["paddingRight", "10rpx"], ["paddingBottom", "10rpx"], ["paddingLeft", "10rpx"], ["color", "#999999"]]))]])]

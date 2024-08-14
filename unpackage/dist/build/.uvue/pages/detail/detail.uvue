@@ -1,0 +1,455 @@
+
+	import { getToken,AuthAction } from "@/store/user"
+	import { getURL } from "@/common/request.uts"
+	import { Result,ArticleDetail,updateArticleChangeEvent,defaultResult,updateSupportEvent,CommentItem,ReplyEmit } from "@/common/type.uts"
+	import { stepInt } from "@/common/utils.uts"
+	import share from "@/components/share/share.uts"
+	export default {
+		data() {
+			return {
+				isfollow:false,
+				read_count:0,
+				ding_count:0,
+				cai_count:0,
+				action:"",
+				collect_count:0,
+				isCollect:false,
+				comment_count:0,
+				share_count:0,
+				ding_loading:false,
+				cai_loading:false,
+				collectLoading:false,
+				
+				scrollIntoView:"",
+				
+				item:{
+					"id": 0,
+					"user_id": 0,
+					"title": "",
+					"content": "",
+					"images": [],
+					"url": "",
+					"category_id": 0,
+					"topic_id": 0,
+					"share_count": 0,
+					"ding_count": 0,
+					"cai_count": 0,
+					"comment_count": 0,
+					"read_count": 0,
+					"collect_count": 0,
+					"create_time": "",
+					"update_time": "",
+					"name": "",
+					"avatar": null,
+					"user_status": 1,
+					"topic_name": "",
+					"user_support_action": "",
+					"isfollow": false,
+					"isCollect": false
+				} as ArticleDetail
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			if(options.has("id")){
+				this.item.id = parseInt(options.get("id") as string)
+				// 加载帖子详情
+				this.loadArticleDetail()
+			}
+			uni.$on("onSendCommentSuccess",this.onSendCommentSuccess)
+			// 监听帖子变化
+			uni.$on("onUpdateArticleChange",this.onUpdateArticleChange)
+		},
+		onUnload() {
+			uni.$off("onSendCommentSuccess",this.onSendCommentSuccess)
+			uni.$off("onUpdateArticleChange",this.onUpdateArticleChange)
+		},
+		computed: {
+			support_count(): number {
+				return Math.floor(this.ding_count + this.cai_count)
+			}
+		},
+		methods: {
+			// 监听帖子变化 
+			onUpdateArticleChange(e:updateArticleChangeEvent){
+				if(e.key == "updateFollow" && this.item.user_id == e.id){
+					this.isfollow = e.value == "true" ? true : false 
+				}
+			},
+			// 打开回复框
+			handleReply(e:ReplyEmit){
+				AuthAction(()=>{
+					let popup = this.$refs["popup"] as ComponentPublicInstance
+					popup.$callMethod("toggleCommentPopup",true,e.placeholder,e.reply_id)
+				})
+			},
+			// 评论/回复成功回调
+			onSendCommentSuccess(e:CommentItem){
+				// 如果是回复，直接终止
+				if(e.comment_id != null){
+					return
+				}
+				// 评论数+1
+				this.comment_count = Math.floor(this.comment_count + 1)
+				
+				// 通知首页更新评论数
+				uni.$emit("onUpdateArticleChange",{
+					id:this.item.id,
+					key:"updateCommentCount",
+					value: this.comment_count.toString()
+				} as updateArticleChangeEvent)
+				
+				// 滚动到评论位置
+				this.scrollIntoView = ""
+				this.$nextTick(()=>{
+					this.scrollIntoView = "divider"
+				})
+			},
+			// 显示隐藏评论框
+			toggleCommentPopup(show:boolean){
+				AuthAction(()=>{
+					let popup = this.$refs["popup"] as ComponentPublicInstance
+					popup.$callMethod("toggleCommentPopup",show,null,null)
+				})
+			},
+			// 收藏/取消收藏
+			handleCollect(){
+				AuthAction(()=>{
+					if(this.collectLoading){
+						return
+					}
+					this.collectLoading = true
+					let action = this.isCollect ? "remove_collection" : "add_collection"
+					uni.request<defaultResult>({
+						url: getURL(`/${action}/${this.item.id}`),
+						method:"POST",
+						header:{
+							token:getToken()
+						},
+						success: (res) => {
+							let r = res.data
+							if(r == null) return
+							if(res.statusCode !=200){
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								return
+							}
+							
+							this.isCollect = !this.isCollect
+							// 修改收藏数
+							this.collect_count = r.data as number
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+						},
+						fail: (err) => {
+							uni.showToast({
+								title: err.errMsg,
+								icon: 'none'
+							});
+						},
+						complete: () => {
+							this.collectLoading = false
+						}
+					})
+				})
+			},
+			// 顶踩
+			handleSupport(type : 'ding' | 'cai'){
+				AuthAction(()=>{
+					if(this.ding_loading || this.cai_loading){
+						return
+					}
+					if(type == "ding"){
+						this.ding_loading = true
+					} else {
+						this.cai_loading = true
+					}
+					uni.request<defaultResult>({
+						url: getURL(`/support/${type}/${this.item.id}`),
+						method:"POST",
+						header:{
+							token:getToken()
+						},
+						success: (res) => {
+							let r = res.data
+							if(r == null) return
+							if(res.statusCode !=200){
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								return
+							}
+							
+							// 之前没有操作过
+							if(this.action == ""){
+								if(type == "ding"){
+									this.ding_count = stepInt(this.ding_count)
+								} else {
+									this.cai_count = stepInt(this.cai_count)
+								}
+								this.action = type
+							}
+							// 之前操作过，操作一致，取消之前操作
+							else if(this.action == type){
+								if(type == "ding"){
+									this.ding_count = stepInt(this.ding_count,"-")
+								} else {
+									this.cai_count = stepInt(this.cai_count,"-")
+								}
+								this.action = ""
+							}
+							// 之前操作，操作不一致
+							else {
+								if(type == "ding"){
+									this.ding_count = stepInt(this.ding_count)
+									this.cai_count = stepInt(this.cai_count,"-")
+								} else {
+									this.cai_count = stepInt(this.cai_count)
+									this.ding_count = stepInt(this.ding_count,"-")
+								}
+								this.action = type
+							}
+							
+							// 全局通知
+							uni.$emit("onUpdateArticleChange",{
+								// 帖子ID
+								id:this.item.id,
+								// 事件标识
+								key:"updateSupport",
+								// 转成string，方便后期其他事件传递其他参数
+								value: JSON.stringify({
+									ding_count:this.ding_count,
+									cai_count:this.cai_count,
+									action:this.action
+								} as updateSupportEvent)
+							} as updateArticleChangeEvent)
+						},
+						fail: (err) => {
+							uni.showToast({
+								title: err.errMsg,
+								icon: 'none'
+							});
+						},
+						complete: () => {
+							this.ding_loading = false
+							this.cai_loading = false
+						}
+					})
+				})
+			},
+			// 触底事件
+			onScrollBottom(){
+				// 加载更多评论
+				(this.$refs["comment"] as ComponentPublicInstance).$callMethod("loadCommentList")
+			},
+			loadArticleDetail(){
+				uni.showLoading({
+					title: '加载中...',
+					mask: false
+				});
+				uni.request<Result<ArticleDetail>>({
+					url: getURL(`/article/${this.item.id}`),
+					header:{
+						token:getToken()
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+
+						this.item = r.data as ArticleDetail
+						this.isfollow = this.item.isfollow
+						this.read_count = this.item.read_count
+						this.action = this.item.user_support_action
+						this.ding_count = this.item.ding_count
+						this.cai_count = this.item.cai_count
+						this.collect_count = this.item.collect_count
+						this.isCollect = this.item.isCollect
+						this.comment_count = this.item.comment_count
+						this.share_count = this.item.share_count
+						
+						// 更新首页阅读数
+						uni.$emit("onUpdateArticleChange",{
+							id:this.item.id,
+							key:"updateReadCount",
+							value:this.item.read_count.toString()
+						} as updateArticleChangeEvent)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						setTimeout(function() {
+							uni.hideLoading()
+						}, 200);
+					}
+				});
+			},
+			// 分享
+			handleShare(){
+				share("https://www.dishaxy.com")
+			},
+			// 打开个人空间页
+			openUserSpace(user_id:number){
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id='+user_id,
+				});
+			},
+			// 预览图片
+			previewImage(img:string){
+				uni.previewImage({
+					current:img,
+					urls:this.item.images
+				})
+			},
+			// 图片加载失败
+			imageErrorEvent(e:UniImageErrorEvent){
+				e.target?.setAttribute("src","/static/error-picture.png")
+			}
+		}
+	}
+
+
+import _easycom_navbar from '@/components/navbar/navbar.uvue'
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+import _easycom_follow_button from '@/components/follow-button/follow-button.uvue'
+import _easycom_comment from '@/components/comment/comment.uvue'
+import _easycom_icon_btn from '@/components/icon-btn/icon-btn.uvue'
+import _easycom_comment_popup from '@/components/comment-popup/comment-popup.uvue'
+function GenPagesDetailDetailRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_navbar = resolveEasyComponent("navbar",_easycom_navbar)
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+const _component_follow_button = resolveEasyComponent("follow-button",_easycom_follow_button)
+const _component_comment = resolveEasyComponent("comment",_easycom_comment)
+const _component_icon_btn = resolveEasyComponent("icon-btn",_easycom_icon_btn)
+const _component_comment_popup = resolveEasyComponent("comment-popup",_easycom_comment_popup)
+
+  return createElementVNode(Fragment, null, [
+    createVNode(_component_navbar, utsMapOf({
+      type: "text",
+      title: "社区交友",
+      "right-icon": "more",
+      onClickRight: _ctx.handleShare
+    }), null, 8, ["onClickRight"]),
+    createElementVNode("scroll-view", utsMapOf({
+      "scroll-into-view": _ctx.scrollIntoView,
+      "scroll-with-animation": true,
+      style: normalizeStyle(utsMapOf({"flex":"1"})),
+      onScrolltolower: _ctx.onScrollBottom
+    }), [
+      createElementVNode("view", utsMapOf({ class: "list-item-header" }), [
+        createVNode(_component_avatar, utsMapOf({
+          src: _ctx.item.avatar,
+          style: normalizeStyle(utsMapOf({"margin-right":"27rpx"})),
+          onClick: () => {_ctx.openUserSpace(_ctx.item.user_id)}
+        }), null, 8, ["src", "style", "onClick"]),
+        createElementVNode("view", utsMapOf({
+          onClick: () => {_ctx.openUserSpace(_ctx.item.user_id)}
+        }), [
+          createElementVNode("text", utsMapOf({ class: "nickname" }), toDisplayString(_ctx.item.name), 1),
+          createElementVNode("text", utsMapOf({ class: "time" }), toDisplayString(_ctx.item.create_time) + " · " + toDisplayString(_ctx.item.read_count) + "次阅读", 1)
+        ], 8, ["onClick"]),
+        createVNode(_component_follow_button, utsMapOf({
+          type: "button",
+          modelValue: _ctx.isfollow,
+          "onUpdate:modelValue": $event => {(_ctx.isfollow) = $event},
+          user_id: _ctx.item.user_id
+        }), null, 8, ["modelValue", "onUpdate:modelValue", "user_id"])
+      ]),
+      createElementVNode("text", utsMapOf({ class: "content" }), toDisplayString(_ctx.item.content), 1),
+      createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.item.images, (img, imgI, _, _): VNode => {
+        return createElementVNode("image", utsMapOf({
+          key: imgI,
+          src: img,
+          "fade-show": true,
+          mode: "widthFix",
+          class: "content-image",
+          onError: _ctx.imageErrorEvent,
+          onClick: withModifiers(() => {_ctx.previewImage(img)}, ["stop"])
+        }), null, 40, ["src", "onError", "onClick"])
+      }), 128 /* KEYED_FRAGMENT */),
+      createElementVNode("view", utsMapOf({
+        class: "divider",
+        id: "divider"
+      })),
+      createVNode(_component_comment, utsMapOf({
+        ref: "comment",
+        article_id: _ctx.item.id,
+        support_count: _ctx.support_count,
+        onReply: _ctx.handleReply
+      }), null, 8, ["article_id", "support_count", "onReply"]),
+      createElementVNode("view", utsMapOf({ class: "action-bar" }), [
+        createElementVNode("view", utsMapOf({
+          class: "action-input",
+          onClick: () => {_ctx.toggleCommentPopup(true)}
+        }), [
+          createElementVNode("text", utsMapOf({ class: "placeholder" }), "说点什么..."),
+          createElementVNode("text", utsMapOf({ class: "iconfont emotion" }), toDisplayString('\ue64e'))
+        ], 8, ["onClick"]),
+        createVNode(_component_icon_btn, utsMapOf({
+          column: true,
+          iconSize: "18px",
+          label: "赞",
+          icon: '\ue6eb',
+          count: _ctx.ding_count,
+          active: _ctx.action == 'ding',
+          onClick: () => {_ctx.handleSupport('ding')}
+        }), null, 8, ["count", "active", "onClick"]),
+        createVNode(_component_icon_btn, utsMapOf({
+          column: true,
+          iconSize: "16px",
+          label: "踩",
+          icon: '\ue701',
+          count: _ctx.cai_count,
+          active: _ctx.action == 'cai',
+          onClick: () => {_ctx.handleSupport('cai')}
+        }), null, 8, ["count", "active", "onClick"]),
+        createVNode(_component_icon_btn, utsMapOf({
+          column: true,
+          iconSize: "18px",
+          label: "收藏",
+          icon: '\ue629',
+          count: _ctx.collect_count,
+          active: _ctx.isCollect,
+          onClick: _ctx.handleCollect
+        }), null, 8, ["count", "active", "onClick"]),
+        createVNode(_component_icon_btn, utsMapOf({
+          column: true,
+          iconSize: "18px",
+          label: "评论",
+          icon: '\ue648',
+          count: _ctx.comment_count,
+          onClick: () => {_ctx.toggleCommentPopup(true)}
+        }), null, 8, ["count", "onClick"]),
+        createVNode(_component_icon_btn, utsMapOf({
+          column: true,
+          iconSize: "18px",
+          label: "分享",
+          icon: '\ue633',
+          count: _ctx.share_count,
+          onClick: () => {_ctx.handleShare()}
+        }), null, 8, ["count", "onClick"])
+      ]),
+      createVNode(_component_comment_popup, utsMapOf({
+        ref: "popup",
+        article_id: _ctx.item.id
+      }), null, 8, ["article_id"])
+    ], 44, ["scroll-into-view", "onScrolltolower"])
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenPagesDetailDetailStyles = [utsMapOf([["list-item-header", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["alignItems", "center"], ["paddingTop", "26rpx"], ["paddingLeft", "33rpx"], ["paddingRight", "33rpx"]]))], ["time", padStyleMapOf(utsMapOf([["fontSize", 13], ["color", "#a7a7a7"], ["marginTop", "10rpx"]]))], ["nickname", padStyleMapOf(utsMapOf([["color", "#050505"], ["textOverflow", "ellipsis"], ["maxWidth", "240rpx"], ["height", "34rpx"], ["fontSize", 15], ["fontWeight", "bold"]]))], ["content", padStyleMapOf(utsMapOf([["paddingTop", "25rpx"], ["paddingLeft", "33rpx"], ["paddingRight", "33rpx"], ["fontSize", 16], ["lineHeight", 1.5], ["marginBottom", "15rpx"]]))], ["content-image", padStyleMapOf(utsMapOf([["width", "750rpx"], ["backgroundColor", "#f0f0f0"]]))], ["action-bar", padStyleMapOf(utsMapOf([["backgroundColor", "#ffffff"], ["position", "fixed"], ["bottom", 0], ["left", 0], ["right", 0], ["borderTopWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderTopColor", "#f2f2f2"], ["zIndex", 100], ["height", "103rpx"], ["paddingLeft", "28rpx"], ["paddingRight", "28rpx"], ["flexDirection", "row"], ["alignItems", "center"]]))], ["action-input", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["backgroundColor", "#f4f4f4"], ["height", "73rpx"], ["width", "250rpx"], ["borderRadius", 5], ["alignItems", "center"], ["justifyContent", "space-between"], ["paddingTop", 0], ["paddingRight", "20rpx"], ["paddingBottom", 0], ["paddingLeft", "20rpx"]]))], ["placeholder", padStyleMapOf(utsMapOf([["fontSize", 14], ["color", "#949494"]]))], ["emotion", padStyleMapOf(utsMapOf([["fontSize", 20], ["color", "#191919"]]))]])]

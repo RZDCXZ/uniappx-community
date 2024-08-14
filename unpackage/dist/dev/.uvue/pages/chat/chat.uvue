@@ -1,0 +1,284 @@
+
+	import { ChatItem,ChatItemResult,Result,Conversation } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+	import { setCurrentConversation } from "@/common/socket.uts"
+	export default {
+		data() {
+			return {
+				content: "",
+				list: [] as ChatItem[],
+				isEnded: false,
+				loading: false,
+				currentPage: 1,
+				sendLoading: false,
+				scrollTop:0,
+				id:0,
+				target_id:0
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			// 会话ID
+			if(options.has("id")){
+				this.id = parseInt(options.get("id") as string)
+			}
+			// 聊天对象ID
+			if(options.has("target_id")){
+				this.target_id = parseInt(options.get("target_id") as string)
+			}
+			// 页面标题
+			if(options.has("title")){
+				const title = options.get("title") as string
+				uni.setNavigationBarTitle({
+					title
+				})
+			}
+			// 设置当前聊天对象
+			setCurrentConversation(this.id, this.target_id)
+			// 获取聊天记录
+			this.refreshData(null)
+			// 监听接收信息
+			uni.$on("onMessage",this.onMessage)
+			// 更新未读数
+			this.read()
+		},
+		onUnload() {
+			// 删除当前聊天对象
+			setCurrentConversation(0, 0)
+			uni.$off("onMessage",this.onMessage)
+		},
+		methods: {
+			// 接收消息
+			onMessage(e:ChatItem){
+				console.log("onMessage",e, " at pages/chat/chat.uvue:69")
+				// 属于当前会话，直接添加数据
+				if(e.conversation_id == this.id){
+					// 将数据渲染到页面
+					this.addMessage(e)
+					// 更新未读数
+					this.read()
+				}
+			},
+			// 更新未读数
+			read(){
+				uni.request<Result<Conversation>>({
+					url: getURL(`/im/read_conversation/${this.id}`),
+					method: 'POST',
+					header:{
+						token:getToken()
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						const resData = r.data as Conversation | null
+						if(resData == null) return
+						// 通知聊天会话列表更新未读数
+						uni.$emit("onUpdateNoReadCount",resData.id)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+				});
+			},
+			refreshData(loadComplete : (() => void) | null) {
+				this.list.length = 0
+				this.currentPage = 1
+				this.isEnded = false
+				this.loading = false
+				this.loadData(loadComplete)
+			},
+			loadData(loadComplete : (() => void) | null) {
+				if (this.loading || this.isEnded) {
+					return
+				}
+				this.loading = true
+				uni.request<Result<ChatItemResult>>({
+					url: getURL(`/im/${this.id}/message/${Math.floor(this.currentPage)}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as ChatItemResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.list = resData.data
+						} else {
+							this.list.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
+			send() {
+				this.sendLoading = true
+
+				uni.request<Result<ChatItem>>({
+					url:getURL("/im/send"),
+					method:"POST",
+					header:{
+						token:getToken()
+					},
+					data: {
+						target_id:this.target_id,
+						type:"text",
+						body:this.content,
+						client_create_time: Date.now()
+					},
+					success:(res)=>{
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						if(r.data == null) return
+						let d = r.data as ChatItem
+						/**
+						 * 消息状态state：
+						 * 100 发送成功
+						 * 101 对方已把你拉黑
+						 * 102 你把对方拉黑了
+						 * 103 对方已被系统封禁
+						 * 104 禁止发送（内容不合法）
+						 */
+						if(d.state != 100){
+							let title = d.state_text != null ? d.state_text as string : '发送失败'
+							uni.showToast({
+								title,
+								icon: 'none'
+							});
+						}
+						
+						this.addMessage(d)
+						this.content = ""
+					},
+					fail:(err)=>{
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete:()=>{
+						this.sendLoading = false
+					}
+				})
+			},
+			// 添加数据
+			addMessage(e:ChatItem){
+				// 将最新的数据追加到列表头部
+				this.list.unshift(e)
+				this.goToBottom()
+			},
+			// 滚动到底部
+			goToBottom(){
+				setTimeout(()=>{
+					this.scrollTop = this.scrollTop == 1 ? 0 : 1
+				},300)
+			}
+		}
+	}
+
+
+import _easycom_chat_item from '@/components/chat-item/chat-item.uvue'
+import _easycom_loading_more from '@/components/loading-more/loading-more.uvue'
+import _easycom_main_btn from '@/components/main-btn/main-btn.uvue'
+function GenPagesChatChatRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_chat_item = resolveEasyComponent("chat-item",_easycom_chat_item)
+const _component_loading_more = resolveEasyComponent("loading-more",_easycom_loading_more)
+const _component_main_btn = resolveEasyComponent("main-btn",_easycom_main_btn)
+
+  return createElementVNode(Fragment, null, [
+    createElementVNode("scroll-view", utsMapOf({
+      "scroll-top": _ctx.scrollTop,
+      class: "chat-scroller",
+      "scroll-with-animation": true,
+      onScrolltolower: () => {_ctx.loadData(null)}
+    }), [
+      createElementVNode("view", utsMapOf({
+        style: normalizeStyle(utsMapOf({"margin-top":"auto"}))
+      }), [
+        createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.list, (item, index, _, _): VNode => {
+          return createVNode(_component_chat_item, utsMapOf({
+            key: index,
+            item: item
+          }), null, 8 /* PROPS */, ["item"])
+        }), 128 /* KEYED_FRAGMENT */),
+        _ctx.list.length > 5
+          ? createElementVNode("view", utsMapOf({
+              key: 0,
+              class: "loadMore"
+            }), [
+              createVNode(_component_loading_more, utsMapOf({
+                isEnded: _ctx.isEnded,
+                loading: _ctx.loading
+              }), null, 8 /* PROPS */, ["isEnded", "loading"])
+            ])
+          : createCommentVNode("v-if", true)
+      ], 4 /* STYLE */)
+    ], 40 /* PROPS, NEED_HYDRATION */, ["scroll-top", "onScrolltolower"]),
+    createElementVNode("view", utsMapOf({ class: "chat-action" }), [
+      createElementVNode("textarea", utsMapOf({
+        "auto-focus": false,
+        class: "chat-input",
+        "auto-height": true,
+        modelValue: _ctx.content,
+        onInput: ($event: InputEvent) => {(_ctx.content) = $event.detail.value},
+        placeholder: "说几句吧"
+      }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"]),
+      createVNode(_component_main_btn, utsMapOf({
+        width: "100rpx",
+        height: "60rpx",
+        "font-size": "14px",
+        disabled: _ctx.content == '' || _ctx.sendLoading,
+        style: normalizeStyle(utsMapOf({"margin-left":"10rpx","margin-bottom":"5rpx"})),
+        onClick: _ctx.send
+      }), utsMapOf({
+        default: withSlotCtx((): any[] => [toDisplayString(_ctx.sendLoading ? '发送中' : '发送')]),
+        _: 1 /* STABLE */
+      }), 8 /* PROPS */, ["disabled", "style", "onClick"])
+    ])
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenPagesChatChatStyles = [utsMapOf([["chat-scroller", padStyleMapOf(utsMapOf([["flex", 1], ["boxSizing", "border-box"], ["transform", "rotate(180deg)"]]))], ["loadMore", padStyleMapOf(utsMapOf([["transform", "rotate(180deg)"]]))], ["chat-action", padStyleMapOf(utsMapOf([["minHeight", "95rpx"], ["flexDirection", "row"], ["alignItems", "flex-end"], ["backgroundColor", "#ffffff"], ["borderTopWidth", 1], ["borderTopStyle", "solid"], ["borderTopColor", "#eeeeee"], ["paddingLeft", "28rpx"], ["paddingRight", "28rpx"], ["paddingBottom", "20rpx"], ["flexShrink", 0]]))], ["chat-input", padStyleMapOf(utsMapOf([["width", "590rpx"], ["backgroundColor", "#f4f4f4"], ["borderRadius", 5], ["paddingTop", "16rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "16rpx"], ["paddingLeft", "20rpx"], ["marginTop", "20rpx"], ["maxHeight", "500rpx"]]))]])]

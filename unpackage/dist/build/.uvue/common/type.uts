@@ -1,0 +1,316 @@
+// 话题分类
+export type TopicNav = {
+	id: number
+	title: string
+}
+
+// 话题列表
+export type Topic = {
+	id: number
+	title: string
+	cover: string
+	desc: string
+	create_time:string | null
+	update_time: string | null
+	category_id: number
+	article_count: number
+	today_article_count: number
+}
+
+// 请求结果
+export type Result<T> = {
+	msg: string
+	data: T | null
+	code: number
+}
+
+export type TopicResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: Topic[]
+}
+
+// 帖子列表
+export type ListItem = {
+	id: number;
+	user_id: number;
+	title: string;
+	images: string[];
+	url: string;
+	category_id: number;
+	topic_id: number;
+	share_count: number;
+	ding_count: number;
+	cai_count: number;
+	comment_count: number;
+	read_count: number;
+	collect_count: number;
+	create_time: string | null;
+	update_time: string | null;
+	name: string;
+	avatar: string | null;
+	user_status: number;
+	topic_name: string | null;
+	user_support_action: string;
+	isfollow: boolean;
+}
+
+// 帖子列表请求结果
+export type ListResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: ListItem[]
+}
+
+export type UserDetail = {
+	name: string | null;
+	id: number;
+	username: string | null;
+	avatar: string | null;
+	password: boolean;
+	phone: string | null;
+	email: string | null;
+	status: number;
+	age: number;
+	sex: number;
+	qg: number;
+	job: string | null;
+	path: string | null;
+	birthday: string | null;
+	desc: string | null;
+	wx_openid: string | null;
+	wx_unionid: string | null;
+	create_time: string | null;
+	update_time: string | null;
+	fans_count: number;
+	follows_count: number;
+	articles_count: number;
+	comments_count: number;
+	token?: string | null;
+	isfollow?: boolean
+	isblacked?: boolean
+}
+
+export type UserDetail2 = {
+	name: string | null;
+	id: number;
+	avatar: string | null;
+	status: number;
+	age: number;
+	sex: number;
+	qg: number;
+	job: string | null;
+	path: string | null;
+	birthday: string | null;
+	desc: string | null;
+	fans_count: number;
+	follows_count: number;
+	articles_count: number;
+	comments_count: number;
+	isfollow: boolean;
+	isblacked: boolean;
+}
+
+// 默认返回结果
+export type defaultResult = {
+	code: number;
+	msg: string;
+	data: any | null
+} 
+
+// 帖子分类
+export type articleNav = {
+	id:number
+	title:string
+}
+
+// 监听帖子变化事件参数
+export type updateArticleChangeEvent = {
+	id:number
+	key:string
+	value:string
+}
+
+// 顶踩操作参数
+export type updateSupportEvent = {
+	action:string
+	ding_count:number
+	cai_count:number
+}
+
+
+// 用户列表
+export type UserItem = {
+	id: number;
+	username: string | null;
+	phone: string | null;
+	email: string | null;
+	avatar: string | null;
+	desc: string | null;
+	create_time: string | null;
+	fans_count: number;
+	isfollow: boolean;
+	name: string | null;
+}
+// 搜索用户列表分页结果
+export type UserItemResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: UserItem[]
+}
+
+// 帖子详情
+export type ArticleDetail = {
+	id: number;
+	user_id: number;
+	title: string | null;
+	content: string | null;
+	images: string[];
+	url: string | null;
+	category_id: number;
+	topic_id: number;
+	share_count: number;
+	ding_count: number;
+	cai_count: number;
+	comment_count: number;
+	read_count: number;
+	collect_count: number;
+	create_time: string | null;
+	update_time: string | null;
+	name: string | null;
+	avatar: string | null;
+	user_status: number;
+	topic_name: string | null;
+	user_support_action: string;
+	isfollow: boolean;
+	isCollect: boolean;
+}
+
+// 评论引用
+export type Quote = {
+	content: string
+	user_id: number
+	name: string | null
+	avatar: string | null
+}
+
+// 评论列表
+export type CommentItem = {
+	id: number;
+	article_id: number;
+	user_id: number;
+	reply_count: number;
+	content: string | null;
+	comment_id: number | null;
+	create_time: string | null;
+	avatar: string | null;
+	name: string | null;
+	quote?:Quote | null;
+	article_cover?: string | null;
+	article_title?: string | null;
+}
+
+// 评论列表分页结果
+export type CommentItemResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: CommentItem[]
+}
+
+// 点击回复
+export type ReplyEmit = {
+	placeholder:string | null
+	reply_id:number
+}
+
+// 评论详情
+export type CommentDetail = {
+	id: number;
+	article_id: number;
+	user_id: number;
+	reply_count: number;
+	content: string;
+	comment_id: number | null;
+	create_time: string | null;
+	avatar: string | null;
+	name: string | null;
+	isfollow: boolean;
+}
+
+export type onAddArticleSuccessEvent = {
+	category_id:number
+	topic_id:number
+}
+
+export type FeedbackItem = {
+	id: number;
+	content: string | null;
+	images: string[];
+	type: string;
+	create_time: string  | null;
+	name: string | null;
+	avatar: string | null;
+}
+
+export type FeedbackItemResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: FeedbackItem[]
+}
+
+// 聊天会话列表
+export type Conversation = {
+	id: number;
+	target_id: number;
+	unread_count: number;
+	last_msg_note: string | null;
+	update_time: string | null;
+	name: string | null;
+	avatar: string | null;
+}
+
+// 聊天会话列表分页结果
+export type ConversationResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: Conversation[]
+}
+
+// 聊天消息
+export type ChatItem = {
+	id: number;
+	user_id: number;
+	target_id: number;
+	is_revoke: number;
+	is_push: number;
+	type: string;
+	state: number;
+	body: string;
+	create_time: string | null;
+	update_time: string | null;
+	client_create_time: string | null;
+	name: string | null;
+	avatar: string | null;
+	conversation_id: number | null;
+	state_text: string | null;
+}
+
+export type ChatItemResult = {
+	current_page: number
+	per_page: number
+	last_page: number
+	total: number
+	data: ChatItem[]
+}

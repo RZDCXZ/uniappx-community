@@ -1,0 +1,111 @@
+
+	import type { defaultResult,updateArticleChangeEvent } from '@/common/type.uts'
+	import { getURL } from "@/common/request.uts"
+	import { AuthAction,getToken } from '@/store/user.uts'
+	export default {
+		emits:["update:modelValue"],
+		name:"follow-button",
+		props: {
+			modelValue: {
+				type: Boolean,
+				default: false
+			},
+			// 被关注人ID
+			user_id:{
+				type:Number,
+				default:0
+			},
+			type:{
+				type:String,
+				default:"text"
+			}
+		},
+		data() {
+			return {
+				loading:false
+			};
+		},
+		methods: {
+			// 关注/取消关注
+			handleFollow() {
+				AuthAction(()=>{
+					if(this.loading) return
+					
+					this.loading = true
+					// 判断是关注还是取消关注
+					let action = this.modelValue ? 'remove_follow' : 'add_follow'
+					uni.request<defaultResult>({
+						url: getURL(`/${action}/${this.user_id}`),
+						method:"POST",
+						header:{
+							token:getToken()
+						},
+						success: (res) => {
+							let r = res.data
+							if(r == null) return
+							if(res.statusCode !=200){
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								return
+							}
+							
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							
+							// 全局通知
+							uni.$emit("onUpdateArticleChange",{
+								// 被关注用户ID
+								id:this.user_id,
+								// 事件标识
+								key:"updateFollow",
+								// 转成string，方便后期其他事件传递其他参数
+								value: this.modelValue ? "false" : "true"
+							} as updateArticleChangeEvent)
+							
+							this.$emit("update:modelValue",!this.modelValue)
+						},
+						fail: (err) => {
+							uni.showToast({
+								title: err.errMsg,
+								icon: 'none'
+							});
+						},
+						complete: () => {
+							setTimeout(()=>{
+								this.loading = false
+							}, 300);
+						}
+					})
+				})
+			}
+		},
+	}
+
+
+import _easycom_main_btn from '@/components/main-btn/main-btn.uvue'
+function GenComponentsFollowButtonFollowButtonRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_main_btn = resolveEasyComponent("main-btn",_easycom_main_btn)
+
+  return _ctx.type == 'main-btn'
+    ? createVNode(_component_main_btn, utsMapOf({
+        key: 0,
+        onClick: withModifiers(_ctx.handleFollow, ["stop"]),
+        width: "330rpx",
+        height: "65rpx"
+      }), utsMapOf({
+        default: withSlotCtx((): any[] => [toDisplayString(_ctx.modelValue ? '已关注' : '关注')]),
+        _: 1
+      }), 8, ["onClick"])
+    : createElementVNode("text", utsMapOf({
+        key: 1,
+        class: normalizeClass(["follow", utsMapOf({  ['follow-' + _ctx.type] : true,'follow-active':_ctx.modelValue })]),
+        onClick: withModifiers(_ctx.handleFollow, ["stop"])
+      }), toDisplayString(_ctx.modelValue ? '已关注' : '关注'), 11, ["onClick"])
+}
+const GenComponentsFollowButtonFollowButtonStyles = [utsMapOf([["follow", padStyleMapOf(utsMapOf([["fontSize", 15], ["fontWeight", "bold"], ["marginLeft", "auto"]]))], ["follow-text", padStyleMapOf(utsMapOf([["color", "#de6489"], ["paddingTop", "10rpx"], ["paddingRight", "10rpx"], ["paddingBottom", "10rpx"], ["paddingLeft", "10rpx"]]))], ["follow-plain", padStyleMapOf(utsMapOf([["color", "#de6489"], ["borderWidth", "1rpx"], ["borderStyle", "solid"], ["borderColor", "#de6489"], ["borderRadius", 6], ["paddingTop", "10rpx"], ["paddingRight", "25rpx"], ["paddingBottom", "10rpx"], ["paddingLeft", "25rpx"], ["fontSize", 14]]))], ["follow-button", padStyleMapOf(utsMapOf([["borderRadius", 6], ["backgroundColor", "#de6489"], ["color", "#ffffff"], ["paddingTop", "10rpx"], ["paddingRight", "25rpx"], ["paddingBottom", "10rpx"], ["paddingLeft", "25rpx"]]))], ["follow-active", padStyleMapOf(utsMapOf([["color", "#9a9a9a"], ["backgroundColor", "#ffffff"], ["borderColor", "#ffffff"]]))]])]

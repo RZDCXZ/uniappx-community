@@ -1,0 +1,84 @@
+
+	import { userState } from '@/store/user.uts'
+	export default {
+		data() {
+			return {
+				phone:"",
+				password:false
+			}
+		},
+		onShow() {
+			this.phone = userState.phone == null ? "" : userState.phone as string
+			this.password = userState.password
+		},
+		methods: {
+			// 绑定手机号
+			bindPhone(){
+				let url = '/pages/user-bindphone/user-bindphone'
+				// 如果之前绑定过了，则是改绑
+				if(this.phone != ""){
+					uni.showModal({
+						content: '是否要修改绑定手机号？',
+						confirmText: '修改',
+						success: res => {
+							if(res.confirm){
+								uni.navigateTo({
+									url
+								});
+							}
+						},
+					});
+					return
+				}
+				uni.navigateTo({
+					url
+				});
+			},
+			// 设置密码
+			resetPassword(){
+				// 还没有绑定手机号，提示先绑定手机号
+				if(this.phone == ""){
+					uni.showModal({
+						content: '请先绑定手机号？',
+						confirmText: '修改',
+						success: res => {
+							if(res.confirm){
+								uni.navigateTo({
+									url: '/pages/user-bindphone/user-bindphone',
+								});
+							}
+						},
+					});
+					return
+				}
+				uni.navigateTo({
+					url: '/pages/user-reset-password/user-reset-password'
+				});
+			}
+		}
+	}
+
+
+import _easycom_cell from '@/components/cell/cell.uvue'
+function GenPagesUserSafeUserSafeRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_cell = resolveEasyComponent("cell",_easycom_cell)
+
+  return createElementVNode("scroll-view", utsMapOf({
+    style: normalizeStyle(utsMapOf({"flex":"1"}))
+  }), [
+    createVNode(_component_cell, utsMapOf({
+      title: "手机号",
+      "right-text": _ctx.phone,
+      "show-arrow": false,
+      onClick: () => {_ctx.bindPhone()}
+    }), null, 8, ["right-text", "onClick"]),
+    createVNode(_component_cell, utsMapOf({
+      title: "登陆密码",
+      "right-text": _ctx.password ? '修改密码' : '设置密码',
+      onClick: () => {_ctx.resetPassword()}
+    }), null, 8, ["right-text", "onClick"])
+  ], 4)
+}
+const GenPagesUserSafeUserSafeStyles = []

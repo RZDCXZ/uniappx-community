@@ -1,0 +1,174 @@
+
+	import { defaultResult } from "@/common/type.uts"
+	import { getURL } from '@/common/request.uts'
+	import { getToken } from '@/store/user.uts'
+	import { generateUniqueId } from '@/common/utils.uts'
+	type ImageItem = {
+		id: string
+		src: string
+		progress: number
+		err: string
+		task: UploadTask | null
+	}
+	export default {
+		name:"upload-images",
+		data() {
+			return {
+				imageList: [] as ImageItem[]
+			};
+		},
+		computed: {
+			// 剩余可选上传图片数
+			count(): number {
+				return 9 - this.imageList.length 
+			}
+		},
+		methods: {
+			// 判断是否还有没上传的图片
+			isUploading():boolean {
+				let result = false
+				this.imageList.forEach((o:ImageItem)=>{
+					if(o.progress < 100 && o.err == ""){
+						result = true
+					}
+				})
+				return result
+			},
+			// 获取已上传图片地址
+			getValue(): string[] {
+				let arr = [] as string[]
+				this.imageList.forEach((o:ImageItem)=>{
+					if(o.progress == 100){
+						arr.push(o.src)
+					}
+				})
+				return arr
+			},
+			// 删除图片
+			remove(index: number){
+				uni.showModal({
+					title: '提示',
+					content: '是否要删除该图片？',
+					confirmText: '删除',
+					success: res => {
+						if(!res.confirm){
+							return
+						}
+						let item = this.imageList[index]
+						// 如果还在上传中，先中端
+						if(item.progress < 100 && item.task != null && item.err == ""){
+							// 取消上传
+							item.task?.abort()
+						}
+						// 移除
+						this.imageList.splice(index,1)
+					},
+				});
+			},
+			previewImage(current : string) {
+				uni.previewImage({
+					current,
+					urls: this.imageList.map((o:ImageItem):string => o.src)
+				})
+			},
+			chooseImageUpload(){
+				uni.chooseImage({
+					count: this.count,
+					sizeType: ["compressed"],
+					sourceType: ["album"],
+					success:(res: ChooseImageSuccess)=>{
+						let length = res.tempFilePaths.length
+						for (let i = 0; i < length; i++) {
+							let src = res.tempFilePaths[i]
+							this.upload(src)
+						}
+					}
+				})
+			},
+			// 上传
+			upload(src:string){
+				let item = {
+					id:generateUniqueId(),
+					src,
+					progress: 0, 
+					err: "",
+					task: null
+				} as ImageItem
+				
+				let i = this.imageList.length
+				this.imageList.push(item)
+				item.task = uni.uploadFile({
+					url:getURL("/upload"),
+					filePath: src,
+					name:"image",
+					header: {
+						token:getToken()
+					},
+					success:(res)=>{
+						let d = JSON.parse<defaultResult>(res.data)
+						if(d == null) return
+						if(d.code == 0){
+							this.imageList[i].err = "上传失败"
+							uni.showToast({
+								title: d.msg,
+								icon: 'none'
+							});
+							return
+						}
+						this.imageList[i].src = d.data as string
+					},
+					fail:(_)=>{
+						this.imageList[i].err = "上传失败"
+					}
+				})
+				
+				// 上传进度
+				item.task?.onProgressUpdate((res:OnProgressUpdateResult)=>{
+					this.imageList[i].progress = res.progress
+				})
+			}
+		},
+	}
+
+
+function GenComponentsUploadImagesUploadImagesRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return createElementVNode("view", utsMapOf({ class: "upload-images" }), [
+    createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.imageList, (img, index, _, _): VNode => {
+      return createElementVNode("view", utsMapOf({
+        class: "upload-item",
+        key: img.id
+      }), [
+        createElementVNode("image", utsMapOf({
+          src: img.src,
+          mode: "aspectFill",
+          class: "upload-img",
+          onClick: () => {_ctx.previewImage(img.src)}
+        }), null, 8, ["src", "onClick"]),
+        createElementVNode("text", utsMapOf({
+          class: "iconfont upload-close",
+          onClick: () => {_ctx.remove(index)}
+        }), "x", 8, ["onClick"]),
+        isTrue(img.err != '' || img.progress < 100)
+          ? createElementVNode("view", utsMapOf({
+              key: 0,
+              class: "upload-progress"
+            }), [
+              createElementVNode("text", utsMapOf({ class: "upload-progress-data" }), toDisplayString(img.err != '' ? img.err : (img.progress + '%')), 1)
+            ])
+          : createCommentVNode("v-if", true)
+      ])
+    }), 128 /* KEYED_FRAGMENT */),
+    _ctx.count > 0
+      ? createElementVNode("view", utsMapOf({
+          key: 0,
+          class: "upload-btn upload-item",
+          onClick: _ctx.chooseImageUpload
+        }), [
+          createElementVNode("text", utsMapOf({ class: "iconfont upload-btn-icon" }), "+")
+        ], 8, ["onClick"])
+      : createCommentVNode("v-if", true)
+  ])
+}
+const GenComponentsUploadImagesUploadImagesStyles = [utsMapOf([["upload-images", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["flexWrap", "wrap"], ["paddingTop", 0], ["paddingRight", "14rpx"], ["paddingBottom", 0], ["paddingLeft", "14rpx"]]))], ["upload-item", padStyleMapOf(utsMapOf([["width", "220rpx"], ["height", "220rpx"], ["borderRadius", 5], ["marginTop", "10rpx"], ["marginRight", "10rpx"], ["marginBottom", "10rpx"], ["marginLeft", "10rpx"], ["overflow", "hidden"], ["position", "relative"]]))], ["upload-img", padStyleMapOf(utsMapOf([["width", "220rpx"], ["height", "220rpx"]]))], ["upload-close", padStyleMapOf(utsMapOf([["position", "absolute"], ["right", 0], ["top", 0], ["zIndex", 100], ["width", "50rpx"], ["height", "50rpx"], ["textAlign", "center"], ["lineHeight", "50rpx"], ["color", "#ffffff"], ["backgroundColor", "rgba(0,0,0,0.1)"], ["borderRadius", 5]]))], ["upload-btn", padStyleMapOf(utsMapOf([["borderWidth", 1], ["borderStyle", "solid"], ["borderColor", "#e2e2e2"], ["alignItems", "center"], ["justifyContent", "center"]]))], ["upload-btn-icon", padStyleMapOf(utsMapOf([["fontSize", 60], ["color", "#e2e2e2"]]))], ["upload-progress", padStyleMapOf(utsMapOf([["width", "220rpx"], ["height", "220rpx"], ["position", "absolute"], ["top", 0], ["right", 0], ["backgroundColor", "rgba(0,0,0,0.3)"], ["zIndex", 99], ["alignItems", "center"], ["justifyContent", "center"], ["flexDirection", "row"]]))], ["upload-progress-data", padStyleMapOf(utsMapOf([["fontSize", 14], ["color", "#ffffff"]]))]])]

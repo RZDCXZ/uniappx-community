@@ -1,0 +1,256 @@
+
+	import { articleNav,Result,TopicNav,defaultResult,onAddArticleSuccessEvent } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+	export default {
+		data() {
+			return {
+				content:"",
+				
+				chooseCategoryTitle:"选择分类",
+				chooseCategoryId:0,
+				// 分类
+				categoryList:[{
+					id:0,
+					title:"请选择"
+				}] as articleNav[],
+				// 分类选项
+				range:[] as string[],
+				
+				chooseTopicTitle:"选择话题",
+				chooseTopicId:0
+			}
+		},
+		computed: {
+			disabled(): boolean {
+				return this.content.length == 0 || this.chooseCategoryId == 0
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			if(options.has("topic_id")){
+				this.chooseTopicId = parseInt(options.get("topic_id") as string)
+			}
+			if(options.has("topic_title")){
+				this.chooseTopicTitle = options.get("topic_title") as string
+			}
+			this.loadCategories()
+			uni.$on("onTopicPickerSuccess",this.onTopicPickerSuccess)
+		},
+		onUnload() {
+			uni.$off("onTopicPickerSuccess",this.onTopicPickerSuccess)
+		},
+		methods: {
+			// 选择话题结果
+			onTopicPickerSuccess(e: TopicNav){
+				this.chooseTopicId = e.id
+				this.chooseTopicTitle = e.title
+			},
+			// 打开话题选择器
+			openTopicPicker(){
+				uni.navigateTo({
+					url: '/pages/choose-topic/choose-topic',
+				});
+			},
+			// 获取分类
+			loadCategories(){
+				uni.request<Result<articleNav[]>>({
+					url: getURL('/category/article'),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						let d = r.data as articleNav[]
+						this.categoryList.push(...d)
+						this.range = this.categoryList.map((o:articleNav) : string => o.title)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					}
+				});
+			},
+			// 发布帖子
+			submit(){
+				// 拿到上传组件节点
+				const uploadRef = this.$refs["upload"] as ComponentPublicInstance
+				// 判断是否还有图片正在上传
+				if(uploadRef.$callMethod("isUploading") as boolean){
+					uni.showToast({
+						title: '还有图片正在上传中...',
+						icon: 'none'
+					});
+					return
+				}
+				// 获取图片数组
+				let images = uploadRef.$callMethod("getValue") as string[]
+				// 请求参数
+				let data = { __$originalPosition: new UTSSourceMapPosition("data", "pages/add-post/add-post.uvue", 128, 9), 
+				  images,
+				  content:this.content,
+				  category_id: this.chooseCategoryId,
+				  topic_id:this.chooseTopicId
+				} as  UTSJSONObject
+				
+				uni.showLoading({
+					title: '发布中...',
+					mask: false
+				});
+				
+				uni.request<defaultResult>({
+					url: getURL("/article/save"),
+					method: 'POST',
+					data,
+					header:{
+						token:getToken()
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						
+						// 请求失败
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						// 刷新首页/话题详情页
+						uni.$emit("onAddArticleSuccess",{
+							category_id:this.chooseCategoryId,
+							topic_id:this.chooseTopicId
+						} as onAddArticleSuccessEvent)
+						
+						uni.showToast({
+							title: r.msg,
+							icon: 'none'
+						});
+						
+						setTimeout(function() {
+							uni.navigateBack({
+								delta: 1
+							});
+						}, 300);
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						uni.hideLoading()
+					}
+				});
+			},
+			handleChooseCategory(i:number){
+				let item = this.categoryList[i] as articleNav
+				this.chooseCategoryId = item.id
+				this.chooseCategoryTitle = item.title
+			}
+		}
+	}
+
+
+import _easycom_main_btn from '@/components/main-btn/main-btn.uvue'
+import _easycom_navbar from '@/components/navbar/navbar.uvue'
+import _easycom_upload_images from '@/components/upload-images/upload-images.uvue'
+import _easycom_cell from '@/components/cell/cell.uvue'
+import _easycom_f_picker from '@/components/f-picker/f-picker.uvue'
+function GenPagesAddPostAddPostRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_main_btn = resolveEasyComponent("main-btn",_easycom_main_btn)
+const _component_navbar = resolveEasyComponent("navbar",_easycom_navbar)
+const _component_upload_images = resolveEasyComponent("upload-images",_easycom_upload_images)
+const _component_cell = resolveEasyComponent("cell",_easycom_cell)
+const _component_f_picker = resolveEasyComponent("f-picker",_easycom_f_picker)
+
+  return createElementVNode(Fragment, null, [
+    createVNode(_component_navbar, utsMapOf({ type: "text" }), utsMapOf({
+      right: withSlotCtx((): any[] => [
+        createElementVNode("view", utsMapOf({ class: "navbar-right" }), [
+          createVNode(_component_main_btn, utsMapOf({
+            disabled: _ctx.disabled,
+            width: "118rpx",
+            height: "60rpx",
+            "font-size": "14px",
+            onClick: _ctx.submit
+          }), utsMapOf({
+            default: withSlotCtx((): any[] => ["发送"]),
+            _: 1 /* STABLE */
+          }), 8 /* PROPS */, ["disabled", "onClick"])
+        ])
+      ]),
+      _: 1 /* STABLE */
+    })),
+    createElementVNode("scroll-view", utsMapOf({
+      style: normalizeStyle(utsMapOf({"flex":"1","background-color":"#f4f4f4"}))
+    }), [
+      createElementVNode("view", utsMapOf({
+        style: normalizeStyle(utsMapOf({"background-color":"#ffffff"}))
+      }), [
+        createElementVNode("textarea", utsMapOf({
+          "auto-focus": true,
+          "auto-height": true,
+          modelValue: _ctx.content,
+          onInput: ($event: InputEvent) => {(_ctx.content) = $event.detail.value},
+          placeholder: "有标题和画面清晰无水印的作品曝光更多哦~",
+          class: "add-textarea"
+        }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"]),
+        createVNode(_component_upload_images, utsMapOf({
+          ref: "upload",
+          style: normalizeStyle(utsMapOf({"margin-bottom":"60rpx"}))
+        }), null, 8 /* PROPS */, ["style"])
+      ], 4 /* STYLE */),
+      createVNode(_component_f_picker, utsMapOf({
+        range: _ctx.range,
+        onConfirm: _ctx.handleChooseCategory
+      }), utsMapOf({
+        default: withSlotCtx((): any[] => [
+          createVNode(_component_cell, utsMapOf({
+            title: '# ' + _ctx.chooseCategoryTitle,
+            rightText: _ctx.chooseCategoryId == 0 ? '点击选择' : ''
+          }), utsMapOf({
+            default: withSlotCtx((): any[] => [
+              _ctx.chooseCategoryId == 0
+                ? createElementVNode("text", utsMapOf({
+                    key: 0,
+                    class: "cell-tip"
+                  }), "必填")
+                : createCommentVNode("v-if", true)
+            ]),
+            _: 1 /* STABLE */
+          }), 8 /* PROPS */, ["title", "rightText"])
+        ]),
+        _: 1 /* STABLE */
+      }), 8 /* PROPS */, ["range", "onConfirm"]),
+      createVNode(_component_cell, utsMapOf({
+        title: '# '+ _ctx.chooseTopicTitle,
+        rightText: _ctx.chooseTopicId == 0 ? '点击选择' : '',
+        onClick: _ctx.openTopicPicker
+      }), utsMapOf({
+        default: withSlotCtx((): any[] => [
+          _ctx.chooseTopicId == 0
+            ? createElementVNode("text", utsMapOf({
+                key: 0,
+                class: "cell-tip"
+              }), "让更多人看见")
+            : createCommentVNode("v-if", true)
+        ]),
+        _: 1 /* STABLE */
+      }), 8 /* PROPS */, ["title", "rightText", "onClick"])
+    ], 4 /* STYLE */)
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenPagesAddPostAddPostStyles = [utsMapOf([["navbar-right", padStyleMapOf(utsMapOf([["height", 45], ["alignItems", "center"], ["justifyContent", "center"], ["marginRight", "34rpx"]]))], ["cell-tip", padStyleMapOf(utsMapOf([["color", "#f0748a"], ["backgroundColor", "#fff1f6"], ["borderRadius", 4], ["marginLeft", "18rpx"], ["fontSize", 13], ["paddingTop", "5rpx"], ["paddingRight", "10rpx"], ["paddingBottom", "5rpx"], ["paddingLeft", "10rpx"]]))], ["add-textarea", padStyleMapOf(utsMapOf([["width", "750rpx"], ["maxHeight", "500rpx"], ["paddingTop", "60rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "60rpx"], ["paddingLeft", "30rpx"]]))]])]

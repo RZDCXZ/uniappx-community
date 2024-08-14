@@ -1,7 +1,6 @@
 import App from './App.uvue'
 
 import { createSSRApp } from 'vue'
-import { login } from './store/user'
 export function createApp() {
 	const app = createSSRApp(App)
 	return {

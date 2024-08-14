@@ -1,0 +1,88 @@
+
+	export default {
+		name:"login-input",
+		emits:["update:modelValue","confirm","click"],
+		props: {
+			autoFocus: {
+				type: Boolean,
+				default: false
+			},
+			fontSize:{
+				type:String,
+				default:"18px"
+			},
+			type:{
+				type:String,
+				default:"text"
+			},
+			placeholder:{
+				type:String,
+				default:""
+			},
+			maxlength:{
+				type:Number,
+				default:140
+			},
+			confirmType:{
+				type:String,
+				default:"done"
+			},
+			modelValue:{
+				type:String,
+				default:""
+			},
+			btn:{
+				type:String,
+				default:""
+			},
+			password:{
+				type:Boolean,
+				default:false
+			}
+		},
+		data() {
+			return {
+				
+			};
+		},
+		methods: {
+			handleInput(event: UniInputEvent) {
+				this.$emit("update:modelValue",event.detail.value)
+			},
+			handleConfirm(event: UniInputConfirmEvent){
+				this.$emit("confirm",event)
+			}
+		},
+	}
+
+
+function GenComponentsLoginInputLoginInputRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return createElementVNode("view", utsMapOf({ class: "login-box" }), [
+    createElementVNode("input", utsMapOf({
+      password: _ctx.password,
+      "auto-focus": _ctx.autoFocus,
+      style: normalizeStyle(utsMapOf({ 'font-size':_ctx.fontSize })),
+      value: _ctx.modelValue,
+      type: _ctx.type,
+      placeholder: _ctx.placeholder,
+      "placeholder-style": "font-weight:bold;color:#cbcbcb;",
+      class: normalizeClass(["login-input", utsMapOf({ 'login-input-full': (_ctx.btn == '') })]),
+      maxlength: _ctx.maxlength,
+      "confirm-type": _ctx.confirmType,
+      onInput: _ctx.handleInput,
+      onConfirm: _ctx.handleConfirm
+    }), null, 46, ["password", "auto-focus", "value", "type", "placeholder", "maxlength", "confirm-type", "onInput", "onConfirm"]),
+    _ctx.btn != ''
+      ? createElementVNode("view", utsMapOf({
+          key: 0,
+          class: "login-box-btn",
+          onClick: () => {_ctx.$emit('click')}
+        }), [
+          createElementVNode("text", utsMapOf({ class: "login-box-btn-text" }), toDisplayString(_ctx.btn), 1)
+        ], 8, ["onClick"])
+      : createCommentVNode("v-if", true)
+  ])
+}
+const GenComponentsLoginInputLoginInputStyles = [utsMapOf([["login-box", padStyleMapOf(utsMapOf([["borderBottomWidth", "1rpx"], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e7e7e7"], ["flexDirection", "row"], ["alignItems", "center"], ["marginTop", "120rpx"], ["height", "112rpx"]]))], ["login-input", padStyleMapOf(utsMapOf([["height", "70rpx"], ["width", "508rpx"], ["borderRightWidth", "1rpx"], ["borderRightStyle", "solid"], ["borderRightColor", "#e7e7e7"]]))], ["login-box-btn", padStyleMapOf(utsMapOf([["flex", 1], ["height", "70rpx"], ["alignItems", "center"], ["justifyContent", "center"]]))], ["login-box-btn-text", padStyleMapOf(utsMapOf([["fontSize", 14], ["color", "#262626"]]))], ["login-input-full", padStyleMapOf(utsMapOf([["width", "655rpx"], ["borderRightWidth", 0], ["borderRightStyle", "none"], ["borderRightColor", "#000000"]]))]])]

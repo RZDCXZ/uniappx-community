@@ -1,0 +1,69 @@
+
+	export default {
+		emits:["click"],
+		name:"icon-btn",
+		props: {
+			icon: {
+				type: String,
+				default: ""
+			},
+			iconSize:{
+				type: String,
+				default: "22px"
+			},
+			count:{
+				type:Number,
+				default:0
+			},
+			label:{
+				type: String,
+				default: ""
+			},
+			column:{
+				type:Boolean,
+				default:false
+			},
+			width:{
+				type: String,
+				default: ""
+			},
+			active:{
+				type:Boolean,
+				default:false
+			}
+		},
+		computed: {
+			style(): string {
+				if(this.width != ''){
+					return `width:${this.width};`
+				} 
+				return 'flex: 1;'
+			}
+		},
+		methods: {
+			handleClick() {
+				this.$emit("click")
+			}
+		},
+	}
+
+
+function GenComponentsIconBtnIconBtnRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return createElementVNode("view", utsMapOf({
+    class: normalizeClass(["action-box", utsMapOf({ 'action-box-column' : _ctx.column })]),
+    "hover-class": "action-box-hover",
+    style: normalizeStyle(_ctx.style),
+    onClick: withModifiers(_ctx.handleClick, ["stop"])
+  }), [
+    createElementVNode("text", utsMapOf({
+      class: normalizeClass(["iconfont action-icon",  _ctx.active ?  'action-active' : '']),
+      style: normalizeStyle(`font-size:${_ctx.iconSize}`)
+    }), toDisplayString(_ctx.icon), 7),
+    createElementVNode("text", utsMapOf({
+      class: normalizeClass(["action-data",  _ctx.active ?  'action-active' : ''])
+    }), toDisplayString(_ctx.count > 0 ? _ctx.count : _ctx.label), 3)
+  ], 14, ["onClick"])
+}
+const GenComponentsIconBtnIconBtnStyles = [utsMapOf([["action-box", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["justifyContent", "center"], ["alignItems", "center"]]))], ["action-icon", utsMapOf([["", utsMapOf([["marginRight", "12rpx"], ["marginBottom", 0]])], [".action-box-column ", utsMapOf([["marginRight", 0], ["marginBottom", "5rpx"]])]])], ["action-data", utsMapOf([["", utsMapOf([["color", "#000000"], ["fontSize", 15]])], [".action-box-column ", utsMapOf([["fontSize", 12]])]])], ["action-box-column", padStyleMapOf(utsMapOf([["flexDirection", "column"]]))], ["action-active", padStyleMapOf(utsMapOf([["color", "#de6489"]]))]])]

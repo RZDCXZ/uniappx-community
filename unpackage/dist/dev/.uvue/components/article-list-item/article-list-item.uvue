@@ -1,0 +1,342 @@
+
+	import { PropType } from "vue"
+	import { ListItem,defaultResult,updateSupportEvent,updateArticleChangeEvent } from "@/common/type.uts"
+	import { stepInt } from "@/common/utils.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken,AuthAction } from "@/store/user.uts"
+	export default {
+		emits:["onDeleteSuccess"],
+		name:"article-list-item",
+		props: {
+			item: {
+				type: Object as PropType<ListItem>,
+				required:true 
+			},
+			inTopicDetail:{
+				type:Boolean,
+				default:false
+			},
+			inUserSpace: {
+				type:Boolean,
+				default:false
+			},
+			isAdmin: {
+				type:Boolean,
+				default:false
+			},
+		},
+		data() {
+			return {
+				isfollow: false,
+				action:"",
+				ding_count:0,
+				ding_loading:false,
+				cai_count:0,
+				cai_loading:false,
+				read_count:0,
+				comment_count:0
+			}
+		},
+		created(){
+			this.isfollow = this.item.isfollow
+			this.action = this.item.user_support_action
+			this.ding_count = this.item.ding_count
+			this.cai_count = this.item.cai_count
+			this.read_count = this.item.read_count
+			this.comment_count = this.item.comment_count
+		},
+		computed: {
+			imageClass(): string {
+				const count = this.item.images.length
+				if(count == 1){
+					return "one-image"
+				} else if(count == 2){
+					return "two-image"
+				} else {
+					return "more-image"
+				}
+			}
+		},
+		created() {
+			this.isfollow = this.item.isfollow
+		},
+		methods: {
+			deleteItem(){
+				uni.showModal({
+					title: '',
+					content: '是否要删除该帖子？',
+					confirmText: '删除',
+					success: res => {
+						if(!res.confirm){
+							return
+						}
+						uni.showLoading({
+							title: '删除中...',
+							mask: true
+						});
+						uni.request<defaultResult>({
+							url: getURL(`/article/delete/${this.item.id}`),
+							method: 'POST',
+							header: {
+								token:getToken()
+							},
+							success: res => {
+								let r = res.data
+								if(r == null) return
+								if(res.statusCode !=200){
+									uni.showToast({
+										title: r.msg,
+										icon: 'none'
+									});
+									return
+								}
+								
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								
+								this.$emit("onDeleteSuccess")
+							},
+							fail: (err) => {
+								uni.showToast({
+									title: err.errMsg,
+									icon: 'none'
+								});
+							},
+							complete: () => {
+								uni.hideLoading()
+							}
+						});
+					},
+				});
+			},
+			openUserSpace(){
+				if(this.inUserSpace){
+					return
+				}
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id=' + this.item.user_id
+				});
+			},
+			// 更新评论数
+			updateCommentCount(count:number){
+				this.comment_count = count
+			},
+			// 更新阅读数
+			updateReadCount(count:number){
+				this.read_count = count
+			},
+			openTopicDetail(){
+				if(this.inTopicDetail){
+					return
+				}
+				uni.navigateTo({
+					url: '/pages/topic-detail/topic-detail?id='+this.item.topic_id
+				});
+			},
+			openDetail(){
+				uni.navigateTo({
+					url: '/pages/detail/detail?id='+this.item.id
+				});
+			},
+			// 更新isfollow
+			updateFollow(value:boolean) {
+				this.isfollow = value
+			},
+			// 更新顶踩情况
+			updateSupport(e:updateSupportEvent){
+				this.action = e.action
+				this.ding_count = e.ding_count
+				this.cai_count = e.cai_count 
+			},
+			// 顶踩
+			handleSupport(type : 'ding' | 'cai'){
+				AuthAction(()=>{
+					if(this.ding_loading || this.cai_loading){
+						return
+					}
+					if(type == "ding"){
+						this.ding_loading = true
+					} else {
+						this.cai_loading = true
+					}
+					uni.request<defaultResult>({
+						url: getURL(`/support/${type}/${this.item.id}`),
+						method:"POST",
+						header:{
+							token:getToken()
+						},
+						success: (res) => {
+							let r = res.data
+							if(r == null) return
+							if(res.statusCode !=200){
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								return
+							}
+							
+							// 之前没有操作过
+							if(this.action == ""){
+								if(type == "ding"){
+									this.ding_count = stepInt(this.ding_count)
+								} else {
+									this.cai_count = stepInt(this.cai_count)
+								}
+								this.action = type
+							}
+							// 之前操作过，操作一致，取消之前操作
+							else if(this.action == type){
+								if(type == "ding"){
+									this.ding_count = stepInt(this.ding_count,"-")
+								} else {
+									this.cai_count = stepInt(this.cai_count,"-")
+								}
+								this.action = ""
+							}
+							// 之前操作，操作不一致
+							else {
+								if(type == "ding"){
+									this.ding_count = stepInt(this.ding_count)
+									this.cai_count = stepInt(this.cai_count,"-")
+								} else {
+									this.cai_count = stepInt(this.cai_count)
+									this.ding_count = stepInt(this.ding_count,"-")
+								}
+								this.action = type
+							}
+							
+							// 全局通知
+							uni.$emit("onUpdateArticleChange",{
+								// 帖子ID
+								id:this.item.id,
+								// 事件标识
+								key:"updateSupport",
+								// 转成string，方便后期其他事件传递其他参数
+								value: JSON.stringify({
+									ding_count:this.ding_count,
+									cai_count:this.cai_count,
+									action:this.action
+								} as updateSupportEvent)
+							} as updateArticleChangeEvent)
+						},
+						fail: (err) => {
+							uni.showToast({
+								title: err.errMsg,
+								icon: 'none'
+							});
+						},
+						complete: () => {
+							this.ding_loading = false
+							this.cai_loading = false
+						}
+					})
+				})
+			}
+		},
+	}
+
+
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+import _easycom_follow_button from '@/components/follow-button/follow-button.uvue'
+import _easycom_icon_btn from '@/components/icon-btn/icon-btn.uvue'
+function GenComponentsArticleListItemArticleListItemRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+const _component_follow_button = resolveEasyComponent("follow-button",_easycom_follow_button)
+const _component_icon_btn = resolveEasyComponent("icon-btn",_easycom_icon_btn)
+
+  return createElementVNode(Fragment, null, [
+    createElementVNode("view", utsMapOf({
+      class: "list-item-header",
+      onClick: withModifiers(_ctx.openDetail, ["stop"])
+    }), [
+      createVNode(_component_avatar, utsMapOf({
+        src: _ctx.item.avatar,
+        style: normalizeStyle(utsMapOf({"margin-right":"27rpx"})),
+        onClick: withModifiers(_ctx.openUserSpace, ["stop"])
+      }), null, 8 /* PROPS */, ["src", "style", "onClick"]),
+      createElementVNode("view", null, [
+        createElementVNode("text", utsMapOf({
+          class: "nickname",
+          onClick: withModifiers(_ctx.openUserSpace, ["stop"])
+        }), toDisplayString(_ctx.item.name), 9 /* TEXT, PROPS */, ["onClick"]),
+        createElementVNode("text", utsMapOf({ class: "time" }), toDisplayString(_ctx.item.create_time) + " · " + toDisplayString(_ctx.read_count) + "次阅读", 1 /* TEXT */)
+      ]),
+      isTrue(_ctx.isAdmin)
+        ? createElementVNode("text", utsMapOf({
+            key: 0,
+            class: "iconfont delete-icon",
+            onClick: withModifiers(_ctx.deleteItem, ["stop"])
+          }), toDisplayString('\ue605'), 8 /* PROPS */, ["onClick"])
+        : createVNode(_component_follow_button, utsMapOf({
+            key: 1,
+            modelValue: _ctx.isfollow,
+            "onUpdate:modelValue": $event => {(_ctx.isfollow) = $event},
+            user_id: _ctx.item.user_id
+          }), null, 8 /* PROPS */, ["modelValue", "onUpdate:modelValue", "user_id"])
+    ], 8 /* PROPS */, ["onClick"]),
+    createElementVNode("text", utsMapOf({
+      class: "content",
+      onClick: withModifiers(_ctx.openDetail, ["stop"])
+    }), toDisplayString(_ctx.item.title), 9 /* TEXT, PROPS */, ["onClick"]),
+    createElementVNode("view", utsMapOf({
+      class: "content-media",
+      onClick: withModifiers(_ctx.openDetail, ["stop"])
+    }), [
+      createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.item.images, (img, imgI, _, _): VNode => {
+        return createElementVNode("image", utsMapOf({
+          key: imgI,
+          src: img,
+          "fade-show": true,
+          mode: "aspectFill",
+          class: normalizeClass(["content-image", _ctx.imageClass])
+        }), null, 10 /* CLASS, PROPS */, ["src"])
+      }), 128 /* KEYED_FRAGMENT */)
+    ], 8 /* PROPS */, ["onClick"]),
+    _ctx.item.topic_name != null
+      ? createElementVNode("view", utsMapOf({
+          key: 0,
+          class: "topic-tag",
+          onClick: withModifiers(_ctx.openTopicDetail, ["stop"])
+        }), [
+          createElementVNode("text", utsMapOf({ class: "topic-tag-icon" }), "#"),
+          createElementVNode("text", utsMapOf({ class: "topic-tag-title" }), toDisplayString(_ctx.item.topic_name), 1 /* TEXT */),
+          createElementVNode("text", utsMapOf({ class: "iconfont topic-tag-more" }), toDisplayString('\ue60c'))
+        ], 8 /* PROPS */, ["onClick"])
+      : createCommentVNode("v-if", true),
+    createElementVNode("view", utsMapOf({ class: "actions" }), [
+      createVNode(_component_icon_btn, utsMapOf({
+        label: "赞",
+        icon: '\ue6eb',
+        count: _ctx.ding_count,
+        active: _ctx.action == 'ding',
+        onClick: () => {_ctx.handleSupport('ding')}
+      }), null, 8 /* PROPS */, ["count", "active", "onClick"]),
+      createVNode(_component_icon_btn, utsMapOf({
+        label: "踩",
+        icon: '\ue701',
+        count: _ctx.cai_count,
+        active: _ctx.action == 'cai',
+        onClick: () => {_ctx.handleSupport('cai')}
+      }), null, 8 /* PROPS */, ["count", "active", "onClick"]),
+      createVNode(_component_icon_btn, utsMapOf({
+        label: "评论",
+        icon: '\ue648',
+        count: _ctx.comment_count,
+        onClick: _ctx.openDetail
+      }), null, 8 /* PROPS */, ["count", "onClick"]),
+      createVNode(_component_icon_btn, utsMapOf({
+        label: "分享",
+        icon: '\ue633',
+        count: _ctx.item.share_count,
+        onClick: _ctx.openDetail
+      }), null, 8 /* PROPS */, ["count", "onClick"])
+    ]),
+    createElementVNode("view", utsMapOf({ class: "divider" }))
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenComponentsArticleListItemArticleListItemStyles = [utsMapOf([["list-item-header", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["alignItems", "center"], ["paddingTop", "26rpx"], ["paddingLeft", "33rpx"], ["paddingRight", "33rpx"]]))], ["time", padStyleMapOf(utsMapOf([["fontSize", 13], ["color", "#a7a7a7"], ["marginTop", "10rpx"]]))], ["nickname", padStyleMapOf(utsMapOf([["color", "#050505"], ["textOverflow", "ellipsis"], ["maxWidth", "240rpx"], ["height", "34rpx"], ["fontSize", 15], ["fontWeight", "bold"]]))], ["content", padStyleMapOf(utsMapOf([["paddingTop", "25rpx"], ["paddingLeft", "33rpx"], ["paddingRight", "33rpx"], ["fontSize", 16], ["lineHeight", 1.5]]))], ["content-media", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["flexWrap", "wrap"], ["paddingLeft", "10rpx"]]))], ["content-image", padStyleMapOf(utsMapOf([["marginTop", "10rpx"], ["marginRight", "10rpx"], ["backgroundColor", "#f0f0f0"]]))], ["one-image", padStyleMapOf(utsMapOf([["width", "730rpx"], ["height", "730rpx"]]))], ["two-image", padStyleMapOf(utsMapOf([["width", "360rpx"], ["height", "360rpx"]]))], ["more-image", padStyleMapOf(utsMapOf([["height", "236rpx"], ["width", "236rpx"]]))], ["topic-tag", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["marginTop", "25rpx"], ["marginRight", "30rpx"], ["marginBottom", 0], ["marginLeft", "30rpx"], ["backgroundColor", "#fff3f7"], ["borderRadius", 50], ["paddingTop", "8rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "8rpx"], ["paddingLeft", "20rpx"], ["alignItems", "center"], ["alignSelf", "flex-start"]]))], ["topic-tag-icon", padStyleMapOf(utsMapOf([["fontWeight", "bold"], ["marginTop", 0], ["marginRight", "10rpx"], ["marginBottom", 0], ["marginLeft", "10rpx"], ["fontSize", 18], ["color", "#fb5e7d"]]))], ["topic-tag-title", padStyleMapOf(utsMapOf([["color", "#000000"], ["fontSize", 14]]))], ["actions", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["alignItems", "center"], ["height", "105rpx"]]))], ["delete-icon", padStyleMapOf(utsMapOf([["marginLeft", "auto"], ["paddingTop", "10rpx"], ["paddingRight", "10rpx"], ["paddingBottom", "10rpx"], ["paddingLeft", "10rpx"], ["color", "#999999"]]))]])]

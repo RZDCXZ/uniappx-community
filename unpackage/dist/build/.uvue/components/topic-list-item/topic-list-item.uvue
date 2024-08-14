@@ -1,0 +1,82 @@
+
+	import { PropType } from "vue"
+	import { Topic, TopicNav } from "@/common/type.uts"
+	export default {
+		name:"topic-list-item",
+		props: {
+			item: {
+				type: Object as PropType<Topic>,
+				required:true
+			},
+			ischoose: {
+				type:Boolean,
+				default:false
+			}
+		},
+		data() {
+			return {
+				
+			};
+		},
+		methods: {
+			open() {
+				// 选择话题功能实现
+				if(this.ischoose){
+					const d = {
+						id:this.item.id,
+						title:this.item.title
+					} as TopicNav
+					uni.$emit("onTopicPickerSuccess",d)
+					uni.navigateBack({
+						delta: 1
+					});
+					return
+				}
+				
+				uni.navigateTo({
+					url: '/pages/topic-detail/topic-detail?id=' + this.item.id
+				});
+			}
+		},
+	}
+
+
+import _easycom_main_btn from '@/components/main-btn/main-btn.uvue'
+function GenComponentsTopicListItemTopicListItemRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_main_btn = resolveEasyComponent("main-btn",_easycom_main_btn)
+
+  return createElementVNode("list-item", utsMapOf({
+    class: "topic-item",
+    onClick: _ctx.open
+  }), [
+    createElementVNode("view", utsMapOf({ class: "topic-item-image-box" }), [
+      createElementVNode("image", utsMapOf({
+        src: _ctx.item.cover,
+        "fade-show": true,
+        mode: "aspectFill",
+        class: "topic-item-image"
+      }), null, 8, ["src"])
+    ]),
+    createElementVNode("view", utsMapOf({ class: "info" }), [
+      createElementVNode("text", utsMapOf({ class: "nickname" }), toDisplayString(_ctx.item.title), 1),
+      createElementVNode("text", utsMapOf({ class: "time" }), toDisplayString(_ctx.item.desc), 1),
+      createElementVNode("text", utsMapOf({ class: "time" }), "动态：" + toDisplayString(_ctx.item.article_count) + "条 · 今日" + toDisplayString(_ctx.item.today_article_count) + "条", 1)
+    ]),
+    isTrue(_ctx.ischoose)
+      ? createVNode(_component_main_btn, utsMapOf({
+          key: 0,
+          width: "100rpx",
+          height: "55rpx",
+          fontSize: "14px",
+          style: normalizeStyle(utsMapOf({"margin-left":"auto"})),
+          onClick: withModifiers(_ctx.open, ["stop"])
+        }), utsMapOf({
+          default: withSlotCtx((): any[] => ["选择"]),
+          _: 1
+        }), 8, ["style", "onClick"])
+      : createCommentVNode("v-if", true)
+  ], 8, ["onClick"])
+}
+const GenComponentsTopicListItemTopicListItemStyles = [utsMapOf([["topic-item", padStyleMapOf(utsMapOf([["height", "170rpx"], ["borderBottomWidth", "1rpx"], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f2f2f2"], ["flexDirection", "row"], ["alignItems", "center"], ["paddingRight", "34rpx"]]))], ["topic-item-image-box", padStyleMapOf(utsMapOf([["width", "102rpx"], ["height", "102rpx"], ["borderRadius", 5], ["overflow", "hidden"], ["marginRight", "25rpx"]]))], ["topic-item-image", padStyleMapOf(utsMapOf([["width", "102rpx"], ["height", "102rpx"]]))], ["info", padStyleMapOf(utsMapOf([["flex", 1]]))], ["nickname", padStyleMapOf(utsMapOf([["color", "#272727"], ["maxWidth", "390rpx"], ["textOverflow", "ellipsis"], ["height", "34rpx"], ["fontSize", 15]]))], ["time", padStyleMapOf(utsMapOf([["fontSize", 13], ["color", "#9a9a9a"], ["marginTop", "10rpx"]]))]])]

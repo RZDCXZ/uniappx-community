@@ -1,0 +1,102 @@
+import App from './App.uvue'
+
+import { createSSRApp } from 'vue'
+export function createApp() {
+	const app = createSSRApp(App)
+	return {
+		app
+	}
+}
+export function main(app: IApp) {
+    definePageRoutes();
+    defineAppConfig();
+    
+    (createApp()['app'] as VueApp).mount(app);
+}
+
+import { AppConfig } from "io.dcloud.uniapp.appframe"
+export class UniAppConfig extends AppConfig {
+    override name: string = "uniappx社区交友"
+    override appid: string = "__UNI__C512840"
+    override versionName: string = "1.0.0"
+    override versionCode: string = "1"
+    override uniCompilerVersion: string = "4.24"
+    
+    constructor() {}
+}
+
+import GenPagesIndexIndexClass from './pages/index/index.uvue?type=page'
+import GenPagesTopicTopicClass from './pages/topic/topic.uvue?type=page'
+import GenPagesMsgMsgClass from './pages/msg/msg.uvue?type=page'
+import GenPagesMyMyClass from './pages/my/my.uvue?type=page'
+import GenPagesTopicDetailTopicDetailClass from './pages/topic-detail/topic-detail.uvue?type=page'
+import GenPagesWebviewWebviewClass from './pages/webview/webview.uvue?type=page'
+import GenPagesUserLoginUserLoginClass from './pages/user-login/user-login.uvue?type=page'
+import GenPagesUserLoginPasswordUserLoginPasswordClass from './pages/user-login-password/user-login-password.uvue?type=page'
+import GenPagesUserGetcodeUserGetcodeClass from './pages/user-getcode/user-getcode.uvue?type=page'
+import GenPagesUserSettingUserSettingClass from './pages/user-setting/user-setting.uvue?type=page'
+import GenPagesUserSafeUserSafeClass from './pages/user-safe/user-safe.uvue?type=page'
+import GenPagesUserEditinfoUserEditinfoClass from './pages/user-editinfo/user-editinfo.uvue?type=page'
+import GenPagesUserFeedbackUserFeedbackClass from './pages/user-feedback/user-feedback.uvue?type=page'
+import GenPagesAboutAboutClass from './pages/about/about.uvue?type=page'
+import GenPagesUserSpaceUserSpaceClass from './pages/user-space/user-space.uvue?type=page'
+import GenPagesUserFollowListUserFollowListClass from './pages/user-follow-list/user-follow-list.uvue?type=page'
+import GenPagesUserFansListUserFansListClass from './pages/user-fans-list/user-fans-list.uvue?type=page'
+import GenPagesMyCollectionMyCollectionClass from './pages/my-collection/my-collection.uvue?type=page'
+import GenPagesUserHistoryUserHistoryClass from './pages/user-history/user-history.uvue?type=page'
+import GenPagesUserBlacklistUserBlacklistClass from './pages/user-blacklist/user-blacklist.uvue?type=page'
+import GenPagesUserResetPasswordUserResetPasswordClass from './pages/user-reset-password/user-reset-password.uvue?type=page'
+import GenPagesUserBindphoneUserBindphoneClass from './pages/user-bindphone/user-bindphone.uvue?type=page'
+import GenPagesUserForgetPasswordUserForgetPasswordClass from './pages/user-forget-password/user-forget-password.uvue?type=page'
+import GenPagesSearchSearchClass from './pages/search/search.uvue?type=page'
+import GenPagesSearchResultSearchResultClass from './pages/search-result/search-result.uvue?type=page'
+import GenPagesDetailDetailClass from './pages/detail/detail.uvue?type=page'
+import GenPagesCommentDetailCommentDetailClass from './pages/comment-detail/comment-detail.uvue?type=page'
+import GenPagesAddPostAddPostClass from './pages/add-post/add-post.uvue?type=page'
+import GenPagesChooseTopicChooseTopicClass from './pages/choose-topic/choose-topic.uvue?type=page'
+import GenPagesUserFeedbackFormUserFeedbackFormClass from './pages/user-feedback-form/user-feedback-form.uvue?type=page'
+import GenPagesChatChatClass from './pages/chat/chat.uvue?type=page'
+function definePageRoutes() {
+__uniRoutes.push({ path: "pages/index/index", component: GenPagesIndexIndexClass, meta: { isQuit: true } as PageMeta, style: utsMapOf([["navigationBarTitleText","首页"],["navigationStyle","custom"],["enablePullDownRefresh",true]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/topic/topic", component: GenPagesTopicTopicClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","话题分类页"],["enablePullDownRefresh",false]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/msg/msg", component: GenPagesMsgMsgClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","消息列表"],["enablePullDownRefresh",true]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/my/my", component: GenPagesMyMyClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","个人中心"],["enablePullDownRefresh",false],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/topic-detail/topic-detail", component: GenPagesTopicDetailTopicDetailClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["enablePullDownRefresh",true],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/webview/webview", component: GenPagesWebviewWebviewClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["enablePullDownRefresh",false]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-login/user-login", component: GenPagesUserLoginUserLoginClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["enablePullDownRefresh",false],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-login-password/user-login-password", component: GenPagesUserLoginPasswordUserLoginPasswordClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["enablePullDownRefresh",false],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-getcode/user-getcode", component: GenPagesUserGetcodeUserGetcodeClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["enablePullDownRefresh",false],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-setting/user-setting", component: GenPagesUserSettingUserSettingClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","设置"],["enablePullDownRefresh",false]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-safe/user-safe", component: GenPagesUserSafeUserSafeClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","账号与安全"],["enablePullDownRefresh",false]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-editinfo/user-editinfo", component: GenPagesUserEditinfoUserEditinfoClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["enablePullDownRefresh",false],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-feedback/user-feedback", component: GenPagesUserFeedbackUserFeedbackClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","我的反馈"],["enablePullDownRefresh",true]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/about/about", component: GenPagesAboutAboutClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","关于社区"],["enablePullDownRefresh",false]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-space/user-space", component: GenPagesUserSpaceUserSpaceClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["enablePullDownRefresh",true],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-follow-list/user-follow-list", component: GenPagesUserFollowListUserFollowListClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","关注列表"],["enablePullDownRefresh",true]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-fans-list/user-fans-list", component: GenPagesUserFansListUserFansListClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","粉丝列表"],["enablePullDownRefresh",true]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/my-collection/my-collection", component: GenPagesMyCollectionMyCollectionClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","我的收藏"],["enablePullDownRefresh",true]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-history/user-history", component: GenPagesUserHistoryUserHistoryClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","历史记录"],["enablePullDownRefresh",true]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-blacklist/user-blacklist", component: GenPagesUserBlacklistUserBlacklistClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","黑名单"],["enablePullDownRefresh",true]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-reset-password/user-reset-password", component: GenPagesUserResetPasswordUserResetPasswordClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["enablePullDownRefresh",false],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-bindphone/user-bindphone", component: GenPagesUserBindphoneUserBindphoneClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["enablePullDownRefresh",false],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-forget-password/user-forget-password", component: GenPagesUserForgetPasswordUserForgetPasswordClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["enablePullDownRefresh",false],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/search/search", component: GenPagesSearchSearchClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["enablePullDownRefresh",false],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/search-result/search-result", component: GenPagesSearchResultSearchResultClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["enablePullDownRefresh",false],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/detail/detail", component: GenPagesDetailDetailClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/comment-detail/comment-detail", component: GenPagesCommentDetailCommentDetailClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","评论详情页"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/add-post/add-post", component: GenPagesAddPostAddPostClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/choose-topic/choose-topic", component: GenPagesChooseTopicChooseTopicClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText","选择话题"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/user-feedback-form/user-feedback-form", component: GenPagesUserFeedbackFormUserFeedbackFormClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""],["navigationStyle","custom"]]) } as PageRoute)
+__uniRoutes.push({ path: "pages/chat/chat", component: GenPagesChatChatClass, meta: { isQuit: false } as PageMeta, style: utsMapOf([["navigationBarTitleText",""]]) } as PageRoute)
+}
+const __uniTabBar: Map<string, any | null> | null = utsMapOf([["color","#323232"],["selectedColor","#f85c81"],["borderStyle","black"],["backgroundColor","#FFFFFF"],["list",[utsMapOf([["iconPath","static/tabbar/index.png"],["selectedIconPath","static/tabbar/indexed.png"],["pagePath","pages/index/index"],["text","首页"]]),utsMapOf([["iconPath","static/tabbar/news.png"],["selectedIconPath","static/tabbar/newsed.png"],["pagePath","pages/topic/topic"],["text","话题"]]),utsMapOf([["iconPath","static/tabbar/paper.png"],["selectedIconPath","static/tabbar/papered.png"],["pagePath","pages/msg/msg"],["text","消息"]]),utsMapOf([["iconPath","static/tabbar/home.png"],["selectedIconPath","static/tabbar/homeed.png"],["pagePath","pages/my/my"],["text","我的"]])]]])
+const __uniLaunchPage: Map<string, any | null> = utsMapOf([["url","pages/index/index"],["style",utsMapOf([["navigationBarTitleText","首页"],["navigationStyle","custom"],["enablePullDownRefresh",true]])]])
+function defineAppConfig(){
+  __uniConfig.entryPagePath = '/pages/index/index'
+  __uniConfig.globalStyle = utsMapOf([["navigationBarTextStyle","black"],["navigationBarTitleText","社区交友"],["navigationBarBackgroundColor","#FFFFFF"],["backgroundColor","#FFFFFF"]])
+  __uniConfig.tabBar = __uniTabBar as Map<string, any> | null
+  __uniConfig.conditionUrl = ''
+  __uniConfig.uniIdRouter = utsMapOf()
+  
+  __uniConfig.ready = true
+}

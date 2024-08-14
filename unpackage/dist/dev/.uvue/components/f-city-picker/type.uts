@@ -1,0 +1,9 @@
+export type cityItem = {
+	label: string
+	value: string
+}
+export type citypickerChangeEvent = {
+	label: string
+	value: number[]
+	cityCode: string
+}

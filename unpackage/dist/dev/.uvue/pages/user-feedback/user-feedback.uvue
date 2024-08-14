@@ -1,0 +1,149 @@
+
+	import { FeedbackItem,FeedbackItemResult,Result } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+	export default {
+		data() {
+			return {
+				List: [] as FeedbackItem[],
+				loading: false,
+				isEnded: false,
+				currentPage: 1,
+				isFirstLoad:true
+			}
+		},
+		onShow() {
+			this.refreshData(()=>{
+				// 回到底部
+				this.$nextTick(()=>{
+					this.goToBottom()
+				})
+			})
+		},
+		onPullDownRefresh() {
+			this.loadData(()=>{
+				uni.stopPullDownRefresh()
+			})
+		},
+		methods: {
+			goToBottom(){
+				uni.pageScrollTo({
+					selector:"#chat-bottom",
+					duration: 100
+				})
+			},
+			refreshData(loadComplete : (() => void) | null) {
+				this.List.length = 0
+				this.currentPage = 1
+				this.isFirstLoad = true
+				this.isEnded = false
+				this.loading = false
+				this.loadData(loadComplete)
+			},
+			loadData(loadComplete : (() => void) | null) {
+				if (this.loading || this.isEnded) {
+					return
+				}
+				this.loading = true
+				uni.request<Result<FeedbackItemResult>>({
+					url: getURL(`/feedback/${Math.floor(this.currentPage)}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as FeedbackItemResult | null
+						if(resData == null) return
+						
+						// 倒序排序，最新的数据在下面
+						resData.data.sort((a:FeedbackItem,b:FeedbackItem):number => a.id - b.id)
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.List = resData.data
+						} else {
+							this.List = [ ...resData.data, ...this.List ]
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
+		}
+	}
+
+
+import _easycom_feedback_item from '@/components/feedback-item/feedback-item.uvue'
+import _easycom_loading from '@/components/loading/loading.uvue'
+import _easycom_tip from '@/components/tip/tip.uvue'
+function GenPagesUserFeedbackUserFeedbackRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_feedback_item = resolveEasyComponent("feedback-item",_easycom_feedback_item)
+const _component_loading = resolveEasyComponent("loading",_easycom_loading)
+const _component_tip = resolveEasyComponent("tip",_easycom_tip)
+const _component_navigator = resolveComponent("navigator")
+
+  return createElementVNode("scroll-view", utsMapOf({
+    style: normalizeStyle(utsMapOf({"flex":"1"}))
+  }), [
+    createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.List, (item, index, _, _): VNode => {
+      return createVNode(_component_feedback_item, utsMapOf({
+        key: index,
+        item: item
+      }), null, 8 /* PROPS */, ["item"])
+    }), 128 /* KEYED_FRAGMENT */),
+    isTrue(_ctx.loading && _ctx.List.length == 0)
+      ? createVNode(_component_loading, utsMapOf({
+          key: 0,
+          circle: true
+        }))
+      : createCommentVNode("v-if", true),
+    isTrue(!_ctx.isFirstLoad && _ctx.List.length == 0)
+      ? createElementVNode("view", utsMapOf({
+          key: 1,
+          class: "flex-1"
+        }), [
+          createVNode(_component_tip)
+        ])
+      : createCommentVNode("v-if", true),
+    createElementVNode("view", utsMapOf({ id: "chat-bottom" })),
+    createVNode(_component_navigator, utsMapOf({ url: "/pages/user-feedback-form/user-feedback-form" }), utsMapOf({
+      default: withSlotCtx((): any[] => [
+        createElementVNode("view", utsMapOf({ class: "feedback-action" }), [
+          createElementVNode("text", utsMapOf({ class: "iconfont feedback-action-icon" }), toDisplayString('\ue668')),
+          createElementVNode("text", utsMapOf({ class: "feedback-action-text" }), "意见反馈")
+        ])
+      ]),
+      _: 1 /* STABLE */
+    })),
+    createElementVNode("view", utsMapOf({
+      style: normalizeStyle(utsMapOf({"height":"95rpx"}))
+    }), null, 4 /* STYLE */)
+  ], 4 /* STYLE */)
+}
+const GenPagesUserFeedbackUserFeedbackStyles = [utsMapOf([["feedback-action", padStyleMapOf(utsMapOf([["position", "fixed"], ["bottom", 0], ["left", 0], ["right", 0], ["height", "95rpx"], ["flexDirection", "row"], ["alignItems", "center"], ["justifyContent", "center"], ["backgroundColor", "#ffffff"], ["borderTopWidth", 1], ["borderTopStyle", "solid"], ["borderTopColor", "#eeeeee"]]))], ["feedback-action-icon", padStyleMapOf(utsMapOf([["marginRight", "20rpx"]]))], ["feedback-action-text", padStyleMapOf(utsMapOf([["fontSize", 16]]))]])]

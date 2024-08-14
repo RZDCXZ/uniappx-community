@@ -1,0 +1,156 @@
+
+	type LeftIcons = { __$originalPosition: UTSSourceMapPosition<"LeftIcons", "components/navbar/navbar.uvue", 31, 7>;
+		more:string
+		back:string
+		close:string
+	}
+	export default {
+		emits:["search","clickRight"],
+		name:"navbar",
+		props: {
+			type: {
+				type: String,
+				default: ""
+			},
+			disabled:{
+				type:Boolean,
+				default:false
+			},
+			title:{
+				type: String,
+				default: ""
+			},
+			rightIcon:{
+				type: String,
+				default: ""
+			},
+			showRightIcon:{
+				type:Boolean,
+				default:true
+			},
+			rightText:{
+				type: String,
+				default: ""
+			}
+		},
+		data() {
+			return {
+				keyword:"",
+				icons: {
+					more:"\ue6fd",
+					back:"\ue60d",
+					close:"\ue6aa",
+				} as LeftIcons
+			}
+		},
+		computed: {
+			leftIcon(): string {
+				if(this.type == "search" || this.type == 'text'){
+					return this.icons.back
+				}
+				return this.icons.close
+			}
+		},
+		methods: {
+			setKeyword(keyword:string){
+				this.keyword = keyword
+			},
+			back(){
+				uni.navigateBack({
+					delta: 1
+				});
+			},
+			handleSearch(){
+				if(this.disabled){
+					this.back()
+					return
+				}
+				if(this.keyword.trim() == ""){
+					return
+				}
+				this.$emit("search",this.keyword)
+			}
+		},
+	}
+
+
+import _easycom_status_bar from '@/components/status-bar/status-bar.uvue'
+function GenComponentsNavbarNavbarRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_status_bar = resolveEasyComponent("status-bar",_easycom_status_bar)
+
+  return createElementVNode(Fragment, null, [
+    createVNode(_component_status_bar),
+    createElementVNode("view", utsMapOf({ class: "navbar" }), [
+      createElementVNode("view", utsMapOf({
+        class: "navbar-icon",
+        onClick: _ctx.back
+      }), [
+        createElementVNode("text", utsMapOf({ class: "iconfont" }), toDisplayString(_ctx.leftIcon), 1 /* TEXT */)
+      ], 8 /* PROPS */, ["onClick"]),
+      _ctx.type == 'search'
+        ? createElementVNode(Fragment, utsMapOf({ key: 0 }), [
+            createElementVNode("view", utsMapOf({ class: "flex-1" }), [
+              isTrue(!_ctx.disabled)
+                ? createElementVNode("input", utsMapOf({
+                    key: 0,
+                    class: "search-input",
+                    type: "text",
+                    placeholder: "请输入搜索词",
+                    modelValue: _ctx.keyword,
+                    onInput: ($event: InputEvent) => {(_ctx.keyword) = $event.detail.value},
+                    "confirm-type": "search",
+                    onConfirm: _ctx.handleSearch
+                  }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput", "onConfirm"])
+                : createElementVNode("input", utsMapOf({
+                    key: 1,
+                    disabled: true,
+                    class: "search-input",
+                    type: "text",
+                    placeholder: "请输入搜索词",
+                    modelValue: _ctx.keyword,
+                    onInput: ($event: InputEvent) => {(_ctx.keyword) = $event.detail.value},
+                    onClick: _ctx.back
+                  }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput", "onClick"])
+            ]),
+            createElementVNode("view", utsMapOf({
+              class: "navbar-icon",
+              onClick: _ctx.handleSearch
+            }), [
+              createElementVNode("text", utsMapOf({ class: "search-btn" }), "搜索")
+            ], 8 /* PROPS */, ["onClick"])
+          ], 64 /* STABLE_FRAGMENT */)
+        : _ctx.type == 'text'
+          ? createElementVNode(Fragment, utsMapOf({ key: 1 }), [
+              createElementVNode("view", utsMapOf({ class: "flex-1 flex-center" }), [
+                createElementVNode("text", null, toDisplayString(_ctx.title), 1 /* TEXT */)
+              ]),
+              renderSlot(_ctx.$slots, "right", {}, (): any[] => [
+                isTrue(_ctx.showRightIcon)
+                  ? createElementVNode("view", utsMapOf({
+                      key: 0,
+                      class: "navbar-icon",
+                      onClick: () => {_ctx.$emit('clickRight')}
+                    }), [
+                      _ctx.rightIcon != ''
+                        ? createElementVNode("text", utsMapOf({
+                            key: 0,
+                            class: "iconfont"
+                          }), toDisplayString(_ctx.icons[_ctx.rightIcon]), 1 /* TEXT */)
+                        : createCommentVNode("v-if", true),
+                      _ctx.rightText !='' 
+                        ? createElementVNode("text", utsMapOf({
+                            key: 1,
+                            class: "search-btn"
+                          }), toDisplayString(_ctx.rightText), 1 /* TEXT */)
+                        : createCommentVNode("v-if", true)
+                    ], 8 /* PROPS */, ["onClick"])
+                  : createCommentVNode("v-if", true)
+              ])
+            ], 64 /* STABLE_FRAGMENT */)
+          : createCommentVNode("v-if", true)
+    ])
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenComponentsNavbarNavbarStyles = [utsMapOf([["navbar", padStyleMapOf(utsMapOf([["height", 45], ["flexDirection", "row"]]))], ["navbar-icon", padStyleMapOf(utsMapOf([["width", 45], ["height", 45], ["justifyContent", "center"], ["alignItems", "center"]]))], ["search-input", padStyleMapOf(utsMapOf([["height", "80rpx"], ["backgroundColor", "#f4f4f4"], ["borderRadius", "6rpx"], ["paddingTop", 0], ["paddingRight", "30rpx"], ["paddingBottom", 0], ["paddingLeft", "30rpx"]]))], ["search-btn", padStyleMapOf(utsMapOf([["fontSize", 14]]))]])]

@@ -1,0 +1,222 @@
+import type { UserDetail,Result } from "@/common/type.uts"
+import { getURL } from "@/common/request.uts"
+import { openSocket,closeSocket } from "@/common/socket.uts"
+// state
+export const userState = reactive({
+	"name": "",
+	"id": 0,
+	"username": null,
+	"avatar": "",
+	"password": false,
+	"phone": "",
+	"email": null,
+	"status": 1,
+	"age": 0,
+	"sex": 0,
+	"qg": 0,
+	"job": null,
+	"path": null,
+	"birthday": null,
+	"desc": null,
+	"wx_openid": null,
+	"wx_unionid": null,
+	"create_time": "",
+	"update_time": "",
+	"fans_count": 0,
+	"follows_count": 0,
+	"articles_count": 0,
+	"comments_count": 0,
+	"token": null
+} as UserDetail)
+
+// 是否已登录
+export const loginState = ref(false)
+
+// 用户登录
+export function login(data:UserDetail){
+	if(data.token != null){
+		uni.setStorageSync("user_token",data.token as string);
+	}
+	// 更新本地用户状态
+	updateUserState(data)
+	uni.setStorageSync("user_info",data);
+	loginState.value = true
+	// 触发获取聊天会话列表
+	uni.$emit("onUpdateConversation",null)
+	// 打开websocket
+	openSocket()
+}
+
+// 更新用户状态
+function updateUserState(data:UserDetail){
+	userState.id = data.id
+	userState.name  = data.name
+	userState.username  = data.username
+	userState.avatar  = data.avatar
+	userState.password  = data.password
+	userState.phone  = data.phone
+	userState.email = data.email
+	userState.status = data.status
+	userState.age = data.age
+	userState.sex = data.sex
+	userState.qg = data.qg
+	userState.job = data.job
+	userState.path = data.path
+	userState.birthday = data.birthday
+	userState.desc = data.desc
+	userState.wx_openid = data.wx_openid
+	userState.wx_unionid = data.wx_unionid
+	userState.create_time = data.create_time
+	userState.update_time = data.update_time
+	userState.fans_count = data.fans_count
+	userState.follows_count = data.follows_count
+	userState.articles_count = data.articles_count
+	userState.comments_count = data.comments_count
+	userState.token = data.token
+}
+
+// 获取当前用户token
+export function getToken():string | null{
+	return uni.getStorageSync("user_token") as string | null
+}
+
+// 当前用户是否已登录
+export function isLogin():boolean{
+	let token = getToken()
+	return token == '' || token == null ? false : true
+}
+
+// 初始化当前登录用户
+export function initCurrentUser(){
+	// 获取缓存中的用户信息
+	getUserInfo(true)
+	if(loginState.value){
+		openSocket()
+	}
+}
+
+// 获取用户信息
+export function getUserInfo(cache : boolean = true){
+	// 从本地缓存中获取
+	if(cache){
+		uni.getStorage({
+			key:"user_info",
+			success:(res)=>{
+				if(typeof res.data !== "object") return
+				let d = JSON.parse<UserDetail>(JSON.stringify(res.data))
+				if(d == null) return
+				updateUserState(d)
+				loginState.value = true
+			}
+		})
+		return
+	}
+	
+	// 获取最新用户信息
+	if(isLogin()){
+		let token = getToken()
+		uni.request<Result<UserDetail>>({
+			url:getURL("/user/info"),
+			header:{
+				token
+			},
+			success:(res)=>{
+				let r = res.data
+				if(r == null) return
+				// 请求失败
+				if(res.statusCode != 200){
+					// 登录失效
+					if(r.msg == "登录已失效，请重新登录"){
+						// 清除登录状态
+						logout()
+						// 跳转到登录页
+						setTimeout(function() {
+							uni.navigateTo({
+								url: '/pages/user-login/user-login',
+							});
+						}, 300);
+					} else {
+						uni.showToast({
+							title: r.msg,
+							icon: 'none'
+						});
+					}
+					return
+				}
+				
+				if(r.data == null) return
+				updateUserState(r.data as UserDetail)
+				loginState.value = true
+			},
+			fail:(err)=>{
+				uni.showToast({
+					title: err.errMsg,
+					icon: 'none'
+				});
+			}
+		})
+	}
+}
+
+// 退出登录状态
+export function logout(){
+	uni.removeStorageSync("user_token")
+	uni.removeStorageSync("user_info")
+	loginState.value = false
+	// 触发清除聊天会话列表
+	uni.$emit("onUpdateConversation",null)
+	// 关闭socket
+	closeSocket()
+}
+
+// 需要登录才能跳转
+export function AuthNavigateTo(u:string){
+	const url = loginState.value ? u : '/pages/user-login/user-login'
+	uni.navigateTo({
+		url
+	});
+}
+
+// 更新手机号和昵称
+export function updatePhoneAndName(data:UserDetail){
+	userState.phone = data.phone
+	userState.name = data.name
+	uni.setStorageSync("user_info",userState)
+}
+
+// 更新密码
+export function updatePassword(){
+	userState.password = true
+	uni.setStorageSync("user_info",userState)
+}
+
+// 需要登录之后才能操作
+export function AuthAction(callback:()=>void){
+	if(loginState.value){
+		callback()
+		return
+	}
+	// 未登录
+	uni.navigateTo({
+		url: '/pages/user-login/user-login',
+	});
+}
+
+// 更新头像
+export function updateUserStateAvatar(src:string){
+	userState.avatar = src
+	uni.setStorageSync("user_info",userState)
+}
+
+// 更新资料
+export function updateInfo(data:UserDetail){
+	userState.name = data.name
+	userState.username = data.username
+	userState.age = data.age
+	userState.sex = data.sex
+	userState.qg = data.qg
+	userState.path = data.path
+	userState.birthday = data.birthday
+	userState.desc = data.desc
+	uni.setStorageSync("user_info",userState)
+}

@@ -1,0 +1,103 @@
+
+	export default {
+		data() {
+			return {
+				searchList:[] as string[]
+			}
+		},
+		onLoad() {
+			this.getSearchList()
+		},
+		methods: {
+			// 跳转到搜索结果页
+			handleSearch(keyword:string){
+				uni.navigateTo({
+					url: '/pages/search-result/search-result?keyword='+keyword,
+					success:()=>{
+						this.addSearchList(keyword)
+					}
+				});
+			},
+			// 加载搜索记录
+			getSearchList(){
+				// 取出搜索历史
+				let list = (uni.getStorageSync("historySearchList"))!
+				if(Array.isArray(list)){
+					this.searchList = list as string[]
+				}
+			},
+			// 添加搜索记录
+			addSearchList(keyword:string){
+				// 查询之前是否已加入
+				let index = (this.searchList.findIndex((v:string):boolean => v == keyword) as number)
+				if(index != -1){
+					// 如果之前加入，则直接置顶到第一位
+					this.toFirst(this.searchList,index)
+				} else {
+					// 否则追加到第一位
+					this.searchList = [ keyword, ...this.searchList ]
+				}
+				// 存储到本地缓存中
+				uni.setStorageSync("historySearchList",this.searchList)
+			},
+			// 数组置顶
+			toFirst(arr:string[],index:number):string[]{
+				if(index != 0){
+					arr.unshift(arr.splice(index,1)[0])
+				}
+				return arr
+			},
+			clearSearchList(){
+				uni.showModal({
+					title: '提示',
+					content: '是否要清除搜索记录？',
+					confirmText: '清除',
+					success: res => {
+						if(res.confirm){
+							uni.removeStorageSync("historySearchList")
+							this.searchList.length = 0
+						}
+					},
+				});
+			}
+		}
+	}
+
+
+import _easycom_navbar from '@/components/navbar/navbar.uvue'
+function GenPagesSearchSearchRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_navbar = resolveEasyComponent("navbar",_easycom_navbar)
+
+  return createElementVNode("scroll-view", utsMapOf({
+    style: normalizeStyle(utsMapOf({"flex":"1"}))
+  }), [
+    createVNode(_component_navbar, utsMapOf({
+      type: "search",
+      onSearch: _ctx.handleSearch
+    }), null, 8, ["onSearch"]),
+    _ctx.searchList.length > 0
+      ? createElementVNode("view", utsMapOf({
+          key: 0,
+          class: "cell"
+        }), [
+          createElementVNode("text", utsMapOf({ class: "cell-title" }), "历史记录"),
+          createElementVNode("text", utsMapOf({
+            class: "cell-tip",
+            onClick: _ctx.clearSearchList
+          }), "清除记录", 8, ["onClick"])
+        ])
+      : createCommentVNode("v-if", true),
+    createElementVNode("view", utsMapOf({ class: "keyword-list" }), [
+      createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.searchList, (item, index, _, _): VNode => {
+        return createElementVNode("text", utsMapOf({
+          class: "keyword",
+          key: index,
+          onClick: () => {_ctx.handleSearch(item)}
+        }), toDisplayString(item), 9, ["onClick"])
+      }), 128 /* KEYED_FRAGMENT */)
+    ])
+  ], 4)
+}
+const GenPagesSearchSearchStyles = [utsMapOf([["cell", padStyleMapOf(utsMapOf([["height", "100rpx"], ["flexDirection", "row"], ["alignItems", "center"], ["justifyContent", "space-between"], ["paddingTop", 0], ["paddingRight", "30rpx"], ["paddingBottom", 0], ["paddingLeft", "30rpx"], ["backgroundColor", "#ffffff"]]))], ["cell-title", padStyleMapOf(utsMapOf([["color", "#090909"]]))], ["cell-tip", padStyleMapOf(utsMapOf([["color", "#858585"]]))], ["keyword-list", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["paddingTop", 0], ["paddingRight", "20rpx"], ["paddingBottom", 0], ["paddingLeft", "20rpx"], ["flexWrap", "wrap"]]))], ["keyword", padStyleMapOf(utsMapOf([["borderWidth", "1rpx"], ["borderStyle", "solid"], ["borderColor", "#dddddd"], ["borderRadius", 4], ["paddingTop", "8rpx"], ["paddingRight", "15rpx"], ["paddingBottom", "8rpx"], ["paddingLeft", "15rpx"], ["marginTop", "10rpx"], ["marginRight", "10rpx"], ["marginBottom", "10rpx"], ["marginLeft", "10rpx"]]))]])]

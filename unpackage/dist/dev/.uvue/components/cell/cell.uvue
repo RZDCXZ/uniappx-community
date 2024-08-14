@@ -1,0 +1,64 @@
+
+	export default {
+		name:"cell",
+		props: {
+			title: {
+				type: String,
+				default: ""
+			},
+			rightText: {
+				type: String,
+				default: ""
+			},
+			showArrow:{
+				type:Boolean,
+				default:true
+			},
+			hover:{
+				type:Boolean,
+				default:true
+			},
+			isColumn:{
+				type:Boolean,
+				default:false
+			}
+		},
+		data() {
+			return {
+				
+			};
+		}
+	}
+
+
+function GenComponentsCellCellRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return createElementVNode("view", utsMapOf({
+    class: normalizeClass(["cell", utsMapOf({ 'cell-column':_ctx.isColumn })]),
+    "hover-class": _ctx.hover ? 'cell-hover' : ''
+  }), [
+    createElementVNode("text", utsMapOf({ class: "cell-title" }), toDisplayString(_ctx.title), 1 /* TEXT */),
+    renderSlot(_ctx.$slots, "default"),
+    isTrue(!_ctx.isColumn)
+      ? createElementVNode("view", utsMapOf({
+          key: 0,
+          class: "cell-right"
+        }), [
+          _ctx.rightText != ''
+            ? createElementVNode("text", utsMapOf({
+                key: 0,
+                class: "cell-right-text"
+              }), toDisplayString(_ctx.rightText), 1 /* TEXT */)
+            : createCommentVNode("v-if", true),
+          isTrue(_ctx.showArrow)
+            ? createElementVNode("text", utsMapOf({
+                key: 1,
+                class: "iconfont cell-icon"
+              }), toDisplayString('\ue60c'))
+            : createCommentVNode("v-if", true)
+        ])
+      : createCommentVNode("v-if", true)
+  ], 10 /* CLASS, PROPS */, ["hover-class"])
+}
+const GenComponentsCellCellStyles = [utsMapOf([["cell", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["minHeight", "100rpx"], ["alignItems", "center"], ["paddingTop", 0], ["paddingRight", "30rpx"], ["paddingBottom", 0], ["paddingLeft", "30rpx"], ["backgroundColor", "#ffffff"]]))], ["cell-column", padStyleMapOf(utsMapOf([["flexDirection", "column"], ["alignItems", "flex-start"]]))], ["cell-hover", padStyleMapOf(utsMapOf([["backgroundColor", "#f4f4f4"]]))], ["cell-title", padStyleMapOf(utsMapOf([["color", "#000000"]]))], ["cell-right", padStyleMapOf(utsMapOf([["marginLeft", "auto"], ["flexDirection", "row"], ["alignItems", "center"]]))], ["cell-icon", padStyleMapOf(utsMapOf([["color", "#808080"]]))], ["cell-right-text", padStyleMapOf(utsMapOf([["color", "#828282"]]))]])]

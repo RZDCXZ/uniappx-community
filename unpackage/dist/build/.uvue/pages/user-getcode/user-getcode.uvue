@@ -1,0 +1,206 @@
+
+	import type { defaultResult,UserDetail,Result } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken, login,updatePhoneAndName } from "@/store/user.uts"
+	export default {
+		data() {
+			return {
+				phone:"",
+				code:"",
+				time:0,
+				type:"login"
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			if(options.has("phone")){
+				this.phone = options.get("phone") as string
+			}
+			if(options.has("type")){
+				this.type = options.get("type") as string
+			}
+		},
+		// 进入页面自动获取验证码
+		onReady() {
+			if(this.phone.length == 11){
+				// 发送短信
+				this.sendSmsCode()
+			}
+		},
+		computed: {
+			disabled(): boolean {
+				return this.time > 0
+			},
+			title():string{
+				if(this.type == "login"){
+					return "登录"
+				} else if(this.type == "bindphone"){
+					return "绑定"
+				}
+				return ""
+			}
+		},
+		methods: {
+			submit(code:string){
+				if(code.length < 6) return
+				uni.showLoading({
+					title: this.title + '中...',
+					mask: true
+				});
+				let t = this.type == "login" ? 'phonelogin' : 'bindphone'
+				uni.request<Result<UserDetail>>({
+					url: getURL(`/user/${t}`),
+					method:"POST",
+					data:{
+						phone:this.phone,
+						code:code
+					},
+					header:{
+						token:getToken()	
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						if(this.type == "login"){
+							// 处理登录
+							login(r.data as UserDetail)
+						} else {
+							// 改绑手机号
+							updatePhoneAndName(r.data as UserDetail)
+						}
+						
+						uni.navigateBack({
+							delta: 2
+						});
+						setTimeout(function() {
+							uni.showToast({
+								title: this.title + '成功',
+								icon: 'none'
+							});
+						}, 200);
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						uni.hideLoading()
+					}
+				});
+			},
+			sendSmsCode(){
+				uni.showLoading({
+					title: '发送中...',
+					mask: true
+				});
+				uni.request<defaultResult>({
+					url: getURL('/user/sendcode'),
+					method:"POST",
+					data:{
+						phone:this.phone
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						if(r.msg == "发送成功"){
+							uni.showToast({
+								title: '发送成功'
+							});
+						} 
+						// 调试模式
+						else {
+							uni.showModal({
+								content: r.msg,
+								showCancel: false,
+							});
+						}
+						// 开启倒计时
+						this.handleSendSmsCode()
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						uni.hideLoading()
+					}
+				});
+			},
+			// 开启倒计时
+			handleSendSmsCode(){
+				this.time = 60
+				let interval:number = 0
+				interval = setInterval(()=>{
+					this.time--
+					if(this.time <= 0){
+						clearInterval(interval)
+					}
+				},1000)
+			}
+		}
+	}
+
+
+import _easycom_navbar from '@/components/navbar/navbar.uvue'
+import _easycom_login_input from '@/components/login-input/login-input.uvue'
+import _easycom_main_btn from '@/components/main-btn/main-btn.uvue'
+function GenPagesUserGetcodeUserGetcodeRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_navbar = resolveEasyComponent("navbar",_easycom_navbar)
+const _component_login_input = resolveEasyComponent("login-input",_easycom_login_input)
+const _component_main_btn = resolveEasyComponent("main-btn",_easycom_main_btn)
+
+  return createElementVNode(Fragment, null, [
+    createVNode(_component_navbar),
+    createElementVNode("view", utsMapOf({ class: "login-page" }), [
+      createElementVNode("text", utsMapOf({ class: "login-title" }), toDisplayString(_ctx.title), 1),
+      createElementVNode("view", utsMapOf({ class: "login-info" }), [
+        createElementVNode("text", utsMapOf({ class: "login-info-phone" }), toDisplayString(_ctx.phone), 1),
+        createElementVNode("text", utsMapOf({
+          class: "iconfont",
+          style: normalizeStyle(utsMapOf({"color":"#8f8f8f"}))
+        }), toDisplayString('\ue668'), 4)
+      ]),
+      createVNode(_component_login_input, utsMapOf({
+        "auto-focus": true,
+        modelValue: _ctx.code,
+        "onUpdate:modelValue": [$event => {(_ctx.code) = $event}, _ctx.submit],
+        placeholder: "请输入验证码",
+        maxlength: 6
+      }), null, 8, ["modelValue", "onUpdate:modelValue"]),
+      createElementVNode("view", utsMapOf({ class: "login-bottom" }), [
+        createVNode(_component_main_btn, utsMapOf({
+          disabled: _ctx.disabled,
+          borderRadius: "0",
+          width: "750rpx",
+          height: "98rpx",
+          fontSize: "18px",
+          onClick: _ctx.sendSmsCode
+        }), utsMapOf({
+          default: withSlotCtx((): any[] => ["重新发送" + toDisplayString(_ctx.time > 0 ? `${_ctx.time}s` : '')]),
+          _: 1
+        }), 8, ["disabled", "onClick"])
+      ])
+    ])
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenPagesUserGetcodeUserGetcodeStyles = [utsMapOf([["login-info", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["alignItems", "center"], ["marginTop", "40rpx"]]))], ["login-info-phone", padStyleMapOf(utsMapOf([["color", "#8f8f8f"], ["fontWeight", "bold"], ["marginRight", "20rpx"]]))]])]

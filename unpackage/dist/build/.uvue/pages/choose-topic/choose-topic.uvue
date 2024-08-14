@@ -1,0 +1,196 @@
+
+	import { getURL } from "@/common/request.uts"
+	import type { TopicNav,Topic,Result,TopicResult } from "@/common/type.uts"
+
+	export default {
+		data() {
+			return {
+				navActiveId:2,
+				topic_navs:[] as TopicNav[],
+				
+				topic_list:[] as Topic[],
+				
+				page:1,
+				isEnded:false,
+				loading:false
+			}
+		},
+		onLoad() {
+			this.loadCategories()
+		},
+		methods: {
+			// 获取话题分类数据
+			loadCategories(){
+				uni.showLoading({
+					title: '加载中...',
+					mask: false
+				});
+				
+				uni.request<Result<TopicNav[]>>({
+					url: getURL('/category/topic'),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						this.topic_navs = r.data as TopicNav[]
+						// 默认选中第一个
+						if(this.topic_navs.length > 0){
+							this.chooseTopicNav(this.topic_navs[0].id)
+						}
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						uni.hideLoading()
+					}
+				});
+			},
+			// 加载话题列表数据
+			loadTopicList(){
+				// 开启上拉加载状态
+				this.loading = true
+				
+				uni.request<Result<TopicResult>>({
+					url: getURL(`/category/${this.navActiveId}/topic/${this.page}`),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as TopicResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.page == 1){
+							this.topic_list = resData.data
+						} else {
+							this.topic_list.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.page = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						// uni.hideLoading()
+					}
+				});
+			},
+			// 切换分类
+			chooseTopicNav(id:number){
+				this.navActiveId = id
+				
+				// uni.showLoading({
+				// 	title: '加载中...',
+				// 	mask: true
+				// });
+				
+				// 重置页码
+				this.isEnded = false
+				this.page = 1
+				this.topic_list.length = 0
+				
+				this.loadTopicList()
+			},
+			loadMore(){
+				if(this.loading || this.isEnded) return
+				this.loadTopicList()
+			}
+		}
+	}
+
+
+import _easycom_loading from '@/components/loading/loading.uvue'
+import _easycom_tip from '@/components/tip/tip.uvue'
+import _easycom_topic_list_item from '@/components/topic-list-item/topic-list-item.uvue'
+import _easycom_loading_more from '@/components/loading-more/loading-more.uvue'
+function GenPagesChooseTopicChooseTopicRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_loading = resolveEasyComponent("loading",_easycom_loading)
+const _component_tip = resolveEasyComponent("tip",_easycom_tip)
+const _component_topic_list_item = resolveEasyComponent("topic-list-item",_easycom_topic_list_item)
+const _component_loading_more = resolveEasyComponent("loading-more",_easycom_loading_more)
+
+  return createElementVNode("view", utsMapOf({
+    class: "flex-1 flex",
+    style: normalizeStyle(utsMapOf({"border-top":"1rpx solid #f2f2f2"}))
+  }), [
+    createElementVNode("scroll-view", utsMapOf({
+      "scroll-y": "true",
+      class: "topic-navs"
+    }), [
+      createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.topic_navs, (tn, _, _, _): VNode => {
+        return createElementVNode("view", utsMapOf({
+          key: tn.id,
+          class: "topic-nav-item",
+          style: normalizeStyle(_ctx.navActiveId == tn.id ? 'background-color:#ffffff;' : '' ),
+          onClick: () => {_ctx.chooseTopicNav(tn.id)}
+        }), [
+          createElementVNode("text", utsMapOf({
+            style: normalizeStyle( _ctx.navActiveId == tn.id ? 'color:#e95e6f' : 'color:#0c0c0c' )
+          }), toDisplayString(tn.title), 5)
+        ], 12, ["onClick"])
+      }), 128 /* KEYED_FRAGMENT */)
+    ]),
+    _ctx.topic_list.length == 0
+      ? createElementVNode("view", utsMapOf({
+          key: 0,
+          class: "flex-1"
+        }), [
+          isTrue(_ctx.loading)
+            ? createVNode(_component_loading, utsMapOf({
+                key: 0,
+                circle: true
+              }))
+            : createVNode(_component_tip, utsMapOf({
+                key: 1,
+                title: "暂无话题~"
+              }))
+        ])
+      : createElementVNode("list-view", utsMapOf({
+          key: 1,
+          class: "flex-1",
+          style: normalizeStyle(utsMapOf({"padding-left":"34rpx"})),
+          onScrolltolower: _ctx.loadMore
+        }), [
+          createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.topic_list, (item, _, _, _): VNode => {
+            return createVNode(_component_topic_list_item, utsMapOf({
+              key: item.id,
+              item: item,
+              ischoose: true
+            }), null, 8, ["item"])
+          }), 128 /* KEYED_FRAGMENT */),
+          createElementVNode("list-item", utsMapOf({ type: 4 }), [
+            createVNode(_component_loading_more, utsMapOf({
+              loading: _ctx.loading,
+              isEnded: _ctx.isEnded
+            }), null, 8, ["loading", "isEnded"])
+          ])
+        ], 44, ["onScrolltolower"])
+  ], 4)
+}
+const GenPagesChooseTopicChooseTopicStyles = [utsMapOf([["topic-navs", padStyleMapOf(utsMapOf([["width", "165rpx"], ["backgroundColor", "#f9f9f9"]]))], ["topic-nav-item", padStyleMapOf(utsMapOf([["height", "100rpx"], ["alignItems", "center"], ["justifyContent", "center"]]))]])]

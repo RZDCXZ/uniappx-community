@@ -1,0 +1,40 @@
+
+	export default {
+		name:"loading-more",
+		props: {
+			loading: {
+				type: Boolean,
+				default: false
+			},
+			isEnded:{
+				type: Boolean,
+				default: false
+			}
+		},
+		computed: {
+			loadingText(): string {
+				if(this.loading){
+					return "加载中..."
+				} else if(this.isEnded){
+					return "已经到底了"
+				} else {
+					return "上拉加载更多"
+				}
+			}
+		},
+	}
+
+
+function GenComponentsLoadingMoreLoadingMoreRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return _ctx.loadingText != ''
+    ? createElementVNode("view", utsMapOf({
+        key: 0,
+        class: "loading"
+      }), [
+        createElementVNode("text", utsMapOf({ class: "loading-text" }), toDisplayString(_ctx.loadingText), 1 /* TEXT */)
+      ])
+    : createCommentVNode("v-if", true)
+}
+const GenComponentsLoadingMoreLoadingMoreStyles = [utsMapOf([["loading", padStyleMapOf(utsMapOf([["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["justifyContent", "center"], ["alignItems", "center"], ["flexDirection", "row"]]))], ["loading-text", padStyleMapOf(utsMapOf([["textAlign", "center"], ["color", "#333333"]]))]])]

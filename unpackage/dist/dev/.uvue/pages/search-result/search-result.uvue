@@ -1,0 +1,97 @@
+
+	import type { TabsSwiperItem } from '@/components/tabs-swiper/type.uts'
+	import longPage from '@/pages/long-list/long-list-page.uvue';
+	export default {
+		components: {
+			longPage
+		},
+		data() {
+			return {
+				keyword:"",
+				tabIndex:0,
+				tabs:[{
+					"id": 0,
+					"name": "帖子",
+					"type":"article",
+					"preload":true
+				},{
+					"id": 2,
+					"name": "用户",
+					"type":"user",
+					"preload":false
+				},
+				{
+					"id": 3,
+					"name": "话题",
+					"type":"topic",
+					"preload":false
+				}] as TabsSwiperItem[],
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			if(options.has("keyword")){
+				this.keyword = options.get("keyword") as string
+			}
+		},
+		onReady() {
+			if(this.keyword != ""){
+				(this.$refs["navbar"] as ComponentPublicInstance).$callMethod("setKeyword",this.keyword)
+			}
+		},
+		methods: {
+			// 当滑动时候，用来加载列表数据
+			loadData(index:number){
+				(this.$refs["longPage"] as ComponentPublicInstance[])[index].$callMethod("loadData",null)
+			},
+			// 当滑动时候，触发索引变化
+			onSwiperChange(index:number){
+				this.tabIndex = index
+			}
+		}
+	}
+
+
+import _easycom_navbar from '@/components/navbar/navbar.uvue'
+import _easycom_tabs_swiper from '@/components/tabs-swiper/tabs-swiper.uvue'
+function GenPagesSearchResultSearchResultRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_navbar = resolveEasyComponent("navbar",_easycom_navbar)
+const _component_long_page = resolveComponent("long-page")
+const _component_tabs_swiper = resolveEasyComponent("tabs-swiper",_easycom_tabs_swiper)
+
+  return createVNode(_component_tabs_swiper, utsMapOf({
+    "default-tab-index": _ctx.tabIndex,
+    "show-search-icon": true,
+    tabs: _ctx.tabs,
+    onLoadData: _ctx.loadData,
+    onChange: _ctx.onSwiperChange
+  }), utsMapOf({
+    navbar: withSlotCtx((): any[] => [
+      createVNode(_component_navbar, utsMapOf({
+        ref: "navbar",
+        type: "search",
+        disabled: true
+      }), null, 512 /* NEED_PATCH */)
+    ]),
+    default: withSlotCtx((): any[] => [
+      createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.tabs, (item, index, _, _): VNode => {
+        return createElementVNode("swiper-item", utsMapOf({
+          class: "flex-1",
+          key: index
+        }), [
+          createVNode(_component_long_page, utsMapOf({
+            ref_for: true,
+            ref: "longPage",
+            page: "search",
+            keyword: _ctx.keyword,
+            type: item.type,
+            preload: item.preload
+          }), null, 8 /* PROPS */, ["keyword", "type", "preload"])
+        ])
+      }), 128 /* KEYED_FRAGMENT */)
+    ]),
+    _: 1 /* STABLE */
+  }), 8 /* PROPS */, ["default-tab-index", "tabs", "onLoadData", "onChange"])
+}
+const GenPagesSearchResultSearchResultStyles = []

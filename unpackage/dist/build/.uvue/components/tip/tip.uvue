@@ -1,0 +1,51 @@
+
+	export default {
+		emits:["click-button"],
+		name:"tip",
+		props: {
+			title: {
+				type: String,
+				default: "暂无数据"
+			},
+			button: {
+				type: String,
+				default: ""
+			}
+		},
+		data() {
+			return {
+				
+			};
+		}
+	}
+
+
+import _easycom_main_btn from '@/components/main-btn/main-btn.uvue'
+import _imports_0 from '@/static/empty.png'
+
+function GenComponentsTipTipRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_main_btn = resolveEasyComponent("main-btn",_easycom_main_btn)
+
+  return createElementVNode("view", utsMapOf({ class: "tip" }), [
+    createElementVNode("image", utsMapOf({
+      src: _imports_0,
+      mode: "widthFix",
+      "fade-show": true,
+      class: "tip-img"
+    })),
+    createElementVNode("text", utsMapOf({ class: "tip-title" }), toDisplayString(_ctx.title), 1),
+    _ctx.button != ''
+      ? createVNode(_component_main_btn, utsMapOf({
+          key: 0,
+          style: normalizeStyle(utsMapOf({"margin-top":"20rpx"})),
+          onClick: () => {_ctx.$emit('click-button')}
+        }), utsMapOf({
+          default: withSlotCtx((): any[] => [toDisplayString(_ctx.button)]),
+          _: 1
+        }), 8, ["style", "onClick"])
+      : createCommentVNode("v-if", true)
+  ])
+}
+const GenComponentsTipTipStyles = [utsMapOf([["tip", padStyleMapOf(utsMapOf([["flex", 1], ["alignItems", "center"], ["justifyContent", "center"], ["minHeight", "600rpx"]]))], ["tip-img", padStyleMapOf(utsMapOf([["width", "350rpx"], ["height", "350rpx"]]))], ["tip-title", padStyleMapOf(utsMapOf([["color", "#5d5d5d"], ["marginTop", "45rpx"]]))]])]

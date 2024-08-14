@@ -1,0 +1,43 @@
+
+	import { AuthNavigateTo } from "@/store/user.uts"
+	export default {
+		name:"add-post-btn",
+		props: {
+			topic_id: {
+				type: Number,
+				default: 0
+			},
+			topic_title:{
+				type:String,
+				default:""
+			}
+		},
+		data() {
+			return {
+				
+			};
+		},
+		methods: {
+			openAddPost() {
+				let url = '/pages/add-post/add-post'
+				if(this.topic_id != 0 && this.topic_title != ""){
+					url += `?topic_id=${this.topic_id}&topic_title=${this.topic_title}`
+				}
+				AuthNavigateTo(url);
+			}
+		},
+	}
+
+
+function GenComponentsAddPostBtnAddPostBtnRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return createElementVNode("view", utsMapOf({
+    class: "add-btn",
+    "hover-class": "add-btn-hover",
+    onClick: _ctx.openAddPost
+  }), [
+    createElementVNode("text", utsMapOf({ class: "iconfont add-btn-text" }), toDisplayString('\ue684'))
+  ], 8, ["onClick"])
+}
+const GenComponentsAddPostBtnAddPostBtnStyles = [utsMapOf([["add-btn", padStyleMapOf(utsMapOf([["width", "100rpx"], ["height", "100rpx"], ["alignItems", "center"], ["justifyContent", "center"], ["position", "fixed"], ["bottom", "34rpx"], ["right", "34rpx"], ["zIndex", 1000], ["borderRadius", 50], ["backgroundImage", "linear-gradient(to bottom right,#fc6672,#e47989)"]]))], ["add-btn-hover", padStyleMapOf(utsMapOf([["backgroundImage", "linear-gradient(to bottom right,#fd6373,#fd6373)"]]))], ["add-btn-text", padStyleMapOf(utsMapOf([["color", "#ffffff"], ["fontSize", 25]]))]])]

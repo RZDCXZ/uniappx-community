@@ -1,0 +1,69 @@
+
+	import { PropType } from "vue"
+	import { FeedbackItem } from "@/common/type.uts"
+	export default {
+		name:"feedback-item",
+		props: {
+			item: {
+				type: Object as PropType<FeedbackItem>,
+				required:true
+			},
+		},
+		data() {
+			return {
+				
+			};
+		},
+		methods: {
+			previewImage(img:string) {
+				uni.previewImage({
+					current:img,
+					urls:this.item.images
+				})
+			}
+		},
+	}
+
+
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+function GenComponentsFeedbackItemFeedbackItemRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+
+  return createElementVNode(Fragment, null, [
+    createElementVNode("text", utsMapOf({ class: "feedback-time" }), toDisplayString(_ctx.item.create_time), 1 /* TEXT */),
+    createElementVNode("view", utsMapOf({
+      class: normalizeClass(["feedback", utsMapOf({ 'feedback-self':(_ctx.item.type == 'user') })])
+    }), [
+      createVNode(_component_avatar, utsMapOf({
+        src: _ctx.item.avatar,
+        width: "84rpx",
+        height: "84rpx",
+        style: normalizeStyle(utsMapOf({"margin":"0 20rpx"}))
+      }), null, 8 /* PROPS */, ["src", "style"]),
+      createElementVNode("view", utsMapOf({
+        class: normalizeClass(["feedback-body", utsMapOf({ 'feedback-body-self' : (_ctx.item.type == 'user') })])
+      }), [
+        createElementVNode("text", utsMapOf({ class: "feedback-text" }), toDisplayString(_ctx.item.content), 1 /* TEXT */),
+        _ctx.item.images.length > 0
+          ? createElementVNode("view", utsMapOf({
+              key: 0,
+              class: "feedback-img"
+            }), [
+              createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.item.images, (img, index, _, _): VNode => {
+                return createElementVNode("image", utsMapOf({
+                  key: index,
+                  src: img,
+                  mode: "aspectFill",
+                  class: "feedback-img-item",
+                  onClick: () => {_ctx.previewImage(img)}
+                }), null, 8 /* PROPS */, ["src", "onClick"])
+              }), 128 /* KEYED_FRAGMENT */)
+            ])
+          : createCommentVNode("v-if", true)
+      ], 2 /* CLASS */)
+    ], 2 /* CLASS */)
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenComponentsFeedbackItemFeedbackItemStyles = [utsMapOf([["feedback-time", padStyleMapOf(utsMapOf([["textAlign", "center"], ["color", "#898989"], ["fontSize", 14], ["marginTop", "20rpx"]]))], ["feedback", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["alignItems", "flex-start"], ["paddingTop", "25rpx"], ["paddingRight", "10rpx"], ["paddingBottom", "25rpx"], ["paddingLeft", "10rpx"]]))], ["feedback-self", padStyleMapOf(utsMapOf([["flexDirection", "row-reverse"]]))], ["feedback-body", padStyleMapOf(utsMapOf([["backgroundColor", "#f4f4f4"], ["borderRadius", 8], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["maxWidth", "475rpx"]]))], ["feedback-body-self", padStyleMapOf(utsMapOf([["backgroundColor", "rgba(240,100,135,0.1)"]]))], ["feedback-text", padStyleMapOf(utsMapOf([["lineHeight", 1.6], ["fontSize", 16]]))], ["feedback-img", padStyleMapOf(utsMapOf([["flexDirection", "row"]]))], ["feedback-img-item", padStyleMapOf(utsMapOf([["width", "130rpx"], ["height", "130rpx"], ["paddingTop", "5rpx"], ["paddingRight", "5rpx"], ["paddingBottom", "5rpx"], ["paddingLeft", "5rpx"], ["borderRadius", "6rpx"], ["backgroundColor", "#f4f4f4"]]))]])]

@@ -1,0 +1,215 @@
+
+	import { Conversation,ConversationResult,Result } from '@/common/type.uts';
+	import { getURL } from "@/common/request.uts"
+	import { getToken,loginState } from "@/store/user.uts"
+	import { openSocket } from "@/common/socket.uts"
+	export default {
+		data() {
+			return {
+				list: [] as Conversation[],
+				loading: false,
+				isEnded: false,
+				currentPage: 1,
+				isFirstLoad:true
+			}
+		},
+		onLoad() {
+			this.refreshData(null)
+			// 监听会话变化
+			uni.$on("onUpdateConversation",this.onUpdateConversation)
+			uni.$on("onUpdateNoReadCount",this.onUpdateNoReadCount)
+		},
+		onShow(){
+			if(this.loginState){
+				openSocket()
+			}
+		},
+		onUnload() {
+			uni.$off("onUpdateConversation",this.onUpdateConversation)
+			uni.$off("onUpdateNoReadCount",this.onUpdateNoReadCount)
+		},
+		onPullDownRefresh() {
+			this.refreshData(()=>{
+				uni.showToast({
+					title: '刷新成功',
+					icon: 'none'
+				});
+				uni.stopPullDownRefresh()
+			})
+		},
+		onReachBottom() {
+			this.loadData(null)
+		},
+		computed: {
+			// 登录状态
+			loginState(): boolean {
+				return loginState.value
+			}
+		},
+		methods: {
+			onUpdateNoReadCount(id:number){
+				let item = this.list.find((o:Conversation):boolean => o.id == id)
+				if(item != null){
+					item.unread_count = 0
+				}
+			},
+			// 监听会话变化
+			onUpdateConversation(e:Conversation | null){
+				// 登录或者退出触发
+				if(e == null){
+					// 已登录，直接刷新数据
+					if(this.loginState){
+						this.refreshData(null)
+					}
+					// 退出登录，清除会话列表
+					else {
+						this.list.length = 0
+					}
+					return
+				}
+				// 发起会话 或 聊天中 触发
+				// 查询会话是否存在
+				let i = this.list.findIndex((o:Conversation):boolean => {
+					return o.id == e.id
+				})
+				// 不存在直接刷新
+				if(i == -1){
+					this.refreshData(null)
+					return
+				}
+				// 存在则修改并置顶
+				this.list[i].avatar = e.avatar
+				this.list[i].name = e.name
+				this.list[i].last_msg_note = e.last_msg_note
+				this.list[i].unread_count = e.unread_count
+				this.list[i].update_time = e.update_time
+				this._toFirst(this.list,i)
+			},
+			// 数组置顶
+			_toFirst(arr: Conversation[], index : number) : Conversation[]{
+				if(index != 0){
+					arr.unshift(arr.splice(index,1)[0])
+				}
+				return arr;
+			},
+			openChat(item : Conversation){
+				uni.navigateTo({
+					url: `/pages/chat/chat?id=${item.id}&target_id=${item.target_id}&title=${item.name}`
+				});
+			},
+			refreshData(loadComplete : (() => void) | null) {
+				this.list.length = 0
+				this.currentPage = 1
+				this.isFirstLoad = true
+				this.isEnded = false
+				this.loading = false
+				this.loadData(loadComplete)
+			},
+			loadData(loadComplete : (() => void) | null) {
+				if (this.loading || this.isEnded) {
+					return
+				}
+				this.loading = true
+				uni.request<Result<ConversationResult>>({
+					url: getURL(`/im/conversation/${Math.floor(this.currentPage)}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as ConversationResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.list = resData.data
+						} else {
+							this.list.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
+		}
+	}
+
+
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+import _easycom_tip from '@/components/tip/tip.uvue'
+import _easycom_loading_more from '@/components/loading-more/loading-more.uvue'
+function GenPagesMsgMsgRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+const _component_tip = resolveEasyComponent("tip",_easycom_tip)
+const _component_loading_more = resolveEasyComponent("loading-more",_easycom_loading_more)
+
+  return createElementVNode("scroll-view", utsMapOf({
+    style: normalizeStyle(utsMapOf({"flex":"1"}))
+  }), [
+    createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.list, (item, index, _, _): VNode => {
+      return createElementVNode("view", utsMapOf({
+        class: "msg-item",
+        "hover-class": "msg-item-hover",
+        key: index,
+        onClick: () => {_ctx.openChat(item)}
+      }), [
+        createVNode(_component_avatar, utsMapOf({
+          src: item.avatar,
+          width: "100rpx",
+          height: "100rpx",
+          style: normalizeStyle(utsMapOf({"margin-right":"20rpx"}))
+        }), null, 8 /* PROPS */, ["src", "style"]),
+        createElementVNode("view", utsMapOf({ class: "msg-item-body" }), [
+          createElementVNode("text", utsMapOf({ class: "msg-item-nickname" }), toDisplayString(item.name), 1 /* TEXT */),
+          createElementVNode("text", utsMapOf({ class: "msg-item-content" }), toDisplayString(item.last_msg_note), 1 /* TEXT */)
+        ]),
+        createElementVNode("view", utsMapOf({ class: "msg-item-info" }), [
+          createElementVNode("text", utsMapOf({ class: "msg-item-time" }), toDisplayString(item.update_time), 1 /* TEXT */),
+          item.unread_count > 0
+            ? createElementVNode("text", utsMapOf({
+                key: 0,
+                class: "msg-item-badge"
+              }), toDisplayString(item.unread_count > 99 ? '99+' : item.unread_count), 1 /* TEXT */)
+            : createCommentVNode("v-if", true)
+        ])
+      ], 8 /* PROPS */, ["onClick"])
+    }), 128 /* KEYED_FRAGMENT */),
+    isTrue(!_ctx.isFirstLoad && _ctx.list.length == 0)
+      ? createVNode(_component_tip, utsMapOf({ key: 0 }))
+      : createCommentVNode("v-if", true),
+    isTrue(_ctx.isFirstLoad || _ctx.list.length > 0)
+      ? createVNode(_component_loading_more, utsMapOf({
+          key: 1,
+          loading: _ctx.loading,
+          isEnded: _ctx.isEnded
+        }), null, 8 /* PROPS */, ["loading", "isEnded"])
+      : createCommentVNode("v-if", true)
+  ], 4 /* STYLE */)
+}
+const GenPagesMsgMsgStyles = [utsMapOf([["msg-item", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["alignItems", "stretch"], ["paddingTop", "20rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "30rpx"]]))], ["msg-item-hover", padStyleMapOf(utsMapOf([["backgroundColor", "#f4f4f4"]]))], ["msg-item-body", padStyleMapOf(utsMapOf([["maxWidth", "420rpx"]]))], ["msg-item-nickname", padStyleMapOf(utsMapOf([["fontSize", 17], ["fontWeight", "bold"], ["marginTop", "10rpx"], ["marginRight", 0], ["marginBottom", "10rpx"], ["marginLeft", 0], ["lines", 1]]))], ["msg-item-content", padStyleMapOf(utsMapOf([["fontSize", 14], ["color", "#727272"], ["lines", 1]]))], ["msg-item-info", padStyleMapOf(utsMapOf([["marginLeft", "auto"], ["alignItems", "flex-end"], ["flexShrink", 0]]))], ["msg-item-time", padStyleMapOf(utsMapOf([["fontSize", 12], ["color", "#777777"], ["marginTop", "10rpx"], ["marginRight", 0], ["marginBottom", "10rpx"], ["marginLeft", 0]]))], ["msg-item-badge", padStyleMapOf(utsMapOf([["color", "#ffffff"], ["backgroundColor", "#f84c2f"], ["fontSize", 11], ["paddingTop", "4rpx"], ["paddingRight", "8rpx"], ["paddingBottom", "4rpx"], ["paddingLeft", "8rpx"], ["borderRadius", "30rpx"], ["fontWeight", "bold"]]))]])]

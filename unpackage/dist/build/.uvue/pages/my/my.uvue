@@ -1,0 +1,330 @@
+
+	import type { Result } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts";
+	import { loginState,userState,getUserInfo,AuthNavigateTo } from "@/store/user.uts"
+	type AdsenseItem = {
+		src: string;
+		url: string;
+	}
+	export default {
+		data() {
+			return {
+				adsenses:[] as AdsenseItem[]
+			}
+		},
+		computed: {
+			loginState(): boolean {
+				return loginState.value
+			},
+			id():number{
+				return userState.id
+			},
+			name():string | null{
+				return userState.name
+			},
+			avatar():string | null{
+				return userState.avatar
+			},
+			fans_count():number{
+				return userState.fans_count
+			},
+			follows_count():number{
+				return userState.follows_count
+			},
+			articles_count():number{
+				return userState.articles_count
+			},
+		},
+		onLoad() {
+			this.loadAdsenses()
+		},
+		onShow() {
+			// 获取最新的用户信息
+			getUserInfo(false)
+		},
+		methods: {
+			test(){
+				uni.showToast({
+					title: '学完之后自己扩展',
+					icon: 'none'
+				});
+			},
+			openMySpace(){
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id=' + this.id,
+				});
+			},
+			// 获取广告列表
+			loadAdsenses(){
+				uni.request<Result<AdsenseItem[]>>({
+					url: getURL(`/adsense/my`),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						// 请求失败
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						this.adsenses = r.data as AdsenseItem[]
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+				});
+			},
+			openWebview(url:string){
+				uni.navigateTo({
+					url: '/pages/webview/webview?url=' + url,
+				});
+			},
+			open(p:string){
+				let url = `/pages/${p}/${p}`
+				
+				// 需要登录后才能打开的页面
+				if(p == "my-collection" || p == "user-history" || p == "user-feedback" || p == "user-blacklist" || p == "user-safe"){
+					AuthNavigateTo(`${url}?user_id=${this.id}`)
+					return
+				}
+				
+				uni.navigateTo({
+					url
+				});
+			}
+		}
+	}
+
+
+import _easycom_status_bar from '@/components/status-bar/status-bar.uvue'
+import _easycom_main_btn from '@/components/main-btn/main-btn.uvue'
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+import _easycom_cell from '@/components/cell/cell.uvue'
+import _easycom_icon_btn from '@/components/icon-btn/icon-btn.uvue'
+import _imports_0 from '@/static/nologin-image.png'
+import _imports_1 from '@/static/view-list.png'
+import _imports_2 from '@/static/message.png'
+import _imports_3 from '@/static/star.png'
+
+function GenPagesMyMyRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_status_bar = resolveEasyComponent("status-bar",_easycom_status_bar)
+const _component_main_btn = resolveEasyComponent("main-btn",_easycom_main_btn)
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+const _component_navigator = resolveComponent("navigator")
+const _component_cell = resolveEasyComponent("cell",_easycom_cell)
+const _component_icon_btn = resolveEasyComponent("icon-btn",_easycom_icon_btn)
+
+  return createElementVNode(Fragment, null, [
+    createVNode(_component_status_bar),
+    createElementVNode("scroll-view", utsMapOf({
+      style: normalizeStyle(utsMapOf({"flex":"1"}))
+    }), [
+      isTrue(!_ctx.loginState)
+        ? createElementVNode(Fragment, utsMapOf({ key: 0 }), [
+            createElementVNode("view", utsMapOf({ class: "my-panel" }), [
+              createElementVNode("view", null, [
+                createElementVNode("text", utsMapOf({ class: "nologin-title" }), "欢迎来到帝莎编程社区"),
+                createElementVNode("text", utsMapOf({ class: "nologin-info" }), "马上登录跟大家一起嗨"),
+                createVNode(_component_main_btn, utsMapOf({
+                  onClick: () => {_ctx.open('user-login')}
+                }), utsMapOf({
+                  default: withSlotCtx((): any[] => ["登录/注册"]),
+                  _: 1
+                }), 8, ["onClick"])
+              ]),
+              createElementVNode("image", utsMapOf({
+                src: _imports_0,
+                mode: "aspectFill",
+                "fade-show": true,
+                class: "nologin-img"
+              }))
+            ]),
+            createElementVNode("view", utsMapOf({ class: "divider" }))
+          ], 64 /* STABLE_FRAGMENT */)
+        : createElementVNode(Fragment, utsMapOf({ key: 1 }), [
+            createElementVNode("view", utsMapOf({ class: "my-panel" }), [
+              createVNode(_component_avatar, utsMapOf({
+                src: _ctx.avatar,
+                width: "148rpx",
+                height: "148rpx",
+                style: normalizeStyle(utsMapOf({"margin-right":"25rpx"})),
+                onClick: () => {_ctx.openMySpace()}
+              }), null, 8, ["src", "style", "onClick"]),
+              createElementVNode("view", utsMapOf({ class: "my-panel-box" }), [
+                createElementVNode("text", utsMapOf({
+                  class: "my-nickname",
+                  onClick: () => {_ctx.openMySpace()}
+                }), toDisplayString(_ctx.name), 9, ["onClick"]),
+                createElementVNode("view", utsMapOf({ class: "my-info" }), [
+                  createVNode(_component_navigator, utsMapOf({
+                    class: "flex",
+                    url: `/pages/user-follow-list/user-follow-list?user_id=${_ctx.id}`
+                  }), utsMapOf({
+                    default: withSlotCtx((): any[] => [
+                      createElementVNode("text", utsMapOf({ class: "my-info-label" }), "关注"),
+                      createElementVNode("text", utsMapOf({ class: "my-info-value" }), toDisplayString(_ctx.follows_count), 1)
+                    ]),
+                    _: 1
+                  }), 8, ["url"]),
+                  createVNode(_component_navigator, utsMapOf({
+                    class: "flex",
+                    url: `/pages/user-fans-list/user-fans-list?user_id=${_ctx.id}`
+                  }), utsMapOf({
+                    default: withSlotCtx((): any[] => [
+                      createElementVNode("text", utsMapOf({ class: "my-info-label" }), "粉丝"),
+                      createElementVNode("text", utsMapOf({ class: "my-info-value" }), toDisplayString(_ctx.fans_count), 1)
+                    ]),
+                    _: 1
+                  }), 8, ["url"]),
+                  createElementVNode("view", utsMapOf({
+                    class: "flex",
+                    onClick: () => {_ctx.openMySpace()}
+                  }), [
+                    createElementVNode("text", utsMapOf({ class: "my-info-label" }), "帖子"),
+                    createElementVNode("text", utsMapOf({ class: "my-info-value" }), toDisplayString(_ctx.articles_count), 1)
+                  ], 8, ["onClick"])
+                ])
+              ]),
+              createElementVNode("text", utsMapOf({
+                class: "my-panel-btn",
+                onClick: () => {_ctx.openMySpace()}
+              }), "个人主页", 8, ["onClick"])
+            ]),
+            createElementVNode("view", utsMapOf({ class: "my-card-section" }), [
+              createElementVNode("view", utsMapOf({
+                class: "my-card",
+                onClick: _ctx.openMySpace
+              }), [
+                createElementVNode("text", utsMapOf({ class: "my-card-title" }), "帖子"),
+                createElementVNode("text", utsMapOf({ class: "my-card-info" }), "我发布的"),
+                createElementVNode("image", utsMapOf({
+                  src: _imports_1,
+                  mode: "aspectFill",
+                  class: "my-card-img"
+                }))
+              ], 8, ["onClick"]),
+              createElementVNode("view", utsMapOf({
+                class: "my-card",
+                onClick: _ctx.openMySpace
+              }), [
+                createElementVNode("text", utsMapOf({ class: "my-card-title" }), "评论"),
+                createElementVNode("text", utsMapOf({ class: "my-card-info" }), "我发布的"),
+                createElementVNode("image", utsMapOf({
+                  src: _imports_2,
+                  mode: "aspectFill",
+                  class: "my-card-img"
+                }))
+              ], 8, ["onClick"]),
+              createElementVNode("view", utsMapOf({
+                class: "my-card",
+                onClick: () => {_ctx.open('my-collection')}
+              }), [
+                createElementVNode("text", utsMapOf({ class: "my-card-title" }), "收藏"),
+                createElementVNode("text", utsMapOf({ class: "my-card-info" }), "我收藏的"),
+                createElementVNode("image", utsMapOf({
+                  src: _imports_3,
+                  mode: "aspectFill",
+                  class: "my-card-img"
+                }))
+              ], 8, ["onClick"])
+            ])
+          ], 64 /* STABLE_FRAGMENT */),
+      createElementVNode("swiper", utsMapOf({
+        "indicator-dots": true,
+        autoplay: true,
+        interval: 3000,
+        duration: 1000,
+        circular: true
+      }), [
+        createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.adsenses, (item, index, _, _): VNode => {
+          return createElementVNode("swiper-item", utsMapOf({
+            style: normalizeStyle(utsMapOf({"padding":"15rpx 30rpx"})),
+            key: index,
+            onClick: () => {_ctx.openWebview(item.url)}
+          }), [
+            createElementVNode("image", utsMapOf({
+              src: item.src,
+              mode: "aspectFill",
+              "fade-show": true,
+              class: "my-swiper-img"
+            }), null, 8, ["src"])
+          ], 12, ["onClick"])
+        }), 128 /* KEYED_FRAGMENT */)
+      ]),
+      createVNode(_component_cell, utsMapOf({
+        title: "历史记录",
+        onClick: () => {_ctx.open('user-history')}
+      }), null, 8, ["onClick"]),
+      createElementVNode("view", utsMapOf({ class: "divider" })),
+      createVNode(_component_cell, utsMapOf({
+        title: "福利中心",
+        onClick: _ctx.test
+      }), null, 8, ["onClick"]),
+      createElementVNode("view", utsMapOf({ class: "divider" })),
+      createVNode(_component_cell, utsMapOf({
+        title: "创作中心",
+        onClick: _ctx.test
+      }), null, 8, ["onClick"]),
+      createVNode(_component_cell, utsMapOf({
+        title: "原创特权",
+        onClick: _ctx.test
+      }), null, 8, ["onClick"]),
+      createElementVNode("view", utsMapOf({ class: "divider" })),
+      createVNode(_component_cell, utsMapOf({
+        title: "更多功能",
+        hover: false,
+        "show-arrow": false
+      })),
+      createElementVNode("view", utsMapOf({ class: "more" }), [
+        createVNode(_component_icon_btn, utsMapOf({
+          column: true,
+          icon: '\ue62e',
+          label: "黑名单",
+          width: "187.5rpx",
+          style: normalizeStyle(utsMapOf({"margin-bottom":"30rpx"})),
+          onClick: () => {_ctx.open('user-blacklist')}
+        }), null, 8, ["style", "onClick"]),
+        createVNode(_component_icon_btn, utsMapOf({
+          column: true,
+          icon: '\ue6f8',
+          label: "意见反馈",
+          width: "187.5rpx",
+          style: normalizeStyle(utsMapOf({"margin-bottom":"30rpx"})),
+          onClick: () => {_ctx.open('user-feedback')}
+        }), null, 8, ["style", "onClick"]),
+        createVNode(_component_icon_btn, utsMapOf({
+          column: true,
+          icon: '\ue608',
+          label: "设置",
+          width: "187.5rpx",
+          style: normalizeStyle(utsMapOf({"margin-bottom":"30rpx"})),
+          onClick: () => {_ctx.open('user-setting')}
+        }), null, 8, ["style", "onClick"]),
+        createVNode(_component_icon_btn, utsMapOf({
+          column: true,
+          icon: '\ueb97',
+          label: "隐私设置",
+          width: "187.5rpx",
+          style: normalizeStyle(utsMapOf({"margin-bottom":"30rpx"})),
+          onClick: () => {_ctx.open('user-safe')}
+        }), null, 8, ["style", "onClick"]),
+        createVNode(_component_icon_btn, utsMapOf({
+          column: true,
+          icon: '\ue6f9',
+          label: "神评鉴定",
+          width: "187.5rpx",
+          style: normalizeStyle(utsMapOf({"margin-bottom":"30rpx"})),
+          onClick: _ctx.test
+        }), null, 8, ["style", "onClick"])
+      ])
+    ], 4)
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenPagesMyMyStyles = [utsMapOf([["my-panel", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["marginTop", "65rpx"], ["paddingTop", 0], ["paddingRight", "30rpx"], ["paddingBottom", 0], ["paddingLeft", "30rpx"], ["alignItems", "center"]]))], ["nologin-title", padStyleMapOf(utsMapOf([["fontWeight", "bold"], ["fontSize", 20], ["color", "#171717"], ["marginBottom", "20rpx"]]))], ["nologin-info", padStyleMapOf(utsMapOf([["color", "#818181"], ["fontSize", 13], ["marginBottom", "35rpx"]]))], ["nologin-img", padStyleMapOf(utsMapOf([["width", "290rpx"], ["height", "240rpx"], ["marginLeft", "auto"]]))], ["my-swiper-img", padStyleMapOf(utsMapOf([["width", "690rpx"], ["height", "135rpx"], ["borderRadius", 5]]))], ["more", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["flexWrap", "wrap"], ["paddingBottom", "50rpx"]]))], ["my-panel-btn", padStyleMapOf(utsMapOf([["backgroundColor", "#f7f6fb"], ["color", "#333237"], ["fontSize", 13], ["borderTopLeftRadius", 20], ["borderBottomLeftRadius", 20], ["paddingTop", "15rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "15rpx"], ["paddingLeft", "20rpx"], ["marginRight", "-30rpx"]]))], ["my-panel-box", padStyleMapOf(utsMapOf([["flex", 1]]))], ["my-nickname", padStyleMapOf(utsMapOf([["fontSize", 18], ["fontWeight", "bold"], ["marginBottom", "20rpx"], ["color", "#333333"]]))], ["my-info", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["alignItems", "center"]]))], ["my-info-label", padStyleMapOf(utsMapOf([["fontSize", 14]]))], ["my-info-value", padStyleMapOf(utsMapOf([["fontSize", 14], ["fontWeight", "bold"], ["marginLeft", "12rpx"], ["marginRight", "20rpx"]]))], ["my-card-section", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["paddingTop", "38rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "38rpx"], ["paddingLeft", "30rpx"]]))], ["my-card", padStyleMapOf(utsMapOf([["height", "115rpx"], ["flex", 1], ["borderRadius", "5rpx"], ["paddingTop", 0], ["paddingRight", "20rpx"], ["paddingBottom", 0], ["paddingLeft", "20rpx"], ["marginLeft", "10rpx"], ["marginRight", "10rpx"], ["boxShadow", "0px 0px 6px rgba(0, 0, 0, 0.1)"], ["backgroundColor", "#ffffff"], ["position", "relative"], ["justifyContent", "center"]]))], ["my-card-title", padStyleMapOf(utsMapOf([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"], ["marginBottom", "10rpx"]]))], ["my-card-info", padStyleMapOf(utsMapOf([["fontSize", 13], ["color", "#686868"]]))], ["my-card-img", padStyleMapOf(utsMapOf([["position", "absolute"], ["width", "70rpx"], ["height", "70rpx"], ["bottom", "-15rpx"], ["right", "-15rpx"], ["opacity", 0.2]]))]])]

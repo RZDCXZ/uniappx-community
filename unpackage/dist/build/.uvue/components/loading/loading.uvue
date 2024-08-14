@@ -1,0 +1,39 @@
+
+	export default {
+		name:"loading",
+		props: {
+			// 是否是圆形
+			circle: {
+				type: Boolean,
+				default: false 
+			},
+		},
+		data() {
+			return {
+				
+			};
+		}
+	}
+
+
+import _imports_0 from '@/static/loading1.gif'
+import _imports_1 from '@/static/loading2.gif'
+
+function GenComponentsLoadingLoadingRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return createElementVNode("view", utsMapOf({ class: "loading-view" }), [
+    isTrue(!_ctx.circle)
+      ? createElementVNode("image", utsMapOf({
+          key: 0,
+          src: _imports_0,
+          style: normalizeStyle(utsMapOf({"width":"30px","height":"8px"}))
+        }), null, 4)
+      : createElementVNode("image", utsMapOf({
+          key: 1,
+          src: _imports_1,
+          style: normalizeStyle(utsMapOf({"width":"40px","height":"40px"}))
+        }), null, 4)
+  ])
+}
+const GenComponentsLoadingLoadingStyles = [utsMapOf([["loading-view", padStyleMapOf(utsMapOf([["flex", 1], ["alignItems", "center"], ["justifyContent", "center"]]))]])]

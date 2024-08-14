@@ -1,0 +1,135 @@
+
+	import { UserItem,UserItemResult,Result } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+	export default {
+		data() {
+			return {
+				user_id:0,
+				loading: false,
+				userList: [] as UserItem[],
+				isEnded: false,
+				currentPage: 1,
+				isFirstLoad:true
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			if(options.has("user_id")){
+				this.user_id = parseInt(options.get("user_id") as string)
+			}
+		},
+		onShow() {
+			this.refreshData(null)
+		},
+		onPullDownRefresh() {
+			this.refreshData(()=>{
+				uni.showToast({
+					title: '刷新成功',
+					icon: 'none'
+				});
+				uni.stopPullDownRefresh()
+			})
+		},
+		onReachBottom() {
+			this.loadData(null)
+		},
+		methods: {
+			refreshData(loadComplete : (() => void) | null) {
+				this.userList.length = 0
+				this.currentPage = 1
+				this.isFirstLoad = true
+				this.isEnded = false
+				this.loading = false
+				this.loadData(loadComplete)
+			},
+			loadData(loadComplete : (() => void) | null) {
+				if (this.loading || this.isEnded) {
+					return
+				}
+				this.loading = true
+				uni.request<Result<UserItemResult>>({
+					url: getURL(`/user/${this.user_id}/follows/${Math.floor(this.currentPage)}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as UserItemResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.userList = resData.data
+						} else {
+							this.userList.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
+		}
+	}
+
+
+import _easycom_tip from '@/components/tip/tip.uvue'
+import _easycom_user_list_item from '@/components/user-list-item/user-list-item.uvue'
+import _easycom_loading_more from '@/components/loading-more/loading-more.uvue'
+function GenPagesUserFollowListUserFollowListRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_tip = resolveEasyComponent("tip",_easycom_tip)
+const _component_user_list_item = resolveEasyComponent("user-list-item",_easycom_user_list_item)
+const _component_loading_more = resolveEasyComponent("loading-more",_easycom_loading_more)
+
+  return createElementVNode("scroll-view", utsMapOf({
+    style: normalizeStyle(utsMapOf({"flex":"1"}))
+  }), [
+    isTrue(!_ctx.isFirstLoad && _ctx.userList.length == 0)
+      ? createElementVNode("view", utsMapOf({
+          key: 0,
+          class: "flex-1"
+        }), [
+          createVNode(_component_tip)
+        ])
+      : createCommentVNode("v-if", true),
+    createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.userList, (item, index, _, _): VNode => {
+      return createVNode(_component_user_list_item, utsMapOf({
+        key: index,
+        item: item
+      }), null, 8, ["item"])
+    }), 128 /* KEYED_FRAGMENT */),
+    isTrue(!_ctx.isFirstLoad && _ctx.userList.length > 0)
+      ? createVNode(_component_loading_more, utsMapOf({
+          key: 1,
+          loading: _ctx.loading,
+          isEnded: _ctx.isEnded
+        }), null, 8, ["loading", "isEnded"])
+      : createCommentVNode("v-if", true)
+  ], 4)
+}
+const GenPagesUserFollowListUserFollowListStyles = []

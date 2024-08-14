@@ -1,0 +1,59 @@
+
+	import type { PropType } from "vue"
+	import type { UserItem } from "@/common/type.uts"
+	export default {
+		name:"user-list-item",
+		props: {
+			item: {
+				type: Object as PropType<UserItem>,
+				required:true
+			},
+		},
+		data() {
+			return {
+				isfollow:false
+			};
+		},
+		created() {
+			this.isfollow = this.item.isfollow
+		},
+		methods: {
+			openUserSpace() {
+				uni.navigateTo({
+					url: '/pages/user-space/user-space?user_id='+this.item.id
+				});
+			}
+		},
+	}
+
+
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+import _easycom_follow_button from '@/components/follow-button/follow-button.uvue'
+function GenComponentsUserListItemUserListItemRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+const _component_follow_button = resolveEasyComponent("follow-button",_easycom_follow_button)
+
+  return createElementVNode("view", utsMapOf({ class: "list-item-header" }), [
+    createVNode(_component_avatar, utsMapOf({
+      src: _ctx.item.avatar,
+      width: "120rpx",
+      height: "120rpx",
+      style: normalizeStyle(utsMapOf({"margin-right":"27rpx"})),
+      onClick: _ctx.openUserSpace
+    }), null, 8, ["src", "style", "onClick"]),
+    createElementVNode("view", utsMapOf({ onClick: _ctx.openUserSpace }), [
+      createElementVNode("text", utsMapOf({ class: "nickname" }), toDisplayString(_ctx.item.name), 1),
+      createElementVNode("text", utsMapOf({ class: "desc" }), toDisplayString(_ctx.item.desc), 1),
+      createElementVNode("text", utsMapOf({ class: "time" }), toDisplayString(_ctx.item.create_time), 1)
+    ], 8, ["onClick"]),
+    createVNode(_component_follow_button, utsMapOf({
+      type: "plain",
+      modelValue: _ctx.isfollow,
+      "onUpdate:modelValue": $event => {(_ctx.isfollow) = $event},
+      user_id: _ctx.item.id
+    }), null, 8, ["modelValue", "onUpdate:modelValue", "user_id"])
+  ])
+}
+const GenComponentsUserListItemUserListItemStyles = [utsMapOf([["list-item-header", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["alignItems", "center"], ["paddingTop", "26rpx"], ["paddingLeft", "33rpx"], ["paddingRight", "33rpx"]]))], ["time", padStyleMapOf(utsMapOf([["fontSize", 13], ["color", "#a7a7a7"], ["marginTop", "10rpx"]]))], ["nickname", padStyleMapOf(utsMapOf([["color", "#050505"], ["textOverflow", "ellipsis"], ["maxWidth", "240rpx"], ["height", "34rpx"], ["fontSize", 15], ["fontWeight", "bold"]]))], ["desc", padStyleMapOf(utsMapOf([["fontSize", 14], ["color", "#202020"], ["marginTop", "10rpx"], ["lines", 1], ["maxWidth", "410rpx"]]))]])]

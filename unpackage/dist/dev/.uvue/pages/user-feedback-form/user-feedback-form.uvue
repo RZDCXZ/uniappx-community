@@ -1,0 +1,140 @@
+
+	import { defaultResult } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+	export default {
+		data() {
+			return {
+				content:"",
+			}
+		},
+		computed: {
+			disabled(): boolean {
+				return this.content.length == 0
+			}
+		},
+		methods: {
+			submit(){
+				// 拿到上传组件节点
+				const uploadRef = this.$refs["upload"] as ComponentPublicInstance
+				// 判断是否还有图片正在上传
+				if(uploadRef.$callMethod("isUploading") as boolean){
+					uni.showToast({
+						title: '还有图片正在上传中...',
+						icon: 'none'
+					});
+					return
+				}
+				// 获取图片数组
+				let images = uploadRef.$callMethod("getValue") as string[]
+				// 请求参数
+				let data = { __$originalPosition: new UTSSourceMapPosition("data", "pages/user-feedback-form/user-feedback-form.uvue", 53, 9), 
+				  images,
+				  content:this.content
+				} as  UTSJSONObject
+				
+				uni.showLoading({
+					title: '提交中...',
+					mask: false
+				});
+				
+				uni.request<defaultResult>({
+					url: getURL("/feedback/save"),
+					method: 'POST',
+					data,
+					header:{
+						token:getToken()
+					},
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						
+						// 请求失败
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						uni.showToast({
+							title: r.msg,
+							icon: 'none'
+						});
+						
+						setTimeout(function() {
+							uni.navigateBack({
+								delta: 1
+							});
+						}, 300);
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						uni.hideLoading()
+					}
+				});
+			},
+		}
+	}
+
+
+import _easycom_main_btn from '@/components/main-btn/main-btn.uvue'
+import _easycom_navbar from '@/components/navbar/navbar.uvue'
+import _easycom_upload_images from '@/components/upload-images/upload-images.uvue'
+function GenPagesUserFeedbackFormUserFeedbackFormRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_main_btn = resolveEasyComponent("main-btn",_easycom_main_btn)
+const _component_navbar = resolveEasyComponent("navbar",_easycom_navbar)
+const _component_upload_images = resolveEasyComponent("upload-images",_easycom_upload_images)
+
+  return createElementVNode(Fragment, null, [
+    createVNode(_component_navbar, utsMapOf({
+      type: "text",
+      title: "意见反馈"
+    }), utsMapOf({
+      right: withSlotCtx((): any[] => [
+        createElementVNode("view", utsMapOf({ class: "navbar-right" }), [
+          createVNode(_component_main_btn, utsMapOf({
+            disabled: _ctx.disabled,
+            width: "138rpx",
+            height: "60rpx",
+            "font-size": "14px",
+            onClick: _ctx.submit
+          }), utsMapOf({
+            default: withSlotCtx((): any[] => ["提交反馈"]),
+            _: 1 /* STABLE */
+          }), 8 /* PROPS */, ["disabled", "onClick"])
+        ])
+      ]),
+      _: 1 /* STABLE */
+    })),
+    createElementVNode("scroll-view", utsMapOf({
+      style: normalizeStyle(utsMapOf({"flex":"1","background-color":"#f4f4f4"}))
+    }), [
+      createElementVNode("view", utsMapOf({
+        style: normalizeStyle(utsMapOf({"background-color":"#ffffff"}))
+      }), [
+        createElementVNode("textarea", utsMapOf({
+          "auto-focus": true,
+          "auto-height": true,
+          modelValue: _ctx.content,
+          onInput: ($event: InputEvent) => {(_ctx.content) = $event.detail.value},
+          placeholder: "请说明具体问题(300字以内)~",
+          class: "add-textarea"
+        }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"]),
+        createVNode(_component_upload_images, utsMapOf({
+          ref: "upload",
+          style: normalizeStyle(utsMapOf({"margin-bottom":"60rpx"}))
+        }), null, 8 /* PROPS */, ["style"])
+      ], 4 /* STYLE */)
+    ], 4 /* STYLE */)
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenPagesUserFeedbackFormUserFeedbackFormStyles = [utsMapOf([["navbar-right", padStyleMapOf(utsMapOf([["height", 45], ["alignItems", "center"], ["justifyContent", "center"], ["marginRight", "34rpx"]]))], ["cell-tip", padStyleMapOf(utsMapOf([["color", "#f0748a"], ["backgroundColor", "#fff1f6"], ["borderRadius", 4], ["marginLeft", "18rpx"], ["fontSize", 13], ["paddingTop", "5rpx"], ["paddingRight", "10rpx"], ["paddingBottom", "5rpx"], ["paddingLeft", "10rpx"]]))], ["add-textarea", padStyleMapOf(utsMapOf([["width", "750rpx"], ["maxHeight", "500rpx"], ["paddingTop", "60rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "60rpx"], ["paddingLeft", "30rpx"]]))]])]

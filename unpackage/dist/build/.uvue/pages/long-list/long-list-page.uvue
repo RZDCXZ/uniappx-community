@@ -1,0 +1,474 @@
+
+	import type { Result,ListItem,ListResult,updateArticleChangeEvent,updateSupportEvent,Topic,TopicResult,UserItem,UserItemResult,CommentItem,CommentItemResult } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+
+	export default {
+		emits:["onDeleteSuccess"],
+		props: {
+			type: {
+				type: String,
+				default: ''
+			},
+			preload: {
+				type: Boolean,
+				default: false
+			},
+			id: {
+				type: String,
+				default: ''
+			},
+			category_id:{
+				type:Number,
+				default:0
+			},
+			page:{
+				type: String,
+				default: 'index'
+			},
+			keyword:{
+				type: String,
+				default: ''
+			},
+			user_id:{
+				type:Number,
+				default:0
+			},
+			isAdmin:{
+				type:Boolean,
+				default:false
+			}
+		},
+		data() {
+			return {
+				loading: false,
+				dataList: [] as ListItem[],
+				topicList: [] as Topic[],
+				userList: [] as UserItem[],
+				commentList: [] as CommentItem[],
+				isEnded: false,
+				loadingError: '',
+				currentPage: 1,
+				isFirstLoad:true
+			}
+		},
+		computed: {
+			// 列表长度
+			count():number{
+				let count = this.dataList.length
+				switch (this.type){
+					case "topic":
+					count = this.topicList.length
+						break;
+					case "user":
+					count = this.userList.length
+						break;
+					case "comment":
+					count = this.commentList.length
+						break;
+				}
+				return count
+			},
+		},
+		created() {
+			if (this.preload) {
+				this.loadData(null)
+			}
+			// 监听帖子变化
+			uni.$on("onUpdateArticleChange",this.onUpdateArticleChange)
+		},
+		// 组件销毁
+		destroyed() {
+			uni.$off("onUpdateArticleChange",this.onUpdateArticleChange)
+		},
+		methods: {
+			onDeleteSuccess(){
+				this.refreshData(null)
+				this.$emit("onDeleteSuccess")
+			},
+			// 打开发帖页面
+			openAddPost(){
+				uni.navigateTo({
+					url: '/pages/add-post/add-post',
+				});
+			},
+			// 监听帖子变化
+			onUpdateArticleChange(e:updateArticleChangeEvent){
+				const aRefs = this.$refs["articleListItem"] as ComponentPublicInstance[]
+				if(e.key == "updateFollow"){
+					this.dataList.forEach((o:ListItem,i:number)=>{
+						if(o.user_id == e.id){
+							aRefs[i].$callMethod("updateFollow",e.value == "true" ? true : false)
+						}
+					})
+					return;
+				} 
+				
+				
+				let index = this.dataList.findIndex((o:ListItem,_:number):boolean => o.id == e.id)
+				if(index == -1){
+					return
+				}
+				let ItemRef = aRefs[index]
+				switch (e.key){
+					case "updateSupport":
+					ItemRef.$callMethod("updateSupport",JSON.parse<updateSupportEvent>(e.value))
+						break;
+					case "updateReadCount":
+					ItemRef.$callMethod("updateReadCount",parseInt(e.value))
+						break;
+					case "updateCommentCount":
+					ItemRef.$callMethod("updateCommentCount",parseInt(e.value))
+						break;
+				}
+			},
+			refreshData(loadComplete : (() => void) | null) {
+				this.dataList.length = 0
+				this.currentPage = 1
+				this.isFirstLoad = true
+				this.isEnded = false
+				this.loading = false
+				this.loadData(loadComplete)
+			},
+			loadData(loadComplete : (() => void) | null) {
+				if (this.loading || this.isEnded) {
+					return
+				}
+				this.loading = true
+				
+				switch (this.page){
+					case "index":
+					this.loadArticleList(loadComplete)
+						break;
+					case "search":
+					if(this.type == "article"){
+						this.loadArticleList(loadComplete)
+					} else if(this.type == "topic"){
+						this.loadSearchTopicList(loadComplete)
+					} else if(this.type == "user"){
+						this.loadSearchUserList(loadComplete)
+					}
+						break;
+					case "user-space":
+					if(this.type == "article"){
+						this.loadArticleList(loadComplete)
+					} else if(this.type == "comment"){
+						this.loadCommentListByUserId(loadComplete)
+					}
+						break;
+				}
+				
+			},
+			// 获取用户评论列表
+			loadCommentListByUserId(loadComplete : (() => void) | null){
+				uni.request<Result<CommentItemResult>>({
+					url: getURL(`/user/${this.user_id}/comment/${Math.floor(this.currentPage)}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as CommentItemResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.commentList = resData.data
+						} else {
+							this.commentList.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
+			// 搜索话题列表
+			loadSearchTopicList(loadComplete : (() => void) | null){
+				uni.request<Result<TopicResult>>({
+					url: getURL(`/search/topic/${Math.floor(this.currentPage)}?keyword=${this.keyword}`),
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as TopicResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.topicList = resData.data
+						} else {
+							this.topicList.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
+			// 搜索用户列表
+			loadSearchUserList(loadComplete : (() => void) | null){
+				uni.request<Result<UserItemResult>>({
+					url: getURL(`/search/user/${Math.floor(this.currentPage)}?keyword=${this.keyword}`),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as UserItemResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.userList = resData.data
+						} else {
+							this.userList.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			},
+			// 获取帖子列表
+			loadArticleList(loadComplete : (() => void) | null){
+				const p = Math.floor(this.currentPage)
+				// 首页
+				let url =  `/category/${this.category_id}/article/${p}`
+				// 搜索页
+				if(this.page == "search"){
+					url = `/search/article/${p}?keyword=${this.keyword}`
+				} else if(this.page == "user-space"){
+					url = `/user/${this.user_id}/article/${p}`
+				}
+				
+				uni.request<Result<ListResult>>({
+					url: getURL(url),
+					header:{
+						token:getToken()
+					},
+					success: (res) => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						const resData = r.data as ListResult | null
+						if(resData == null) return
+						
+						// 是否还有数据
+						this.isEnded = resData.last_page <= resData.current_page
+						if(this.currentPage == 1){
+							this.dataList = resData.data
+						} else {
+							this.dataList.push(...resData.data)
+						}
+						
+						// 页码+1
+						this.currentPage = this.isEnded ? resData.current_page : Math.floor(resData.current_page + 1)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						this.loading = false
+						this.isFirstLoad = false
+						if (loadComplete != null) {
+							loadComplete()
+						}
+					}
+				})
+			}
+		}
+	}
+
+
+import _easycom_skeleton from '@/components/skeleton/skeleton.uvue'
+import _easycom_tip from '@/components/tip/tip.uvue'
+import _easycom_article_list_item from '@/components/article-list-item/article-list-item.uvue'
+import _easycom_user_list_item from '@/components/user-list-item/user-list-item.uvue'
+import _easycom_topic_list_item from '@/components/topic-list-item/topic-list-item.uvue'
+import _easycom_comment_list_item from '@/components/comment-list-item/comment-list-item.uvue'
+import _easycom_loading_more from '@/components/loading-more/loading-more.uvue'
+function GenPagesLongListLongListPageRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_skeleton = resolveEasyComponent("skeleton",_easycom_skeleton)
+const _component_tip = resolveEasyComponent("tip",_easycom_tip)
+const _component_article_list_item = resolveEasyComponent("article-list-item",_easycom_article_list_item)
+const _component_user_list_item = resolveEasyComponent("user-list-item",_easycom_user_list_item)
+const _component_topic_list_item = resolveEasyComponent("topic-list-item",_easycom_topic_list_item)
+const _component_comment_list_item = resolveEasyComponent("comment-list-item",_easycom_comment_list_item)
+const _component_loading_more = resolveEasyComponent("loading-more",_easycom_loading_more)
+
+  return createElementVNode("list-view", utsMapOf({
+    ref: "listView",
+    id: _ctx.id,
+    class: "list",
+    rebound: false,
+    "scroll-y": true,
+    "custom-nested-scroll": true,
+    onScrolltolower: () => {_ctx.loadData(null)}
+  }), [
+    isTrue(_ctx.isFirstLoad)
+      ? createElementVNode("list-item", utsMapOf({
+          key: 0,
+          type: 1
+        }), [
+          createVNode(_component_skeleton)
+        ])
+      : createCommentVNode("v-if", true),
+    isTrue(!_ctx.isFirstLoad && _ctx.count == 0)
+      ? createElementVNode("list-item", utsMapOf({
+          key: 1,
+          type: 2,
+          class: "flex-1"
+        }), [
+          isTrue(_ctx.page == 'user-space' && _ctx.isAdmin && _ctx.type == 'article')
+            ? createVNode(_component_tip, utsMapOf({
+                key: 0,
+                title: "现在不发帖,光看别人火",
+                button: "去发帖",
+                onClickButton: _ctx.openAddPost
+              }), null, 8, ["onClickButton"])
+            : createVNode(_component_tip, utsMapOf({ key: 1 }))
+        ])
+      : createCommentVNode("v-if", true),
+    isTrue(_ctx.type == 'article' || _ctx.page == 'index')
+      ? createElementVNode(Fragment, utsMapOf({ key: 2 }), RenderHelpers.renderList(_ctx.dataList, (item, index, _, _): VNode => {
+          return createElementVNode("list-item", utsMapOf({
+            key: index,
+            type: 0
+          }), [
+            createVNode(_component_article_list_item, utsMapOf({
+              isAdmin: _ctx.isAdmin,
+              inUserSpace: _ctx.page == 'user-space',
+              ref_for: true,
+              ref: "articleListItem",
+              item: item,
+              onOnDeleteSuccess: _ctx.onDeleteSuccess
+            }), null, 8, ["isAdmin", "inUserSpace", "item", "onOnDeleteSuccess"])
+          ])
+        }), 128 /* KEYED_FRAGMENT */)
+      : _ctx.type == 'user'
+        ? createElementVNode(Fragment, utsMapOf({ key: 3 }), RenderHelpers.renderList(_ctx.userList, (item, index, _, _): VNode => {
+            return createElementVNode("list-item", utsMapOf({
+              key: index,
+              type: 5
+            }), [
+              createVNode(_component_user_list_item, utsMapOf({ item: item }), null, 8, ["item"])
+            ])
+          }), 128 /* KEYED_FRAGMENT */)
+        : _ctx.type == 'topic'
+          ? createElementVNode(Fragment, utsMapOf({ key: 4 }), RenderHelpers.renderList(_ctx.topicList, (item, index, _, _): VNode => {
+              return createElementVNode("list-item", utsMapOf({
+                style: normalizeStyle(utsMapOf({"padding-left":"34rpx"})),
+                key: index,
+                type: 6
+              }), [
+                createVNode(_component_topic_list_item, utsMapOf({ item: item }), null, 8, ["item"])
+              ], 4)
+            }), 128 /* KEYED_FRAGMENT */)
+          : _ctx.type == 'comment'
+            ? createElementVNode(Fragment, utsMapOf({ key: 5 }), RenderHelpers.renderList(_ctx.commentList, (item, index, _, _): VNode => {
+                return createElementVNode("list-item", utsMapOf({
+                  key: index,
+                  type: 7
+                }), [
+                  createVNode(_component_comment_list_item, utsMapOf({
+                    isAdmin: _ctx.isAdmin,
+                    item: item,
+                    onOnDeleteSuccess: () => {_ctx.refreshData(null)}
+                  }), null, 8, ["isAdmin", "item", "onOnDeleteSuccess"])
+                ])
+              }), 128 /* KEYED_FRAGMENT */)
+            : createCommentVNode("v-if", true),
+    isTrue(!_ctx.isFirstLoad && _ctx.count > 0)
+      ? createElementVNode("list-item", utsMapOf({
+          key: 6,
+          type: 4
+        }), [
+          createVNode(_component_loading_more, utsMapOf({
+            loading: _ctx.loading,
+            isEnded: _ctx.isEnded
+          }), null, 8, ["loading", "isEnded"])
+        ])
+      : createCommentVNode("v-if", true)
+  ], 40, ["id", "onScrolltolower"])
+}
+const GenPagesLongListLongListPageStyles = [utsMapOf([["list", padStyleMapOf(utsMapOf([["flex", 1], ["backgroundColor", "#ffffff"]]))]])]

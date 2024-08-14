@@ -1,0 +1,40 @@
+
+	import { initCurrentUser } from "@/store/user.uts"
+	let firstBackTime = 0
+	export default {
+		onLaunch: function () {
+			console.log('App Launch', " at App.uvue:6")
+		},
+		onShow: function () {
+			console.log('App Show', " at App.uvue:9")
+			// 初始化用户信息
+			initCurrentUser()
+		},
+		onHide: function () {
+			console.log('App Hide', " at App.uvue:14")
+		},
+
+		onLastPageBackPress: function () {
+			console.log('App LastPageBackPress', " at App.uvue:18")
+			if (firstBackTime == 0) {
+				uni.showToast({
+					title: '再按一次退出应用',
+					position: 'bottom',
+				})
+				firstBackTime = Date.now()
+				setTimeout(() => {
+					firstBackTime = 0
+				}, 2000)
+			} else if (Date.now() - firstBackTime < 2000) {
+				firstBackTime = Date.now()
+				uni.exit()
+			}
+		},
+
+		onExit: function () {
+			console.log('App Exit', " at App.uvue:35")
+		},
+	}
+
+
+const GenAppStyles = [utsMapOf([["iconfont", padStyleMapOf(utsMapOf([["!fontFamily", "iconfont"], ["fontSize", 16], ["fontStyle", "normal"]]))], ["flex", padStyleMapOf(utsMapOf([["display", "flex"], ["flexDirection", "row"]]))], ["flex-1", padStyleMapOf(utsMapOf([["flex", 1]]))], ["flex-center", padStyleMapOf(utsMapOf([["alignItems", "center"], ["justifyContent", "center"], ["display", "flex"]]))], ["divider", padStyleMapOf(utsMapOf([["backgroundColor", "#f3f3f3"], ["width", "750rpx"], ["height", "17rpx"]]))], ["login-page", padStyleMapOf(utsMapOf([["flex", 1], ["paddingTop", 0], ["paddingRight", "48rpx"], ["paddingBottom", 0], ["paddingLeft", "48rpx"]]))], ["login-title", padStyleMapOf(utsMapOf([["marginTop", "70rpx"], ["fontSize", 30], ["fontWeight", "bold"]]))], ["login-bottom", padStyleMapOf(utsMapOf([["position", "fixed"], ["left", 0], ["bottom", 0], ["right", 0]]))], ["input-tip", padStyleMapOf(utsMapOf([["color", "#8d8d8d"], ["fontSize", 12], ["marginTop", "25rpx"], ["lineHeight", 1.5]]))], ["@FONT-FACE", utsMapOf([["0", utsMapOf([["fontFamily", "iconfont"], ["src", "url('/static/iconfont.ttf')"]])]])]])]

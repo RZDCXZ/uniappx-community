@@ -1,0 +1,162 @@
+
+	import { getURL } from "@/common/request.uts"
+	import { loginState,getToken,logout,userState,AuthNavigateTo } from "@/store/user.uts"
+	import type { defaultResult } from "@/common/type.uts"
+	// 缓存白名单
+	const whites = ["user_info","user_token"] as string[]
+	
+	export default {
+		data() {
+			return {
+				// 本地缓存大小
+				currentSize:"",
+				// 需要清除的key
+				keys:[] as string[]
+			}
+		},
+		computed: {
+			loginState(): boolean {
+				return loginState.value
+			},
+			id():number{
+				return userState.id
+			}
+		},
+		onLoad() {
+			this.getStorageInfo()
+		},
+		methods: {
+			logout(){
+				uni.showModal({
+					content: '是否要退出登录？',
+					confirmText: '立即退出',
+					success: res => {
+						if(!res.confirm) return
+						// 退出登录操作
+						uni.showLoading({
+							title: '退出登录中...',
+							mask: false
+						});
+						uni.request<defaultResult>({
+							url: getURL('/user/logout'),
+							method: 'POST',
+							header:{
+								token:getToken()
+							},
+							complete: () => {
+								uni.hideLoading()
+								// 清除本地缓存
+								logout()
+								uni.showToast({
+									title: '退出成功',
+									icon: 'none'
+								});
+								// 返回上一页
+								setTimeout(function() {
+									uni.navigateBack({
+										delta: 1
+									});
+								}, 300);
+							}
+						});
+					},
+				});
+			},
+			getStorageInfo(){
+				uni.getStorageInfo({
+					success:res=>{
+						this.currentSize = res.currentSize > 1024 ? (res.currentSize/1024).toFixed(2) + 'MB' : res.currentSize.toFixed(2) + 'KB'
+						// 排除白名单
+						this.keys = res.keys.filter((k:string):boolean =>  !whites.includes(k))
+					}
+				})
+			},
+			clearStorage(){
+				uni.showModal({
+					title: '提示',
+					content: '是否要清除缓存？',
+					confirmText: '立即清除',
+					success: res => {
+						if(res.confirm){
+							// 移除缓存
+							for (let i = 0; i < this.keys.length; i++) {
+								uni.removeStorageSync(this.keys[i])
+							}
+							// 重新获取缓存大小
+							this.getStorageInfo()
+							uni.showToast({
+								title: '清除缓存成功',
+								icon: 'none'
+							});
+						}
+					},
+				});
+			},
+			open(p:string){
+				let url = `/pages/${p}/${p}`
+				
+				// 需要登录后才能打开的页面
+				if(p == "user-safe" || p == "user-feedback" || p == "user-editinfo"){
+					AuthNavigateTo(`${url}?user_id=${this.id}`)
+					return
+				}
+				
+				uni.navigateTo({
+					url
+				});
+			}
+		}
+	}
+
+
+import _easycom_cell from '@/components/cell/cell.uvue'
+import _easycom_main_btn from '@/components/main-btn/main-btn.uvue'
+function GenPagesUserSettingUserSettingRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_cell = resolveEasyComponent("cell",_easycom_cell)
+const _component_main_btn = resolveEasyComponent("main-btn",_easycom_main_btn)
+
+  return createElementVNode("scroll-view", utsMapOf({
+    style: normalizeStyle(utsMapOf({"flex":"1"}))
+  }), [
+    createVNode(_component_cell, utsMapOf({
+      title: "账号与安全",
+      onClick: () => {_ctx.open('user-safe')}
+    }), null, 8, ["onClick"]),
+    createVNode(_component_cell, utsMapOf({
+      title: "资料编辑",
+      onClick: () => {_ctx.open('user-editinfo')}
+    }), null, 8, ["onClick"]),
+    createVNode(_component_cell, utsMapOf({
+      title: "清除缓存",
+      "right-text": _ctx.currentSize,
+      "show-arrow": false,
+      onClick: _ctx.clearStorage
+    }), null, 8, ["right-text", "onClick"]),
+    createVNode(_component_cell, utsMapOf({
+      title: "意见反馈",
+      onClick: () => {_ctx.open('user-feedback')}
+    }), null, 8, ["onClick"]),
+    createVNode(_component_cell, utsMapOf({
+      title: "关于社区",
+      onClick: () => {_ctx.open('about')}
+    }), null, 8, ["onClick"]),
+    isTrue(_ctx.loginState)
+      ? createElementVNode("view", utsMapOf({
+          key: 0,
+          class: "flex-center",
+          style: normalizeStyle(utsMapOf({"padding":"20rpx 0"}))
+        }), [
+          createVNode(_component_main_btn, utsMapOf({
+            width: "600rpx",
+            onClick: _ctx.logout
+          }), utsMapOf({
+            default: withSlotCtx((): any[] => ["退出登录"]),
+            _: 1
+          }), 8, ["onClick"])
+        ], 4)
+      : createCommentVNode("v-if", true)
+  ], 4)
+}
+const GenPagesUserSettingUserSettingStyles = []

@@ -1,0 +1,554 @@
+
+	import { UserDetail2, Result, defaultResult,Conversation } from '@/common/type.uts'
+	import { getURL } from '@/common/request.uts';
+	import { getToken, AuthAction, userState } from "@/store/user.uts"
+	import { TabsSwiperItem } from "@/components/tabs-swiper/type.uts"
+	import headTabsSwiper from "@/components/tabs-swiper/head-tabs-swiper.uvue"
+	import longPage from '@/pages/long-list/long-list-page.uvue';
+	import { getSexText } from "@/common/utils.uts"
+
+	// 举报违规选项
+	type ReasonOption = { __$originalPosition: UTSSourceMapPosition<"ReasonOption", "pages/user-space/user-space.uvue", 90, 7>;
+		title : string
+		list : string[]
+	}
+
+	export default {
+		components: {
+			headTabsSwiper,
+			longPage
+		},
+		data() {
+			return {
+				tabIndex: 0,
+				tabs: [{
+					"id": 1,
+					"name": "帖子",
+					"type": "article",
+					"preload": false
+				}, {
+					"id": 2,
+					"name": "评论",
+					"type": "comment",
+					"preload": false
+				}] as TabsSwiperItem[],
+
+				title: "个人空间",
+				isfollow: false,
+				isblacked: false,
+
+				user: {
+					"name": "",
+					"id": 0,
+					"avatar": "",
+					"status": 1,
+					"age": 0,
+					"sex": 0,
+					"qg": 0,
+					"job": null,
+					"path": null,
+					"birthday": null,
+					"desc": null,
+					"fans_count": 0,
+					"follows_count": 0,
+					"articles_count": 0,
+					"comments_count": 0,
+					"isfollow": false,
+					"isblacked": false
+				} as UserDetail2,
+
+				popup: null as ComponentPublicInstance | null,
+				reportPopup: null as ComponentPublicInstance | null,
+
+				reasonContent: "",
+				reasonOptions: [{
+					title: "违规",
+					list: ["低俗色情", "侮辱谩骂", "违法行为", "政治敏感", "垃圾广告", "未成年人有害行为"]
+				}, {
+					title: "不友善",
+					list: ["不尊重女性", "引战、制造冲突", "恶意诋毁", "刷水/骗赞", "感官不适"]
+				}, {
+					title: "个人信息问题",
+					list: ["头像/昵称/签名违规", "冒充官号/其他用户"]
+				}] as ReasonOption[],
+			}
+		},
+		computed: {
+			sex() : string {
+				return getSexText(this.user.sex)
+			},
+			// 是否是登录者本人
+			isSelf() : boolean {
+				return this.user.id === userState.id
+			}
+		},
+		onLoad(options : OnLoadOptions) {
+			if (options.has("user_id")) {
+				const uid = parseInt(options.get("user_id") as string)
+				this.user.id = uid
+			}
+			this.loadUserDetail()
+			uni.$on("onUpdateInfoSuccess", this.onUpdateInfoSuccess)
+		},
+		onUnload() {
+			uni.$off("onUpdateInfoSuccess", this.onUpdateInfoSuccess)
+		},
+		onReady() {
+			this.popup = this.$refs["popup"] as ComponentPublicInstance
+			this.reportPopup = this.$refs["reportPopup"] as ComponentPublicInstance
+		},
+		onPullDownRefresh() {
+			this.refreshData(() => {
+				uni.stopPullDownRefresh()
+			})
+		},
+		methods: {
+			// 发起聊天
+			openChat() {
+				AuthAction(() => {
+					uni.showLoading({
+						title: '发起聊天中...',
+						mask: true
+					});
+					uni.request<Result<Conversation>>({
+						url: getURL("/im/create_conversation"),
+						method: "POST",
+						header: {
+							token: getToken()
+						},
+						data: {
+							target_id: this.user.id
+						},
+						success: (res) => {
+							let r = res.data
+							if (r == null) return
+							if (res.statusCode != 200) {
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								return
+							}
+							
+							if(r.data == null) return
+							
+							let resData = r.data as Conversation
+							
+							// 通知消息页 更新 会话列表数据
+							uni.$emit("onUpdateConversation", resData)
+							
+							uni.navigateTo({
+								url: `/pages/chat/chat?id=${resData.id}&target_id=${resData.target_id}&title=${resData.name}`
+							});
+						},
+						fail: (err) => {
+							uni.showToast({
+								title: err.errMsg,
+								icon: 'none'
+							});
+						},
+						complete: () => {
+							uni.hideLoading()
+						}
+					})
+				})
+			},
+			onUpdateInfoSuccess(_ : string) {
+				this.loadUserDetail()
+				this.refreshData(null)
+			},
+			openUserEditInfo() {
+				uni.navigateTo({
+					url: '/pages/user-editinfo/user-editinfo'
+				});
+			},
+			handleReportChange(e : UniRadioGroupChangeEvent) {
+				this.reasonContent = e.detail.value
+			},
+			// 提交举报事件
+			confirmReport() {
+				AuthAction(() => {
+					uni.showLoading({
+						title: '提交中...',
+						mask: true
+					});
+					uni.request<defaultResult>({
+						url: getURL(`/report/save`),
+						method: 'POST',
+						header: {
+							token: getToken()
+						},
+						data: {
+							report_uid: this.user.id,
+							content: this.reasonContent
+						},
+						success: res => {
+							let r = res.data
+							if (r == null) return
+							if (res.statusCode != 200) {
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								return
+							}
+
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+						},
+						fail: (err) => {
+							uni.showToast({
+								title: err.errMsg,
+								icon: 'none'
+							});
+						},
+						complete: () => {
+							uni.hideLoading()
+							setTimeout(() => {
+								this.reportPopup?.$callMethod("close")
+							}, 400)
+						}
+					});
+				})
+			},
+			// 打开举报弹框
+			openReportPopup() {
+				this.popup?.$callMethod("close")
+				this.reportPopup?.$callMethod("open")
+			},
+			refreshData(loadComplete : (() => void) | null) {
+				(this.$refs["longPage"] as ComponentPublicInstance[])[this.tabIndex].$callMethod("refreshData", loadComplete)
+			},
+			handleBlack() {
+				this.popup?.$callMethod("close")
+				if (this.isblacked) {
+					this.doBlack()
+					return
+				}
+				uni.showModal({
+					title: '确定拉黑用户？',
+					content: '拉黑后用户不能关注你，给你评论及@你，你也将不会再推荐此用户内容',
+					confirmText: '直接拉黑',
+					success: res => {
+						if (res.confirm) {
+							this.doBlack()
+						}
+					},
+				});
+			},
+			doBlack() {
+				AuthAction(() => {
+					uni.showLoading({
+						title: '操作中...',
+						mask: true
+					});
+					let action = !this.isblacked ? "add_blacklist" : "remove_blacklist"
+					uni.request<defaultResult>({
+						url: getURL(`/${action}/${this.user.id}`),
+						method: 'POST',
+						header: {
+							token: getToken()
+						},
+						success: res => {
+							let r = res.data
+							if (r == null) return
+							if (res.statusCode != 200) {
+								uni.showToast({
+									title: r.msg,
+									icon: 'none'
+								});
+								return
+							}
+
+							// 修改拉黑状态
+							this.isblacked = !this.isblacked
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+
+							// 刷新列表数据
+							this.refreshData(null)
+						},
+						fail: (err) => {
+							uni.showToast({
+								title: err.errMsg,
+								icon: 'none'
+							});
+						},
+						complete: () => {
+							uni.hideLoading()
+						}
+					});
+				})
+			},
+			openMore() {
+				this.popup?.$callMethod("open")
+			},
+			// 获取用户详情
+			loadUserDetail() {
+				uni.showLoading({
+					title: '加载中...',
+					mask: false
+				});
+				uni.request<Result<UserDetail2>>({
+					url: getURL(`/user_info/${this.user.id}`),
+					header: {
+						token: getToken()
+					},
+					success: res => {
+						let r = res.data
+						if (r == null) return
+						if (res.statusCode != 200) {
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						this.user = r.data as UserDetail2
+						if (this.user.name != null) {
+							this.title = this.user.name as string
+						}
+						this.isfollow = this.user.isfollow as boolean
+						this.isblacked = this.user.isblacked as boolean
+
+						this.loadData(this.tabIndex)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						setTimeout(function () {
+							uni.hideLoading()
+						}, 200);
+					}
+				});
+			},
+			// 加载数据时调用
+			loadData(index : number) {
+				(this.$refs["longPage"] as ComponentPublicInstance[])[index].$callMethod("loadData", null)
+			},
+			// 切换tab时调用
+			onSwiperChange(i : number) {
+				this.tabIndex = i
+			}
+		}
+	}
+
+
+import _easycom_navbar from '@/components/navbar/navbar.uvue'
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+import _easycom_main_btn from '@/components/main-btn/main-btn.uvue'
+import _easycom_follow_button from '@/components/follow-button/follow-button.uvue'
+import _easycom_popup from '@/components/popup/popup.uvue'
+function GenPagesUserSpaceUserSpaceRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_navbar = resolveEasyComponent("navbar",_easycom_navbar)
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+const _component_navigator = resolveComponent("navigator")
+const _component_main_btn = resolveEasyComponent("main-btn",_easycom_main_btn)
+const _component_follow_button = resolveEasyComponent("follow-button",_easycom_follow_button)
+const _component_long_page = resolveComponent("long-page")
+const _component_head_tabs_swiper = resolveComponent("head-tabs-swiper")
+const _component_popup = resolveEasyComponent("popup",_easycom_popup)
+const _component_radio = resolveComponent("radio")
+const _component_radio_group = resolveComponent("radio-group")
+
+  return createElementVNode(Fragment, null, [
+    createVNode(_component_navbar, utsMapOf({
+      type: "text",
+      title: _ctx.title,
+      "right-icon": "more",
+      onClickRight: _ctx.openMore,
+      showRightIcon: !_ctx.isSelf
+    }), null, 8 /* PROPS */, ["title", "onClickRight", "showRightIcon"]),
+    createVNode(_component_head_tabs_swiper, utsMapOf({
+      "tab-center": true,
+      tabs: _ctx.tabs,
+      onLoadData: _ctx.loadData,
+      onChange: _ctx.onSwiperChange
+    }), utsMapOf({
+      header: withSlotCtx((): any[] => [
+        createElementVNode("view", utsMapOf({ class: "space-header" }), [
+          createVNode(_component_avatar, utsMapOf({
+            src: _ctx.user.avatar,
+            width: "162rpx",
+            height: "162rpx",
+            style: normalizeStyle(utsMapOf({"margin-right":"27rpx"}))
+          }), null, 8 /* PROPS */, ["src", "style"]),
+          createElementVNode("view", utsMapOf({ class: "flex-1" }), [
+            createElementVNode("view", utsMapOf({ class: "space-data" }), [
+              createElementVNode("view", utsMapOf({ class: "space-data-item" }), [
+                createElementVNode("text", utsMapOf({ class: "space-data-value" }), toDisplayString(_ctx.user.articles_count), 1 /* TEXT */),
+                createElementVNode("text", utsMapOf({ class: "space-data-title" }), "帖子")
+              ]),
+              createVNode(_component_navigator, utsMapOf({
+                class: "space-data-item",
+                url: '/pages/user-follow-list/user-follow-list?user_id='+_ctx.user.id
+              }), utsMapOf({
+                default: withSlotCtx((): any[] => [
+                  createElementVNode("text", utsMapOf({ class: "space-data-value" }), toDisplayString(_ctx.user.follows_count), 1 /* TEXT */),
+                  createElementVNode("text", utsMapOf({ class: "space-data-title" }), "关注")
+                ]),
+                _: 1 /* STABLE */
+              }), 8 /* PROPS */, ["url"]),
+              createVNode(_component_navigator, utsMapOf({
+                class: "space-data-item",
+                url: '/pages/user-fans-list/user-fans-list?user_id='+_ctx.user.id
+              }), utsMapOf({
+                default: withSlotCtx((): any[] => [
+                  createElementVNode("text", utsMapOf({ class: "space-data-value" }), toDisplayString(_ctx.user.fans_count), 1 /* TEXT */),
+                  createElementVNode("text", utsMapOf({ class: "space-data-title" }), "粉丝")
+                ]),
+                _: 1 /* STABLE */
+              }), 8 /* PROPS */, ["url"])
+            ]),
+            isTrue(_ctx.isSelf)
+              ? createElementVNode("view", utsMapOf({
+                  key: 0,
+                  class: "space-actions"
+                }), [
+                  createVNode(_component_main_btn, utsMapOf({
+                    onClick: () => {_ctx.openUserEditInfo()},
+                    width: "330rpx",
+                    height: "65rpx"
+                  }), utsMapOf({
+                    default: withSlotCtx((): any[] => ["编辑资料"]),
+                    _: 1 /* STABLE */
+                  }), 8 /* PROPS */, ["onClick"])
+                ])
+              : createElementVNode("view", utsMapOf({
+                  key: 1,
+                  class: "space-actions"
+                }), [
+                  isTrue(_ctx.isblacked)
+                    ? createVNode(_component_main_btn, utsMapOf({
+                        key: 0,
+                        onClick: () => {_ctx.handleBlack()},
+                        width: "330rpx",
+                        height: "65rpx"
+                      }), utsMapOf({
+                        default: withSlotCtx((): any[] => ["解除拉黑"]),
+                        _: 1 /* STABLE */
+                      }), 8 /* PROPS */, ["onClick"])
+                    : createVNode(_component_follow_button, utsMapOf({
+                        key: 1,
+                        type: "main-btn",
+                        user_id: _ctx.user.id,
+                        modelValue: _ctx.isfollow,
+                        "onUpdate:modelValue": $event => {(_ctx.isfollow) = $event}
+                      }), null, 8 /* PROPS */, ["user_id", "modelValue", "onUpdate:modelValue"]),
+                  createElementVNode("view", utsMapOf({
+                    class: "space-action-msg",
+                    onClick: _ctx.openChat
+                  }), [
+                    createElementVNode("text", utsMapOf({ class: "iconfont space-action-msg-icon" }), toDisplayString('\ue648'))
+                  ], 8 /* PROPS */, ["onClick"])
+                ])
+          ])
+        ]),
+        createElementVNode("text", utsMapOf({ class: "space-info" }), toDisplayString(_ctx.user.desc == null ? "暂无描述~" : _ctx.user.desc), 1 /* TEXT */),
+        createElementVNode("text", utsMapOf({ class: "space-info" }), "地区：" + toDisplayString(_ctx.user.path == null ? "未知" : _ctx.user.path), 1 /* TEXT */),
+        createElementVNode("view", utsMapOf({ class: "space-tags" }), [
+          createElementVNode("text", utsMapOf({ class: "space-tag" }), toDisplayString(_ctx.sex), 1 /* TEXT */),
+          createElementVNode("text", utsMapOf({ class: "space-tag" }), toDisplayString(_ctx.user.age) + "岁", 1 /* TEXT */),
+          _ctx.user.birthday != null
+            ? createElementVNode("text", utsMapOf({
+                key: 0,
+                class: "space-tag"
+              }), toDisplayString(_ctx.user.birthday), 1 /* TEXT */)
+            : createCommentVNode("v-if", true)
+        ])
+      ]),
+      default: withSlotCtx((): any[] => [
+        createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.tabs, (item, index, _, _): VNode => {
+          return createElementVNode("swiper-item", utsMapOf({
+            class: "flex-1",
+            key: index
+          }), [
+            createVNode(_component_long_page, utsMapOf({
+              isAdmin: _ctx.isSelf,
+              ref_for: true,
+              ref: "longPage",
+              page: "user-space",
+              id: 'list_'+item.id,
+              user_id: _ctx.user.id,
+              type: item.type,
+              preload: item.preload,
+              onOnDeleteSuccess: _ctx.loadUserDetail
+            }), null, 8 /* PROPS */, ["isAdmin", "id", "user_id", "type", "preload", "onOnDeleteSuccess"])
+          ])
+        }), 128 /* KEYED_FRAGMENT */)
+      ]),
+      _: 1 /* STABLE */
+    }), 8 /* PROPS */, ["tabs", "onLoadData", "onChange"]),
+    createVNode(_component_popup, utsMapOf({ ref: "popup" }), utsMapOf({
+      default: withSlotCtx((): any[] => [
+        createElementVNode("view", utsMapOf({ class: "more-popup" }), [
+          createElementVNode("view", utsMapOf({
+            class: "more-item",
+            onClick: _ctx.handleBlack
+          }), [
+            createElementVNode("text", utsMapOf({ class: "iconfont more-item-icon" }), toDisplayString('\ue60a')),
+            createElementVNode("text", null, toDisplayString(_ctx.isblacked ? '解除拉黑' : '拉黑'), 1 /* TEXT */)
+          ], 8 /* PROPS */, ["onClick"]),
+          createElementVNode("view", utsMapOf({
+            class: "more-item",
+            onClick: () => {_ctx.openReportPopup()}
+          }), [
+            createElementVNode("text", utsMapOf({ class: "iconfont more-item-icon" }), toDisplayString('\ue6f7')),
+            createElementVNode("text", null, "举报")
+          ], 8 /* PROPS */, ["onClick"])
+        ])
+      ]),
+      _: 1 /* STABLE */
+    }), 512 /* NEED_PATCH */),
+    createVNode(_component_popup, utsMapOf({
+      ref: "reportPopup",
+      title: "举报原因",
+      "show-cancel": false,
+      onConfirm: _ctx.confirmReport
+    }), utsMapOf({
+      default: withSlotCtx((): any[] => [
+        createVNode(_component_radio_group, utsMapOf({
+          name: "reason",
+          style: normalizeStyle(utsMapOf({"height":"940rpx","width":"750rpx"})),
+          onChange: _ctx.handleReportChange
+        }), utsMapOf({
+          default: withSlotCtx((): any[] => [
+            createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.reasonOptions, (r, ri, _, _): VNode => {
+              return createElementVNode("view", utsMapOf({ key: ri }), [
+                createElementVNode("text", utsMapOf({ class: "reason-title" }), toDisplayString(r.title), 1 /* TEXT */),
+                createElementVNode("view", utsMapOf({ class: "reason-box" }), [
+                  createElementVNode(Fragment, null, RenderHelpers.renderList(r.list, (s, sI, _, _): VNode => {
+                    return createVNode(_component_radio, utsMapOf({
+                      color: "#F06487",
+                      class: "reason-item",
+                      key: sI,
+                      value: s
+                    }), utsMapOf({
+                      default: withSlotCtx((): any[] => [
+                        createElementVNode("text", utsMapOf({ class: "reason-item-text" }), toDisplayString(s), 1 /* TEXT */)
+                      ]),
+                      _: 2 /* DYNAMIC */
+                    }), 1032 /* PROPS, DYNAMIC_SLOTS */, ["value"])
+                  }), 128 /* KEYED_FRAGMENT */)
+                ])
+              ])
+            }), 128 /* KEYED_FRAGMENT */)
+          ]),
+          _: 1 /* STABLE */
+        }), 8 /* PROPS */, ["style", "onChange"])
+      ]),
+      _: 1 /* STABLE */
+    }), 8 /* PROPS */, ["onConfirm"])
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenPagesUserSpaceUserSpaceStyles = [utsMapOf([["space-header", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["alignItems", "center"], ["paddingTop", "35rpx"], ["paddingRight", "35rpx"], ["paddingBottom", "35rpx"], ["paddingLeft", "35rpx"]]))], ["space-data", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["marginBottom", "25rpx"]]))], ["space-data-item", padStyleMapOf(utsMapOf([["flex", 1], ["justifyContent", "center"], ["alignItems", "center"]]))], ["space-data-value", padStyleMapOf(utsMapOf([["fontSize", 22], ["color", "#070707"], ["fontWeight", "bold"]]))], ["space-data-title", padStyleMapOf(utsMapOf([["fontSize", 13], ["color", "#101010"]]))], ["space-actions", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["justifyContent", "center"]]))], ["space-action-msg", padStyleMapOf(utsMapOf([["width", "65rpx"], ["height", "65rpx"], ["borderRadius", 5], ["borderWidth", "1rpx"], ["borderStyle", "solid"], ["borderColor", "#dedede"], ["alignItems", "center"], ["justifyContent", "center"], ["marginLeft", "10rpx"]]))], ["space-action-msg-icon", padStyleMapOf(utsMapOf([["fontSize", 20], ["color", "#535353"]]))], ["space-info", padStyleMapOf(utsMapOf([["paddingTop", 0], ["paddingRight", "35rpx"], ["paddingBottom", 0], ["paddingLeft", "35rpx"], ["marginTop", "15rpx"], ["lineHeight", 1.5], ["fontSize", 15], ["color", "#8e8e90"]]))], ["space-tags", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["paddingTop", 0], ["paddingRight", "35rpx"], ["paddingBottom", 0], ["paddingLeft", "35rpx"], ["marginTop", "15rpx"], ["marginBottom", "20rpx"]]))], ["space-tag", padStyleMapOf(utsMapOf([["fontSize", 12], ["borderWidth", "1rpx"], ["borderStyle", "solid"], ["borderColor", "#e0e0e0"], ["borderRadius", 50], ["paddingTop", "10rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "10rpx"], ["paddingLeft", "20rpx"], ["marginRight", "10rpx"]]))], ["more-popup", padStyleMapOf(utsMapOf([["height", "230rpx"], ["backgroundColor", "#f4f4f4"], ["flexDirection", "row"]]))], ["more-item", padStyleMapOf(utsMapOf([["flex", 1], ["alignItems", "center"], ["justifyContent", "center"]]))], ["more-item-icon", padStyleMapOf(utsMapOf([["fontSize", 25], ["marginBottom", "25rpx"], ["backgroundColor", "#ffffff"], ["width", "100rpx"], ["height", "100rpx"], ["textAlign", "center"], ["lineHeight", "100rpx"], ["borderRadius", 50], ["color", "#5a5a5a"]]))], ["reason-title", padStyleMapOf(utsMapOf([["fontSize", 15], ["marginTop", "35rpx"], ["marginRight", "30rpx"], ["marginBottom", "35rpx"], ["marginLeft", "30rpx"], ["color", "#828282"]]))], ["reason-box", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["flexWrap", "wrap"]]))], ["reason-item", padStyleMapOf(utsMapOf([["width", "375rpx"], ["flexDirection", "row"], ["paddingLeft", "30rpx"], ["paddingBottom", "35rpx"]]))], ["reason-item-text", padStyleMapOf(utsMapOf([["marginLeft", "10rpx"], ["width", "260rpx"]]))]])]

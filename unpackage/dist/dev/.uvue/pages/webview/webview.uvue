@@ -1,0 +1,27 @@
+
+	export default {
+		data() {
+			return {
+				url:""
+			}
+		},
+		onLoad(options:OnLoadOptions) {
+			if(options.has("url")){
+				this.url = options.get("url") as string
+			}
+		},
+		methods: {
+			
+		}
+	}
+
+
+function GenPagesWebviewWebviewRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return createElementVNode("web-view", utsMapOf({
+    class: "flex-1",
+    src: _ctx.url
+  }), null, 8 /* PROPS */, ["src"])
+}
+const GenPagesWebviewWebviewStyles = []

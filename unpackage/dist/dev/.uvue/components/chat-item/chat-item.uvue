@@ -1,0 +1,54 @@
+
+	import { userState } from '@/store/user.uts'
+	import { PropType } from "vue"
+	import { ChatItem } from "@/common/type.uts"
+	export default {
+		name:"chat-item",
+		props: {
+			item: {
+				type: Object as PropType<ChatItem>,
+				required:true
+			},
+		},
+		computed: {
+			isself(): boolean {
+				return userState.id == this.item.user_id
+			}
+		},
+		data() {
+			return {
+				
+			};
+		},
+		methods: {
+			
+		},
+	}
+
+
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+function GenComponentsChatItemChatItemRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+
+  return createElementVNode("view", utsMapOf({ class: "chatlist" }), [
+    createElementVNode("text", utsMapOf({ class: "chat-time" }), toDisplayString(_ctx.item.client_create_time), 1 /* TEXT */),
+    createElementVNode("view", utsMapOf({
+      class: normalizeClass(["chat", utsMapOf({ 'chat-self': _ctx.isself })])
+    }), [
+      createVNode(_component_avatar, utsMapOf({
+        src: _ctx.item.avatar,
+        width: "84rpx",
+        height: "84rpx",
+        style: normalizeStyle(utsMapOf({"margin":"0 20rpx"}))
+      }), null, 8 /* PROPS */, ["src", "style"]),
+      createElementVNode("view", utsMapOf({
+        class: normalizeClass(["chat-body", utsMapOf({ 'chat-body-self' : _ctx.isself })])
+      }), [
+        createElementVNode("text", utsMapOf({ class: "chat-text" }), toDisplayString(_ctx.item.body), 1 /* TEXT */)
+      ], 2 /* CLASS */)
+    ], 2 /* CLASS */)
+  ])
+}
+const GenComponentsChatItemChatItemStyles = [utsMapOf([["chatlist", padStyleMapOf(utsMapOf([["transform", "rotate(180deg)"]]))], ["chat-time", padStyleMapOf(utsMapOf([["textAlign", "center"], ["color", "#898989"], ["fontSize", 14], ["marginTop", "20rpx"]]))], ["chat", padStyleMapOf(utsMapOf([["flexDirection", "row"], ["alignItems", "flex-start"], ["paddingTop", "25rpx"], ["paddingRight", "10rpx"], ["paddingBottom", "25rpx"], ["paddingLeft", "10rpx"]]))], ["chat-self", padStyleMapOf(utsMapOf([["flexDirection", "row-reverse"]]))], ["chat-body", padStyleMapOf(utsMapOf([["backgroundColor", "#f4f4f4"], ["borderRadius", 8], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["maxWidth", "475rpx"]]))], ["chat-body-self", padStyleMapOf(utsMapOf([["backgroundColor", "rgba(240,100,135,0.1)"]]))], ["chat-text", padStyleMapOf(utsMapOf([["lineHeight", 1.6], ["fontSize", 16]]))], ["chat-img", padStyleMapOf(utsMapOf([["flexDirection", "row"]]))], ["chat-img-item", padStyleMapOf(utsMapOf([["width", "130rpx"], ["height", "130rpx"], ["paddingTop", "5rpx"], ["paddingRight", "5rpx"], ["paddingBottom", "5rpx"], ["paddingLeft", "5rpx"], ["borderRadius", "6rpx"], ["backgroundColor", "#f4f4f4"]]))]])]

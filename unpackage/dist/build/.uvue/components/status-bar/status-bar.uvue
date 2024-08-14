@@ -1,0 +1,22 @@
+
+	export default {
+		name:"status-bar",
+		data() {
+			return {
+				statusBarHeight:0
+			};
+		},
+		created() {
+			this.statusBarHeight = uni.getSystemInfoSync().statusBarHeight
+		}
+	}
+
+
+function GenComponentsStatusBarStatusBarRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return createElementVNode("view", utsMapOf({
+    style: normalizeStyle('height:'+_ctx.statusBarHeight+'px;')
+  }), null, 4)
+}
+const GenComponentsStatusBarStatusBarStyles = []

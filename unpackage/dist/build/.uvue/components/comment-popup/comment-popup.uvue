@@ -1,0 +1,131 @@
+
+	import { Result,CommentItem } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import { getToken } from "@/store/user.uts"
+	export default {
+		name:"comment-popup",
+		props: {
+			article_id: {
+				type: Number,
+				default: 0
+			},
+		},
+		data() {
+			return {
+				comment_popup_show:false,
+				focus:false,
+				comment_data:"",
+				placeholder:"说点什么...",
+				reply_id: null  as number | null
+			};
+		},
+		methods: {
+			// 显示/隐藏评论框
+			toggleCommentPopup(show:boolean, placeholder:string | null, reply_id : number | null){
+				this.comment_popup_show = show
+				this.placeholder = placeholder == null ? "说点什么..." : placeholder
+				this.reply_id = reply_id
+				this.focus = show
+			},
+			// 发布/回复评论
+			sendComment() {
+				uni.showLoading({
+					title: '发布中...',
+					mask: true
+				});
+				
+				// 是否是回复
+				let isreply = this.reply_id == null ? false : true
+				let url = "/comment/save"
+				let data = {
+					"content": this.comment_data
+				} as UTSJSONObject
+				
+				// 回复
+				if(isreply){
+					url = "/comment/reply"
+					data.set("reply_id",this.reply_id)
+				} else {
+					data.set("article_id",this.article_id)
+				}
+				
+				uni.request<Result<CommentItem>>({
+					url: getURL(url),
+					method: 'POST',
+					header:{
+						token:getToken()
+					},
+					data,
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						// 全局通知：评论列表更新，首页/详情页评论数+1
+						uni.$emit("onSendCommentSuccess",r.data)
+						// 关闭评论框
+						this.toggleCommentPopup(false,null,null)
+						// 清空评论框
+						this.comment_data = ""
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						uni.hideLoading()
+					}
+				});
+			}
+		},
+	}
+
+
+import _easycom_main_btn from '@/components/main-btn/main-btn.uvue'
+function GenComponentsCommentPopupCommentPopupRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_main_btn = resolveEasyComponent("main-btn",_easycom_main_btn)
+
+  return createElementVNode(Fragment, null, [
+    isTrue(_ctx.comment_popup_show)
+      ? createElementVNode("view", utsMapOf({
+          key: 0,
+          class: "comment-popup-mask",
+          onClick: () => {_ctx.toggleCommentPopup(false,null,null)}
+        }), null, 8, ["onClick"])
+      : createCommentVNode("v-if", true),
+    createElementVNode("view", utsMapOf({
+      class: normalizeClass(["comment-popup", _ctx.comment_popup_show ? 'comment-popup-show' : ''])
+    }), [
+      createElementVNode("textarea", utsMapOf({
+        focus: _ctx.focus,
+        class: "comment-textarea",
+        "auto-height": true,
+        modelValue: _ctx.comment_data,
+        onInput: ($event: InputEvent) => {(_ctx.comment_data) = $event.detail.value},
+        placeholder: _ctx.placeholder
+      }), null, 40, ["focus", "modelValue", "onInput", "placeholder"]),
+      createVNode(_component_main_btn, utsMapOf({
+        width: "100rpx",
+        height: "60rpx",
+        "font-size": "14px",
+        disabled: _ctx.comment_data == '',
+        onClick: _ctx.sendComment,
+        style: normalizeStyle(utsMapOf({"margin-left":"10rpx","margin-bottom":"10rpx"}))
+      }), utsMapOf({
+        default: withSlotCtx((): any[] => ["发送"]),
+        _: 1
+      }), 8, ["disabled", "onClick", "style"])
+    ], 2)
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenComponentsCommentPopupCommentPopupStyles = [utsMapOf([["comment-popup-mask", padStyleMapOf(utsMapOf([["position", "fixed"], ["top", 0], ["left", 0], ["right", 0], ["bottom", 0], ["zIndex", 101]]))], ["comment-popup", padStyleMapOf(utsMapOf([["zIndex", 1000], ["backgroundColor", "#ffffff"], ["position", "fixed"], ["bottom", 0], ["left", 0], ["right", 0], ["borderTopWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderTopColor", "#f2f2f2"], ["minHeight", "83rpx"], ["paddingLeft", "28rpx"], ["paddingRight", "28rpx"], ["flexDirection", "row"], ["alignItems", "flex-end"], ["paddingBottom", "20rpx"], ["transform", "translateY(500rpx)"], ["transitionProperty", "transform"], ["transitionDuration", "300ms"]]))], ["comment-popup-show", padStyleMapOf(utsMapOf([["transform", "translateY(0)"]]))], ["comment-textarea", padStyleMapOf(utsMapOf([["width", "590rpx"], ["backgroundColor", "#f4f4f4"], ["borderRadius", 5], ["paddingTop", "16rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "16rpx"], ["paddingLeft", "20rpx"], ["marginTop", "20rpx"], ["maxHeight", "500rpx"]]))], ["@TRANSITION", utsMapOf([["comment-popup", utsMapOf([["property", "transform"], ["duration", "300ms"]])]])]])]

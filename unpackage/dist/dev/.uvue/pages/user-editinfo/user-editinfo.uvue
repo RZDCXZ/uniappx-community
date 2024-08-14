@@ -1,0 +1,292 @@
+
+	import { citypickerChangeEvent } from "@/components/f-city-picker/type.uts"
+	import { defaultResult,Result,UserDetail } from "@/common/type.uts"
+	import { getURL } from '@/common/request.uts'
+	import { userState,getToken,updateUserStateAvatar,updateInfo } from "@/store/user.uts"
+	import {
+		sexOptions,
+		getSexText,
+		emotionOptions,
+		getEmotionText
+	} from "@/common/utils.uts"
+	export default {
+		data() {
+			return {
+				// 默认头像
+				avatar:"/static/default-avatar.png",
+				birthday:"",
+				path:"",
+				name:"",
+				sex:0,
+				qg:0,
+				desc:""
+			}
+		},
+		onLoad() {
+			// 初始化头像地址
+			if(userState.avatar != null){
+				this.avatar = userState.avatar as string
+			}
+			if(userState.birthday != null){
+				this.birthday = userState.birthday as string
+			}
+			if(userState.path != null){
+				this.path = userState.path as string
+			}
+			if(userState.username != null){
+				this.name = userState.username as string
+			}
+			if(userState.desc != null){
+				this.desc = userState.desc as string
+			}
+			this.sex = userState.sex as number
+			this.qg = userState.qg as number
+		},
+		computed: {
+			sexText(): string {
+				return getSexText(this.sex)
+			},
+			qgText(): string {
+				return getEmotionText(this.qg)
+			}
+		},
+		methods: {
+			sumbit(){
+				uni.showLoading({
+					title: '修改中...',
+					mask: true
+				});
+				
+				const data = { __$originalPosition: new UTSSourceMapPosition("data", "pages/user-editinfo/user-editinfo.uvue", 89, 11), 
+					name:this.name,
+					sex:this.sex,
+					qg:this.qg,
+					birthday:this.birthday,
+					path:this.path,
+					desc:this.desc
+				} as UTSJSONObject
+				
+				uni.request<Result<UserDetail>>({
+					url:getURL("/user/changeinfo"),
+					data,
+					method:"POST",
+					header:{
+						token:getToken()
+					},
+					success:(res)=>{
+						let r = res.data
+						if(r === null) return
+						if(res.statusCode != 200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						// 全局通知用户信息修改
+						uni.$emit("onUpdateInfoSuccess","info")
+						// 同步本地用户信息
+						updateInfo(r.data as UserDetail)
+						
+						uni.showToast({
+							title: '修改成功',
+							icon: 'none'
+						});
+						
+						setTimeout(function() {
+							uni.navigateBack({
+								delta: 1
+							});
+						}, 300);
+					},
+					fail:(err)=>{
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete:()=>{
+						uni.hideLoading()
+					}
+				})
+			},
+			handleDescInput(e:UniInputEvent){
+				this.desc = e.detail.value
+			},
+			openSexPicker(){
+				uni.showActionSheet({
+					title:"请选择性别",
+					itemList: sexOptions,
+					success:(res:ShowActionSheetSuccess)=>{
+						this.sex = res.tapIndex ?? 0
+						console.log(this.sex, " at pages/user-editinfo/user-editinfo.uvue:151");
+					}
+				})
+			},
+			openEmotionPicker(){
+				uni.showActionSheet({
+					title:"请选择情感情况",
+					itemList: emotionOptions,
+					success:(res:ShowActionSheetSuccess)=>{
+						this.qg = res.tapIndex ?? 0
+						console.log(this.qg, " at pages/user-editinfo/user-editinfo.uvue:161");
+					}
+				})
+			},
+			confirmPathPicker(e:citypickerChangeEvent){
+				this.path = e.label
+			},
+			confirmBirthdayPicker(e:string){
+				this.birthday = e
+			}, 
+			updateAvatar(){
+				uni.chooseImage({
+					count:1,
+					sizeType:["compressed"],
+					sourceType:['album','camera'],
+					success:(res)=>{
+						uni.showLoading({
+							title: '上传头像中...',
+							mask: true
+						});
+						uni.uploadFile({
+							url:getURL("/user/changeavatar"),
+							filePath:res.tempFilePaths[0],
+							name:"avatar",
+							header: {
+								token:getToken()
+							},
+							success:(res)=>{
+								let d = UTSAndroid.consoleDebugError(JSON.parse<defaultResult>(res.data), " at pages/user-editinfo/user-editinfo.uvue:189")
+								if(d == null) return
+								if(d.code == 0){
+									uni.showToast({
+										title: d.msg,
+										icon: 'none'
+									});
+									return
+								}
+								const src = d.data as string
+								uni.showToast({
+									title: '修改头像成功',
+									icon: 'none'
+								});
+								// 更新本地用户信息
+								updateUserStateAvatar(src)
+								
+								this.avatar = src
+								
+								// 通知全局修改用户信息,例如个人空间
+								uni.$emit("onUpdateInfoSuccess","avatar")
+							},
+							complete:()=>{
+								uni.hideLoading()
+							}
+						})
+					}
+				})
+			}
+		}
+	}
+
+
+import _easycom_navbar from '@/components/navbar/navbar.uvue'
+import _easycom_avatar from '@/components/avatar/avatar.uvue'
+import _easycom_cell from '@/components/cell/cell.uvue'
+import _easycom_f_picker from '@/components/f-picker/f-picker.uvue'
+import _easycom_f_city_picker from '@/components/f-city-picker/f-city-picker.uvue'
+function GenPagesUserEditinfoUserEditinfoRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_navbar = resolveEasyComponent("navbar",_easycom_navbar)
+const _component_avatar = resolveEasyComponent("avatar",_easycom_avatar)
+const _component_cell = resolveEasyComponent("cell",_easycom_cell)
+const _component_f_picker = resolveEasyComponent("f-picker",_easycom_f_picker)
+const _component_f_city_picker = resolveEasyComponent("f-city-picker",_easycom_f_city_picker)
+
+  return createElementVNode("scroll-view", utsMapOf({
+    style: normalizeStyle(utsMapOf({"flex":"1"}))
+  }), [
+    createVNode(_component_navbar, utsMapOf({
+      title: "编辑资料",
+      type: "text",
+      "right-text": "完成",
+      onClickRight: _ctx.sumbit
+    }), null, 8 /* PROPS */, ["onClickRight"]),
+    createElementVNode("view", utsMapOf({ class: "avatar-input" }), [
+      createVNode(_component_avatar, utsMapOf({
+        src: _ctx.avatar,
+        width: "175rpx",
+        height: "175rpx",
+        onClick: _ctx.updateAvatar
+      }), null, 8 /* PROPS */, ["src", "onClick"]),
+      createElementVNode("text", utsMapOf({ class: "avatar-input-tip" }), "点击更换头像")
+    ]),
+    createVNode(_component_cell, utsMapOf({
+      title: "昵称",
+      border: true,
+      "is-column": true
+    }), utsMapOf({
+      default: withSlotCtx((): any[] => [
+        createElementVNode("input", utsMapOf({
+          modelValue: _ctx.name,
+          onInput: ($event: InputEvent) => {(_ctx.name) = $event.detail.value},
+          class: "nickname-input",
+          type: "text",
+          placeholder: "请输入你的昵称"
+        }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
+      ]),
+      _: 1 /* STABLE */
+    })),
+    createVNode(_component_cell, utsMapOf({
+      title: "性别",
+      border: true,
+      "right-text": _ctx.sexText,
+      onClick: _ctx.openSexPicker
+    }), null, 8 /* PROPS */, ["right-text", "onClick"]),
+    createVNode(_component_f_picker, utsMapOf({
+      mode: "date",
+      onConfirm: _ctx.confirmBirthdayPicker
+    }), utsMapOf({
+      default: withSlotCtx((): any[] => [
+        createVNode(_component_cell, utsMapOf({
+          title: "生日",
+          border: true,
+          "right-text": _ctx.birthday == '' ? '未填写' : _ctx.birthday
+        }), null, 8 /* PROPS */, ["right-text"])
+      ]),
+      _: 1 /* STABLE */
+    }), 8 /* PROPS */, ["onConfirm"]),
+    createVNode(_component_cell, utsMapOf({
+      title: "情感",
+      border: true,
+      "right-text": _ctx.qgText,
+      onClick: () => {_ctx.openEmotionPicker()}
+    }), null, 8 /* PROPS */, ["right-text", "onClick"]),
+    createVNode(_component_f_city_picker, utsMapOf({ onConfirm: _ctx.confirmPathPicker }), utsMapOf({
+      default: withSlotCtx((): any[] => [
+        createVNode(_component_cell, utsMapOf({
+          title: "所在地",
+          border: true,
+          "right-text": _ctx.path == '' ? '未填写' : _ctx.path
+        }), null, 8 /* PROPS */, ["right-text"])
+      ]),
+      _: 1 /* STABLE */
+    }), 8 /* PROPS */, ["onConfirm"]),
+    createElementVNode("view", utsMapOf({ class: "divider" })),
+    createVNode(_component_cell, utsMapOf({
+      title: "个性签名",
+      "show-arrow": false
+    })),
+    createElementVNode("textarea", utsMapOf({
+      value: _ctx.desc,
+      placeholder: "请输入你的个性签名",
+      class: "desc-input",
+      onInput: _ctx.handleDescInput
+    }), null, 40 /* PROPS, NEED_HYDRATION */, ["value", "onInput"]),
+    createElementVNode("view", utsMapOf({
+      style: normalizeStyle(utsMapOf({"height":"300rpx"}))
+    }), null, 4 /* STYLE */)
+  ], 4 /* STYLE */)
+}
+const GenPagesUserEditinfoUserEditinfoStyles = [utsMapOf([["avatar-input", padStyleMapOf(utsMapOf([["alignItems", "center"], ["justifyContent", "center"], ["paddingTop", "60rpx"], ["paddingBottom", "50rpx"]]))], ["avatar-input-tip", padStyleMapOf(utsMapOf([["fontSize", 14], ["marginTop", "25rpx"], ["color", "#0d0d0d"]]))], ["desc-input", padStyleMapOf(utsMapOf([["backgroundColor", "#f9f9f9"], ["marginTop", 0], ["marginRight", "30rpx"], ["marginBottom", 0], ["marginLeft", "30rpx"], ["height", "225rpx"], ["paddingTop", "25rpx"], ["paddingRight", "25rpx"], ["paddingBottom", "25rpx"], ["paddingLeft", "25rpx"], ["width", "690rpx"]]))], ["nickname-input", padStyleMapOf(utsMapOf([["height", "90rpx"], ["fontSize", 15], ["color", "#424242"]]))]])]

@@ -1,0 +1,171 @@
+
+	import checkUpdate from "@/uni_modules/uni-upgrade-center-app/utils/check-update"
+	import type { articleNav,Result,onAddArticleSuccessEvent } from "@/common/type.uts"
+	import { getURL } from "@/common/request.uts"
+	import type { TabsSwiperItem } from '@/components/tabs-swiper/type.uts'
+	import longPage from '@/pages/long-list/long-list-page.uvue';
+	export default {
+		components: {
+			longPage
+		},
+		data() {
+			return {
+				tabIndex:1,
+				tabs:[{
+					"id": 0,
+					"name": "关注",
+					"type":"follow",
+					"preload":false
+				},{
+					"id": 2,
+					"name": "图文",
+					"type":"default",
+					"preload":false
+				},
+				{
+					"id": 3,
+					"name": "体育",
+					"type":"default",
+					"preload":false
+				},
+				{
+					"id": 4,
+					"name": "热点",
+					"type":"default",
+					"preload":false
+				}] as TabsSwiperItem[],
+				// 是否已经加载了分类
+				isTabsLoaded:false
+			}
+		},
+		onLoad() {
+			this.loadTabs(null)
+			uni.$on("onAddArticleSuccess",this.onAddArticleSuccess)
+		},
+		onReady() {
+			checkUpdate(this.$refs["upgradePopup"] as ComponentPublicInstance)
+		},
+		onUnload() {
+			uni.$off("onAddArticleSuccess",this.onAddArticleSuccess)
+		},
+		onPullDownRefresh() {
+			if(!this.isTabsLoaded){
+				this.loadTabs(()=>{
+					uni.stopPullDownRefresh()
+				})
+				return
+			}
+			(this.$refs["longPage"] as ComponentPublicInstance[])[this.tabIndex].$callMethod("refreshData",()=>{
+				uni.stopPullDownRefresh()
+			})
+		},
+		methods: {
+			// 监听发帖成功事件，刷新对应的页面
+			onAddArticleSuccess(e:onAddArticleSuccessEvent){
+				// 找到对应分类
+				let i = this.tabs.findIndex((o:TabsSwiperItem) : boolean => o.id == e.category_id)
+				if(i == -1) return
+				// 刷新对应页面
+				(this.$refs["longPage"] as ComponentPublicInstance[])[i].$callMethod("refreshData",null)
+			},
+			// 加载分类
+			loadTabs(loadComplete:(()=>void) | null){
+				uni.request<Result<articleNav[]>>({
+					url: getURL('/category/article'),
+					success: res => {
+						let r = res.data
+						if(r == null) return
+						if(res.statusCode !=200){
+							uni.showToast({
+								title: r.msg,
+								icon: 'none'
+							});
+							return
+						}
+						
+						let tabs = [{
+							"id": 0,
+							"name": "关注",
+							"type":"follow",
+							"preload":false
+						}] as TabsSwiperItem[]
+						let d = r.data as articleNav[]
+						d.forEach((o:articleNav,_:number)=>{
+							tabs.push({
+								id:o.id,
+								name:o.title,
+								type:"default",
+								preload:false
+							} as TabsSwiperItem)
+						})
+						
+						this.tabs = tabs
+						this.isTabsLoaded = true
+						
+						this.loadData(this.tabIndex)
+					},
+					fail: (err) => {
+						uni.showToast({
+							title: err.errMsg,
+							icon: 'none'
+						});
+					},
+					complete: () => {
+						if(loadComplete != null) loadComplete()
+					}
+				});
+			},
+			// 当滑动时候，用来加载列表数据
+			loadData(index:number){
+				(this.$refs["longPage"] as ComponentPublicInstance[])[index].$callMethod("loadData",null)
+			},
+			// 当滑动时候，触发索引变化
+			onSwiperChange(index:number){
+				this.tabIndex = index
+			}
+		}
+	}
+
+
+import _easycom_tabs_swiper from '@/components/tabs-swiper/tabs-swiper.uvue'
+import _easycom_add_post_btn from '@/components/add-post-btn/add-post-btn.uvue'
+import _easycom_uni_upgrade_center_app from '@/uni_modules/uni-upgrade-center-app/components/uni-upgrade-center-app/uni-upgrade-center-app.uvue'
+function GenPagesIndexIndexRender(): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+const _component_long_page = resolveComponent("long-page")
+const _component_tabs_swiper = resolveEasyComponent("tabs-swiper",_easycom_tabs_swiper)
+const _component_add_post_btn = resolveEasyComponent("add-post-btn",_easycom_add_post_btn)
+const _component_uni_upgrade_center_app = resolveEasyComponent("uni-upgrade-center-app",_easycom_uni_upgrade_center_app)
+
+  return createElementVNode(Fragment, null, [
+    createVNode(_component_tabs_swiper, utsMapOf({
+      "default-tab-index": _ctx.tabIndex,
+      "show-search-icon": true,
+      tabs: _ctx.tabs,
+      onLoadData: _ctx.loadData,
+      onChange: _ctx.onSwiperChange
+    }), utsMapOf({
+      default: withSlotCtx((): any[] => [
+        createElementVNode(Fragment, null, RenderHelpers.renderList(_ctx.tabs, (item, index, _, _): VNode => {
+          return createElementVNode("swiper-item", utsMapOf({
+            class: "flex-1",
+            key: index
+          }), [
+            createVNode(_component_long_page, utsMapOf({
+              ref_for: true,
+              ref: "longPage",
+              category_id: item.id,
+              type: item.type,
+              preload: item.preload
+            }), null, 8, ["category_id", "type", "preload"])
+          ])
+        }), 128 /* KEYED_FRAGMENT */)
+      ]),
+      _: 1
+    }), 8, ["default-tab-index", "tabs", "onLoadData", "onChange"]),
+    createVNode(_component_add_post_btn),
+    createVNode(_component_uni_upgrade_center_app, utsMapOf({ ref: "upgradePopup" }), null, 512)
+  ], 64 /* STABLE_FRAGMENT */)
+}
+const GenPagesIndexIndexStyles = []
